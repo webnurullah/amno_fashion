@@ -27,18 +27,16 @@
   S.isValidOrder = isValid;
 
   /* ======================================================================
-     Locations (showrooms + warehouse). One location fulfils online orders.
+     One store location: it holds the stock and fulfils online orders.
      ====================================================================== */
   const SEED_LOCATIONS = [
-    { id: 'w1', name: 'Central Warehouse', type: 'warehouse', address: 'Plot 00, Tejgaon I/A, Dhaka', district: 'Dhaka', phone: '+880 1700-000010', hours: 'Sun – Thu · 9:00 am – 6:00 pm', manager: 'Shop Manager', active: true },
-    { id: 's1', name: 'Dhanmondi Showroom', type: 'showroom', address: 'House 00, Road 00, Dhanmondi, Dhaka', district: 'Dhaka', phone: '+880 1700-000011', hours: 'Sat – Thu · 10:00 am – 9:00 pm', manager: 'Rafi Hossain', active: true },
-    { id: 's2', name: 'Chattogram Showroom', type: 'showroom', address: 'Shop 00, GEC Circle, Chattogram', district: 'Chattogram', phone: '+880 1700-000012', hours: 'Sat – Thu · 10:00 am – 9:00 pm', manager: 'Nusrat Jahan', active: true }
+    { id: 's1', name: 'Amnu Store', type: 'showroom', address: 'House 00, Road 00, Dhanmondi, Dhaka', district: 'Dhaka', phone: '+880 1700-000011', hours: 'Sat – Thu · 10:00 am – 9:00 pm', manager: 'Rafi Hossain', active: true }
   ];
   S.locations = () => DB.get('locations', null) || (DB.set('locations', SEED_LOCATIONS), clone(SEED_LOCATIONS));
   S.saveLocations = (l) => DB.set('locations', l);
   S.location = (id) => S.locations().find((l) => l.id === id);
   S.locName = (id) => (S.location(id) || { name: id === 'all' ? 'All locations' : id }).name;
-  S.onlineLoc = () => S.settings().onlineLoc || 'w1';
+  S.onlineLoc = () => S.settings().onlineLoc || 's1';
   S.showrooms = () => S.locations().filter((l) => l.type === 'showroom' && l.active !== false);
 
   /* ======================================================================
@@ -62,7 +60,7 @@
   }
   function seedInventory() {
     const inv = {};
-    const shares = [['w1', 0.6], ['s1', 0.25], ['s2', 0.15]];
+    const shares = [['s1', 1]];
     S.seedProducts.forEach((p) => {
       const r = rng(p.id * 131 + 7);
       inv[p.id] = {};
@@ -190,14 +188,14 @@
       const dom = date.getDate();
       const dim = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
       const add = (category, amount, account, loc, vendor, note) => out.push({ date: date.toISOString(), category, amount: Math.round(amount / 10) * 10, account, loc, vendor, note });
-      if (dom === 1) { add('Rent', 30000, 'bank', 's1', 'Landlord (Dhanmondi)', 'Monthly showroom rent'); add('Rent', 18000, 'bank', 's2', 'Landlord (Chattogram)', 'Monthly showroom rent'); add('Rent', 10000, 'bank', 'w1', 'Warehouse landlord', 'Monthly warehouse rent'); }
-      if (dom === dim) { add('Salaries', 22000, 'bank', 's1', 'Staff payroll', 'Dhanmondi showroom staff'); add('Salaries', 16000, 'bank', 's2', 'Staff payroll', 'Chattogram showroom staff'); add('Salaries', 14000, 'bank', 'w1', 'Staff payroll', 'Warehouse and packing staff'); }
-      if (dom === 15) { add('Utilities', 6000 + r() * 3000, 'cash', 's1', 'Electricity', 'Dhanmondi showroom bill'); add('Utilities', 4000 + r() * 2500, 'cash', 's2', 'Electricity', 'Chattogram showroom bill'); add('Utilities', 3000 + r() * 1500, 'bank', 'w1', 'Internet and electricity', 'Warehouse bills'); }
-      if (d % 7 === 3) add('Transport & courier', 3000 + r() * 3500, 'bank', 'w1', 'Courier fees', 'Weekly parcel charges');
-      if (d % 6 === 2) add('Packaging', 1800 + r() * 1800, 'bank', 'w1', 'Packaging supplies', 'Poly bags, boxes and tags');
-      if (d % 4 === 1) add('Marketing & ads', 1500 + r() * 4500, 'bank', 'all', 'Facebook ads', 'Page boost and campaigns');
-      ['s1', 's2'].forEach((loc) => { if (r() < 0.7) add('Miscellaneous', 300 + r() * 600, 'cash', loc, 'Petty cash', 'Tea, cleaning and small repairs'); });
-      if (d === 21 || d === 44) add('Repairs & maintenance', 2500 + r() * 1000, 'cash', 's1', 'AC servicing', 'Showroom maintenance');
+      if (dom === 1) add('Rent', 58000, 'bank', 's1', 'Landlord', 'Monthly shop rent');
+      if (dom === dim) add('Salaries', 52000, 'bank', 's1', 'Staff payroll', 'Shop and packing staff');
+      if (dom === 15) { add('Utilities', 10000 + r() * 5000, 'cash', 's1', 'Electricity', 'Shop electricity bill'); add('Utilities', 3000 + r() * 1500, 'bank', 's1', 'Internet', 'Internet bill'); }
+      if (d % 7 === 3) add('Transport & courier', 3000 + r() * 3500, 'bank', 's1', 'Courier fees', 'Weekly parcel charges');
+      if (d % 6 === 2) add('Packaging', 1800 + r() * 1800, 'bank', 's1', 'Packaging supplies', 'Poly bags, boxes and tags');
+      if (d % 4 === 1) add('Marketing & ads', 1500 + r() * 4500, 'bank', 's1', 'Facebook ads', 'Page boost and campaigns');
+      if (r() < 0.9) add('Miscellaneous', 300 + r() * 600, 'cash', 's1', 'Petty cash', 'Tea, cleaning and small repairs');
+      if (d === 21 || d === 44) add('Repairs & maintenance', 2500 + r() * 1000, 'cash', 's1', 'AC servicing', 'Shop maintenance');
     }
     out.forEach((e, i) => { e.id = i + 1; });
     return out;
@@ -250,7 +248,7 @@
     const pay = (days, amount, account = 'bank', note = '') => ({ id: A.uid(), date: ago(days), account, amount, note });
     const mk = (n, sup, days, status, pids, qty, payments) => {
       const items = poItems(pids, qty);
-      return { id: 'PO-' + pad(n, 4), n, date: ago(days), supplierId: sup, locId: 'w1', status, items, shipping: 0, payments: payments(sum(items, (i) => i.qty * i.cost)), note: '' };
+      return { id: 'PO-' + pad(n, 4), n, date: ago(days), supplierId: sup, locId: 's1', status, items, shipping: 0, payments: payments(sum(items, (i) => i.qty * i.cost)), note: '' };
     };
     return [
       mk(1, 'sup1', 52, 'received', [5, 6, 9, 15], 6, (t) => [pay(50, t)]),
@@ -314,7 +312,7 @@
   function genCloses() {
     const r = rng(404);
     const out = [];
-    ['s1', 's2'].forEach((loc) => {
+    ['s1'].forEach((loc) => {
       let opening = 5000;
       for (let d = 59; d >= 1; d--) {
         const date = ymd(dayStart(d));
@@ -327,7 +325,7 @@
         const deposit = Math.max(0, Math.floor((counted - 5000) / 100) * 100);
         out.push({
           id: `DC-${loc}-${date}`, date, loc, opening, byTender: sales.byTender, orders: sales.count, total: sales.total, discount: sales.discount, vat: sales.vat,
-          cashExpenses: cashExp, expected, counted, variance, deposit, denoms: breakdown(counted), cashier: loc === 's1' ? 'Rafi Hossain' : 'Nusrat Jahan', notes: '', submittedAt: new Date(`${date}T21:30:00`).toISOString(), seeded: true
+          cashExpenses: cashExp, expected, counted, variance, deposit, denoms: breakdown(counted), cashier: 'Rafi Hossain', notes: '', submittedAt: new Date(`${date}T21:30:00`).toISOString(), seeded: true
         });
         opening = counted - deposit;
       }

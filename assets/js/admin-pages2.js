@@ -288,7 +288,7 @@
         title: u ? 'Edit user' : 'Add user',
         body: `<form id="uf" class="form-grid2" novalidate><div class="field full"><label>Full name</label><input name="name" value="${esc(u ? u.name : '')}"><span class="msg">Enter a name.</span></div>
           <div class="field"><label>Username</label><input name="username" value="${esc(u ? u.username : '')}"><span class="msg">Enter a username.</span></div><div class="field"><label>Email</label><input name="email" type="email" value="${esc(u ? u.email : '')}"><span class="msg">Enter a valid email.</span></div>
-          <div class="field"><label>Role</label><select name="role">${Object.keys(ROLES).map((r) => `<option>${r}</option>`).join('')}</select><span class="hint" id="role-hint"></span></div><div class="field"><label>Showroom</label><select name="loc"><option value="">None / all</option>${S.showrooms().map((r) => `<option value="${r.id}" ${u && u.loc === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}</select><span class="hint">Cashiers sell from this showroom.</span></div></form>`,
+          <div class="field full"><label>Role</label><select name="role">${Object.keys(ROLES).map((r) => `<option>${r}</option>`).join('')}</select><span class="hint" id="role-hint"></span></div></form>`,
         footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Save user</button>'
       });
       const f = $('#uf', m.el).elements;
@@ -299,7 +299,7 @@
         const checks = { name: (v) => v.trim().length > 1, username: (v) => /^[a-z0-9_.-]{3,}$/i.test(v.trim()), email: (v) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.trim()) };
         const bad = Object.keys(checks).filter((k) => { const ok = checks[k](f[k].value); f[k].closest('.field').classList.toggle('err', !ok); return !ok; });
         if (bad.length) { f[bad[0]].focus(); return; }
-        const rec = { id: u ? u.id : list.reduce((n, x) => Math.max(n, x.id), 0) + 1, name: f.name.value.trim(), username: f.username.value.trim(), email: f.email.value.trim(), role: f.role.value, loc: f.loc.value, date: u ? u.date : new Date().toISOString(), posts: u ? u.posts : 0 };
+        const rec = { id: u ? u.id : list.reduce((n, x) => Math.max(n, x.id), 0) + 1, name: f.name.value.trim(), username: f.username.value.trim(), email: f.email.value.trim(), role: f.role.value, date: u ? u.date : new Date().toISOString(), posts: u ? u.posts : 0 };
         if (u) list[list.indexOf(u)] = rec; else list.push(rec);
         S.saveUsers(list); m.close(); api.refresh(); A.toast(u ? 'User updated' : 'User added');
       });
@@ -312,7 +312,7 @@
       columns: [
         { id: 'name', label: 'Name', sort: (a, b) => a.name.localeCompare(b.name), render: (u) => `<div class="row gap-8">${Admin.avatar(u.name)}<div><b class="row-title">${esc(u.name)}</b><div class="xs muted">@${esc(u.username)}</div></div></div>${Admin.actions([{ label: 'Edit', act: 'edit', id: u.id }, u.id === 1 ? null : { label: 'Delete', act: 'del', id: u.id, danger: true }])}` },
         { id: 'email', label: 'Email', render: (u) => `<a class="u" href="mailto:${esc(u.email)}">${esc(u.email)}</a>` },
-        { id: 'role', label: 'Role', render: (u) => `<span class="badge b-violet">${esc(u.role)}</span>${u.loc ? `<div class="xs muted">${esc(S.locName(u.loc))}</div>` : ''}` },
+        { id: 'role', label: 'Role', render: (u) => `<span class="badge b-violet">${esc(u.role)}</span>` },
         { id: 'posts', label: 'Posts', cls: 'right', render: (u) => `<span class="num">${u.posts}</span>` },
         { id: 'date', label: 'Registered', render: (u) => `<span class="muted small">${A.date(u.date)}</span>` }
       ],
@@ -350,7 +350,6 @@
     const get = (o, path) => path.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
     const setPath = (o, path, v) => { const ks = path.split('.'); ks.slice(0, -1).reduce((a, k) => (a[k] = a[k] || {}), o)[ks[ks.length - 1]] = v; };
     const s = S.settings();
-    const online = $('#s-online'); if (online) online.innerHTML = S.locations().map((l) => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
     $$('[data-key]').forEach((el) => { const v = get(s, el.dataset.key); if (el.type === 'checkbox') el.checked = !!v; else el.value = v == null ? '' : v; });
 
     $('#settings-tabs').addEventListener('click', (e) => {

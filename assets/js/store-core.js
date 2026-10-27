@@ -206,7 +206,7 @@
       <div class="util-r"><span class="deliver">${icon('truck', 16)} Deliver to: <i class="flag-bd"></i> <b>Bangladesh</b></span><a href="stores.html">Store Locations</a><a href="track-order.html">Track Order</a></div>
     </div></div>
     <header class="site-header"><div class="container nav-in">
-      <a class="logo" href="index.html" aria-label="${esc(s.storeName)} home"><span class="logo-mark">${icon('sparkle', 20)}</span><span class="logo-text">Amnu<small>Fashion</small></span></a>
+      <a class="logo" href="index.html" aria-label="${esc(s.storeName)} home"><span class="logo-plate"><img src="assets/img/logo-wordmark.png" alt="${esc(s.storeName)}" width="96" height="51"></span><span class="logo-tag">${esc(s.tagline)}</span></a>
       <nav class="menu" id="menu" aria-label="Main">${NAV.map(([l, h, on]) => `<a href="${h}" class="${on(cat, page, sort) ? 'active' : ''}">${l}</a>`).join('')}<a class="menu-extra" href="stores.html">Store Locations</a><a class="menu-extra" href="track-order.html">Track Order</a></nav>
       <div class="nav-actions">
         <button class="icon-btn" data-search aria-label="Search">${icon('search', 21)}</button>
@@ -228,6 +228,7 @@
     const L = (href, label) => `<li><a href="${href}">${label}</a></li>`;
     const cats = S.categories();
     return `<footer class="site-footer"><div class="container">
+      <div class="footer-brand"><img src="assets/img/logo-lockup.jpg" alt="${esc(s.storeName)}: ${esc(s.tagline)}" width="146" height="120"><p>${esc(s.tagline)}<span>Panjabi for Eid, weddings and every day.</span></p></div>
       <div class="footer-top glass">
         <div><h4>Legal</h4><ul>${L('policy.html?p=shipping', 'Shipping Policy')}${L('policy.html?p=terms', 'Terms and Conditions')}${L('policy.html?p=privacy', 'Privacy Policy')}${L('policy.html?p=payment', 'Payment Policy')}</ul></div>
         <div><h4>Information</h4><ul>${L('policy.html?p=exchange', 'Exchange &amp; Refund')}${L('policy.html?p=size', 'Size Guide')}${L('policy.html?p=loyalty', 'Loyalty Program')}${L('stores.html', 'Store Locations')}${L('track-order.html', 'Track Your Order')}</ul></div>

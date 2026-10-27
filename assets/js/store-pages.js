@@ -173,7 +173,7 @@
     const root = $('#pdp');
     if (!p || p.status !== 'publish') {
       root.innerHTML = `<div class="empty glass pad" style="grid-column:1/-1"><h2>Product not found</h2><p class="muted">It may have been removed or is no longer available.</p><a class="btn btn-primary" href="shop.html">Back to shop</a></div>`;
-      $('#pdp-rail-host').hidden = true;
+      if ($('#pdp-rail-host')) $('#pdp-rail-host').hidden = true;
       return;
     }
     document.title = `${p.name} — ${settings.storeName}`;

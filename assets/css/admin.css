@@ -37,6 +37,8 @@
 .side-brand { display: flex; align-items: center; gap: 12px; }
 .side-brand .nav-label { display: flex; flex-direction: column; line-height: 1.15; }
 .side-brand small { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--ink-3); }
+.logo-mark img { display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+.login-logo { display: block; width: 120px; height: auto; border-radius: 16px; margin: 0 auto 6px; }
 .logo-mark { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 14px; color: #fff; background: linear-gradient(145deg, var(--primary-2), var(--primary)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .5), 0 8px 16px -6px var(--primary); }
 .side-nav { flex: 1; overflow-y: auto; padding: 8px 12px; display: flex; flex-direction: column; gap: 3px; scrollbar-width: thin; }
 .nav-heading { margin: 16px 14px 6px; font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
@@ -610,3 +612,72 @@ a.store-row:hover b:first-of-type { color: var(--primary); }
   .sidebar, .topbar, .admin-footer, .no-print { display: none !important; }
   .admin { display: block; padding: 0; }
 }
+
+/* ==========================================================================
+   Brand theme: black + gold, taken from the Amnu logo
+   (gold #d5a54e, black #0b0b0d, white). Overrides the base admin palette.
+   ========================================================================== */
+[data-surface=admin] {
+  --primary: #946a14;            /* gold, dark enough for text on light glass */
+  --primary-2: #e3b95f;
+  --primary-soft: rgba(213, 165, 78, .2);
+  --primary-ink: #1a1206;
+  --page: #f3efe5;
+  --mesh:
+    radial-gradient(44% 40% at 0% 36%, rgba(213, 165, 78, .34) 0, transparent 70%),
+    radial-gradient(40% 40% at 100% 14%, rgba(255, 226, 160, .5) 0, transparent 70%),
+    radial-gradient(46% 46% at 52% 106%, rgba(120, 100, 60, .22) 0, transparent 70%),
+    radial-gradient(34% 34% at 55% 0%, rgba(255, 255, 255, .7) 0, transparent 70%),
+    linear-gradient(160deg, #f6f2e8, #ebe5d6);
+  --viz-1: #a8761a;
+  --viz-a: #26262c;
+  --viz-b: #c9972f;
+  --viz-grid: rgba(60, 45, 10, .1);
+}
+[data-surface=admin][data-theme=dark] {
+  --primary: #e3b95f;
+  --primary-2: #f0cf85;
+  --primary-soft: rgba(227, 185, 95, .18);
+  --primary-ink: #1a1206;
+  --page: #0b0b0d;
+  --mesh:
+    radial-gradient(40% 40% at 0% 40%, rgba(213, 165, 78, .2) 0, transparent 70%),
+    radial-gradient(40% 40% at 100% 12%, rgba(213, 165, 78, .14) 0, transparent 70%),
+    radial-gradient(46% 46% at 50% 106%, rgba(150, 110, 40, .2) 0, transparent 70%),
+    linear-gradient(160deg, #141416, #09090a);
+  --viz-1: #e3b95f;
+  --viz-a: #c9c9d2;
+  --viz-b: #e3b95f;
+  --viz-grid: rgba(255, 255, 255, .1);
+}
+
+/* black glass sidebar, gold active item */
+[data-surface=admin] .sidebar {
+  background: linear-gradient(180deg, rgba(20, 20, 22, .97), rgba(8, 8, 9, .98)) !important;
+  border-color: rgba(213, 165, 78, .28);
+  --ink: #f5efe2; --ink-2: #d2c9b4; --ink-3: #a09784;
+  --primary: #e3b95f;
+  --glass-soft: rgba(255, 255, 255, .07);
+  --glass-strong: rgba(213, 165, 78, .16);
+  --glass-line: rgba(213, 165, 78, .3);
+  --line: rgba(255, 255, 255, .1);
+  color: var(--ink);
+}
+.sidebar .nav-count { background: rgba(213, 165, 78, .25); color: #f0cf85; }
+.sidebar .logo-mark { background: #000; box-shadow: 0 0 0 1px rgba(213, 165, 78, .5), 0 8px 16px -6px rgba(213, 165, 78, .5); }
+.sidebar .side-card { background: rgba(255, 255, 255, .06); }
+
+/* gold buttons and chips carry dark text */
+.btn-violet, [data-surface=admin] .chip.active, [data-surface=admin] .size.on, .count-pill, .plugin.on .plugin-ico, .media-tag { color: var(--primary-ink) !important; }
+[data-surface=admin] .btn-violet { background: linear-gradient(180deg, #efcb7c -30%, #cf9d3f 110%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 10px 20px -8px rgba(180, 125, 25, .7); }
+[data-surface=admin] .chip.active, [data-surface=admin] .size.on { background: linear-gradient(180deg, #efcb7c, #cf9d3f); }
+.count-pill, .media-tag { background: #cf9d3f; }
+.kpi-ico.violet { background: linear-gradient(145deg, #efcb7c, #c08a2a); color: #1a1206; }
+.kpi-ico.blue { background: linear-gradient(145deg, #4a4a52, #16161a); }
+.kpi-ico.pink { background: linear-gradient(145deg, #e8b27a, #a8681f); }
+.insight-ico { background: linear-gradient(145deg, #efcb7c, #c08a2a); color: #1a1206; }
+.pl-row.grand { background: rgba(213, 165, 78, .22); }
+.split-dot.s-a { background: var(--viz-a); } .split-dot.s-b { background: var(--viz-b); }
+.login-body .login-card, .login-card { border-color: rgba(213, 165, 78, .35); }
+[data-surface=admin][data-theme=dark] { --glass-bg: rgba(255, 255, 255, .06); --glass-strong: rgba(30, 28, 24, .82); --glass-soft: rgba(255, 255, 255, .05); --field: rgba(255, 255, 255, .06); }
+[data-theme=dark][data-surface=admin] .modal, [data-theme=dark][data-surface=admin] .modal-backdrop .modal { background: rgba(24, 23, 20, .94); }
