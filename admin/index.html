@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en" data-surface="admin">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard ‹ Amnu Fashion Admin</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%236250d6'/%3E%3Cpath d='M32 14 18 50h7l3-8h8l3 8h7zm-2.6 22 2.6-8 2.6 8z' fill='white'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/glass.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <script src="../assets/js/core.js"></script>
+</head>
+<body data-page="dashboard">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="admin" id="admin">
+    <aside class="sidebar glass" id="sidebar"></aside>
+
+    <div class="admin-main">
+      <header class="topbar glass" id="topbar"></header>
+
+      <main class="content" id="content">
+        <div class="page-head">
+          <div><h1>Dashboard</h1><p class="muted">Welcome back. Here's what's happening in your store.</p></div>
+          <div class="row gap-8 wrap">
+            <select id="range" aria-label="Date range" class="pill-select">
+              <option value="7">Last 7 days</option><option value="14">Last 14 days</option><option value="30">Last 30 days</option><option value="60">Last 60 days</option>
+            </select>
+            <a class="btn btn-violet" href="product-edit.html"><i data-icon="plus" data-size="18"></i> Add product</a>
+          </div>
+        </div>
+
+        <section class="kpis" id="kpis" aria-label="Key metrics"></section>
+
+        <section class="dash-grid">
+          <div class="card chart-card">
+            <div class="card-h">
+              <div><span class="card-title">Sales overview</span>
+                <div class="big-row"><b class="big num" id="sales-total">৳0</b><span class="delta" id="sales-delta"></span></div></div>
+            </div>
+            <div id="sales-chart"></div>
+          </div>
+          <div class="side-stats" id="side-stats"></div>
+        </section>
+
+        <section class="dash-two">
+          <div class="card">
+            <div class="card-h"><span class="card-title">Recent orders</span><a class="btn-link small" href="orders.html">View all orders</a></div>
+            <div class="table-wrap"><table class="mini-table" id="recent-orders"></table></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><span class="card-title">Top products</span><a class="btn-link small" href="products.html">View all products</a></div>
+            <div id="top-products" class="top-list"></div>
+          </div>
+        </section>
+
+        <section class="dash-three">
+          <div class="card"><div class="card-h"><span class="card-title">At a glance</span></div><div id="glance" class="glance"></div></div>
+          <div class="card"><div class="card-h"><span class="card-title">Stock alerts</span><a class="btn-link small" href="products.html?stock=low">Manage</a></div><div id="stock-alerts" class="top-list"></div></div>
+          <div class="card">
+            <div class="card-h"><span class="card-title">Quick draft</span></div>
+            <form id="quick-draft" class="col" novalidate>
+              <div class="field"><label for="qd-title">Title</label><input id="qd-title" type="text" placeholder="Post or page title"></div>
+              <div class="field"><label for="qd-body">Content</label><textarea id="qd-body" rows="3" placeholder="What's on your mind?"></textarea></div>
+              <button class="btn btn-violet btn-sm" type="submit" style="align-self:flex-start">Save draft</button>
+            </form>
+            <div id="drafts" class="drafts"></div>
+          </div>
+        </section>
+
+        <section class="card insight" id="insight"></section>
+      </main>
+
+      <footer class="admin-footer" id="admin-footer"></footer>
+    </div>
+  </div>
+
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/charts.js"></script>
+  <script src="../assets/js/admin-core.js"></script>
+  <script src="../assets/js/admin-pages.js"></script>
+  <script src="../assets/js/admin-pages2.js"></script>
+  <script>Amnu.admin.boot('dashboard', Amnu.adminPages.dashboard);</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en" data-surface="admin">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Product Categories ‹ Amnu Fashion Admin</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%236250d6'/%3E%3Cpath d='M32 14 18 50h7l3-8h8l3 8h7zm-2.6 22 2.6-8 2.6 8z' fill='white'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/glass.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <script src="../assets/js/core.js"></script>
+</head>
+<body data-page="categories">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="admin" id="admin">
+    <aside class="sidebar glass" id="sidebar"></aside>
+
+    <div class="admin-main">
+      <header class="topbar glass" id="topbar"></header>
+
+      <main class="content" id="content">
+        <div class="page-head">
+          <div><h1>Product categories</h1><p class="muted">Group your Panjabi so customers can browse faster.</p></div>
+          
+        </div>
+        <div class="split-layout">
+          <section class="card">
+            <h3 class="sub-h" id="cat-form-title">Add new category</h3>
+            <form id="cat-form" class="col" novalidate>
+              <div class="field"><label for="cat-name">Name</label><input id="cat-name" name="name" type="text" placeholder="e.g. Winter Collection"><span class="msg">Please enter a name.</span></div>
+              <div class="field"><label for="cat-slug">Slug</label><input id="cat-slug" name="slug" type="text" placeholder="auto-generated"><span class="hint">The URL-friendly version of the name.</span></div>
+              <div class="field"><label for="cat-desc">Description</label><textarea id="cat-desc" name="desc" rows="3"></textarea></div>
+              <div class="row gap-8"><button class="btn btn-violet" id="cat-save" type="submit">Add category</button><button class="btn btn-ghost" id="cat-cancel" type="button" hidden>Cancel</button></div>
+            </form>
+          </section>
+          <div id="list"></div>
+        </div>
+      </main>
+
+      <footer class="admin-footer" id="admin-footer"></footer>
+    </div>
+  </div>
+
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/charts.js"></script>
+  <script src="../assets/js/admin-core.js"></script>
+  <script src="../assets/js/admin-pages.js"></script>
+  <script src="../assets/js/admin-pages2.js"></script>
+  <script>Amnu.admin.boot('categories', Amnu.adminPages['categories']);</script>
+</body>
+</html>
