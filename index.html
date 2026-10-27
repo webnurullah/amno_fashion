@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en" data-surface="store">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Amnu Fashion — Premium Panjabi Collection</title>
+  <meta name="description" content="Shop premium Panjabi for Eid, weddings and everyday wear. Cash on Delivery, bKash and Nagad accepted across Bangladesh.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23ff7a59'/%3E%3Cpath d='M32 14 18 50h7l3-8h8l3 8h7zm-2.6 22 2.6-8 2.6 8z' fill='white'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/glass.css">
+  <link rel="stylesheet" href="assets/css/store.css">
+  <script src="assets/js/core.js"></script>
+</head>
+<body data-page="home">
+  <div class="bg" aria-hidden="true"></div>
+  <div id="site-header"></div>
+
+  <main id="main">
+    <!-- HERO -->
+    <section class="hero container">
+      <div class="hero-copy">
+        <span class="eyebrow glass-soft"><i data-icon="sparkle" data-size="16"></i> Eid collection is live</span>
+        <h1 id="hero-title">Choose Your Best Panjabi</h1>
+        <p class="hero-sub" id="hero-sub">They're all so nice</p>
+
+        <form class="hero-search glass" action="shop.html" role="search">
+          <i data-icon="search" data-size="20"></i>
+          <input type="search" name="q" placeholder="Search panjabi, fabric, colour…" aria-label="Search products">
+          <button class="btn btn-primary" type="submit">Search</button>
+        </form>
+
+        <div class="chips" id="hero-chips" aria-label="Quick categories"></div>
+
+        <div class="hero-cta">
+          <a class="btn btn-primary btn-lg" href="shop.html">Shop collection <i data-icon="arrow-right" data-size="18"></i></a>
+          <a class="btn btn-glass btn-lg" href="shop.html?cat=wedding">Wedding edit</a>
+        </div>
+
+        <ul class="hero-points">
+          <li><i data-icon="truck" data-size="20"></i><span id="hero-free">Free delivery over ৳5,000</span></li>
+          <li><i data-icon="refresh" data-size="20"></i><span>7-day easy exchange</span></li>
+          <li><i data-icon="wallet" data-size="20"></i><span>bKash · Nagad · COD</span></li>
+        </ul>
+      </div>
+
+      <div class="hero-art" id="hero-art" aria-hidden="false"></div>
+    </section>
+
+    <!-- CATEGORIES -->
+    <section class="section container">
+      <div class="section-h">
+        <div><span class="eyebrow-sm">Browse</span><h2>Shop by category</h2></div>
+        <a class="link-arrow" href="shop.html">View all <i data-icon="arrow-right" data-size="16"></i></a>
+      </div>
+      <div class="cat-grid" id="cat-grid"></div>
+    </section>
+
+    <!-- NEW ARRIVALS -->
+    <section class="section container">
+      <div class="section-h">
+        <div><span class="eyebrow-sm">Just landed</span><h2>New arrivals</h2></div>
+        <a class="link-arrow" href="shop.html?sort=new">See all new <i data-icon="arrow-right" data-size="16"></i></a>
+      </div>
+      <div class="grid-products" id="new-grid"></div>
+    </section>
+
+    <!-- PROMO -->
+    <section class="section container">
+      <div class="promo glass">
+        <div class="promo-copy">
+          <span class="eyebrow glass-soft"><i data-icon="zap" data-size="16"></i> Limited time</span>
+          <h2>Eid Special — up to 25% off</h2>
+          <p class="muted">Use code <b>EID200</b> for ৳200 off orders above ৳2,000. Cash on Delivery everywhere in Bangladesh.</p>
+          <div class="countdown" id="countdown" aria-live="off"></div>
+          <a class="btn btn-primary btn-lg" href="shop.html?cat=eid">Shop Eid collection</a>
+        </div>
+        <div class="promo-art" id="promo-art"></div>
+      </div>
+    </section>
+
+    <!-- TRENDING -->
+    <section class="section container">
+      <div class="section-h">
+        <div><span class="eyebrow-sm">Customer favourites</span><h2>Trending now</h2></div>
+        <div class="tabs" id="trend-tabs" role="tablist"></div>
+      </div>
+      <div class="grid-products" id="trend-grid"></div>
+    </section>
+
+    <!-- WHY US -->
+    <section class="section container">
+      <div class="features glass">
+        <div class="feature"><span class="feature-ico"><i data-icon="gem" data-size="24"></i></span><h3>Premium fabric</h3><p class="muted small">Carefully sourced cotton, silk-touch and jamdani weaves.</p></div>
+        <div class="feature"><span class="feature-ico"><i data-icon="shield" data-size="24"></i></span><h3>Quality checked</h3><p class="muted small">Every piece is inspected for stitching and finishing.</p></div>
+        <div class="feature"><span class="feature-ico"><i data-icon="truck" data-size="24"></i></span><h3>Fast delivery</h3><p class="muted small">Inside Dhaka in 1–2 days, nationwide in 3–5 days.</p></div>
+        <div class="feature"><span class="feature-ico"><i data-icon="refresh" data-size="24"></i></span><h3>Easy exchange</h3><p class="muted small">Wrong size? Exchange within 7 days, no fuss.</p></div>
+      </div>
+    </section>
+
+    <!-- TESTIMONIALS -->
+    <section class="section container">
+      <div class="section-h"><div><span class="eyebrow-sm">Sample reviews</span><h2>Loved by our customers</h2></div></div>
+      <div class="testi-grid" id="testi-grid"></div>
+    </section>
+
+    <!-- SOCIAL -->
+    <section class="section container">
+      <div class="social glass">
+        <div>
+          <span class="eyebrow glass-soft"><i data-icon="facebook" data-size="16"></i> Facebook</span>
+          <h2>Follow our latest drops</h2>
+          <p class="muted">New designs, Eid lookbooks and customer photos land on our Facebook page first.</p>
+        </div>
+        <div class="row wrap gap-8">
+          <a class="btn btn-primary btn-lg" id="fb-link" href="https://www.facebook.com/amnufashionbd/" target="_blank" rel="noopener"><i data-icon="facebook" data-size="18"></i> Visit our page</a>
+          <a class="btn btn-glass btn-lg" id="msgr-link" href="https://m.me/amnufashionbd" target="_blank" rel="noopener"><i data-icon="message" data-size="18"></i> Message us</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- NEWSLETTER -->
+    <section class="section container">
+      <form class="newsletter glass" data-demo-form="Thanks for subscribing!">
+        <div><h2>Get 10% off your first order</h2><p class="muted">Join for new arrivals, Eid offers and style notes. Use code <b>WELCOME10</b>.</p></div>
+        <div class="newsletter-field">
+          <input type="email" required placeholder="Your email address" aria-label="Email address">
+          <button class="btn btn-primary" type="submit">Subscribe</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+  <script src="assets/js/data.js"></script>
+  <script src="assets/js/store.js"></script>
+</body>
+</html>

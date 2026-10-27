@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en" data-surface="admin">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Add New Product ‹ Amnu Fashion Admin</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%236250d6'/%3E%3Cpath d='M32 14 18 50h7l3-8h8l3 8h7zm-2.6 22 2.6-8 2.6 8z' fill='white'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/glass.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <script src="../assets/js/core.js"></script>
+</head>
+<body data-page="product-edit">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="admin" id="admin">
+    <aside class="sidebar glass" id="sidebar"></aside>
+
+    <div class="admin-main">
+      <header class="topbar glass" id="topbar"></header>
+
+      <main class="content" id="content">
+        <form id="pe-form" novalidate>
+          <div class="page-head">
+            <div><h1 id="pe-heading">Add new product</h1><a id="view-link" class="btn-link small" target="_blank" rel="noopener" hidden>View on storefront ↗</a></div>
+            <a class="btn btn-glass" href="products.html"><i data-icon="chevron-left" data-size="16"></i> All products</a>
+          </div>
+
+          <div class="editor-layout">
+            <!-- main column -->
+            <div class="col gap-16">
+              <div class="card">
+                <div class="field"><label class="sr-only" for="p-title">Product name</label><input id="p-title" class="big-input" type="text" placeholder="Product name" autocomplete="off"><span class="msg">Add a product name.</span></div>
+                <div id="p-permalink" class="permalink small muted"></div>
+                <label class="label" style="display:block;margin:18px 0 8px">Description</label>
+                <div class="editor">
+                  <div class="editor-bar" id="ed-toolbar" role="toolbar" aria-label="Formatting">
+                    <button type="button" data-cmd="bold" title="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline"><u>U</u></button>
+                    <span class="sep"></span>
+                    <button type="button" data-cmd="formatBlock" data-val="h3" title="Heading">H</button><button type="button" data-cmd="insertUnorderedList" title="Bulleted list"><i data-icon="list" data-size="16"></i></button><button type="button" data-cmd="link" title="Link"><i data-icon="link" data-size="16"></i></button><button type="button" data-cmd="removeFormat" title="Clear formatting"><i data-icon="x" data-size="16"></i></button>
+                  </div>
+                  <div id="p-long" class="editor-body prose" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Product description"></div>
+                </div>
+              </div>
+
+              <section class="metabox card">
+                <div class="metabox-h"><h3>Product data</h3><button class="mb-toggle" type="button" aria-label="Toggle panel"><i data-icon="chevron-up" data-size="18"></i></button></div>
+                <div class="metabox-b pd">
+                  <div class="vtabs" id="pd-tabs" role="tablist" aria-orientation="vertical">
+                    <button type="button" role="tab" data-pd="general" aria-selected="true"><i data-icon="tag" data-size="18"></i> General</button>
+                    <button type="button" role="tab" data-pd="inventory" aria-selected="false"><i data-icon="package" data-size="18"></i> Inventory</button>
+                    <button type="button" role="tab" data-pd="shipping" aria-selected="false"><i data-icon="truck" data-size="18"></i> Shipping</button>
+                    <button type="button" role="tab" data-pd="attrs" aria-selected="false"><i data-icon="sliders" data-size="18"></i> Attributes</button>
+                    <button type="button" role="tab" data-pd="advanced" aria-selected="false"><i data-icon="sparkle" data-size="18"></i> Advanced</button>
+                  </div>
+                  <div class="pd-panels">
+                    <div class="pd-panel col" id="pd-general">
+                      <div class="field"><label for="p-price">Regular price (৳)</label><input id="p-price" type="number" min="0" step="1" placeholder="0"><span class="msg">Enter a price above 0.</span></div>
+                      <div class="field"><label for="p-sale">Sale price (৳)</label><input id="p-sale" type="number" min="0" step="1" placeholder="Leave empty for no sale"><span class="msg">Sale price must be lower than the regular price.</span></div>
+                    </div>
+                    <div class="pd-panel col" id="pd-inventory" hidden>
+                      <div class="field"><label for="p-sku">SKU</label><input id="p-sku" type="text" placeholder="Auto-generated if empty"></div>
+                      <div class="field"><label for="p-stock">Stock quantity</label><input id="p-stock" type="number" min="0" step="1"></div>
+                      <div class="field"><span class="label">Stock status</span><div id="p-stockstate"></div><span class="hint">Calculated from the quantity and your low-stock threshold (Settings → Store).</span></div>
+                    </div>
+                    <div class="pd-panel col" id="pd-shipping" hidden>
+                      <div class="field"><label for="p-weight">Weight (kg)</label><input id="p-weight" type="number" min="0" step="0.1"></div>
+                      <p class="muted small">Delivery charges are set by district in Settings → Shipping.</p>
+                    </div>
+                    <div class="pd-panel col" id="pd-attrs" hidden>
+                      <div class="field"><span class="label">Sizes</span><div class="row wrap gap-8" id="p-sizes"></div></div>
+                      <div class="form-grid2">
+                        <div class="field"><label for="p-fabric">Fabric</label><input id="p-fabric" type="text" placeholder="e.g. premium cotton"></div>
+                        <div class="field"><label for="p-style">Style</label><select id="p-style"><option value="plain">Plain</option><option value="embroidered">Embroidered</option><option value="jacquard">Jacquard</option><option value="stripe">Pintuck / stripe</option></select></div>
+                      </div>
+                      <div class="field"><span class="label">Colours <span class="muted">(the first is the default)</span></span><div id="p-colors" class="col gap-8"></div><button class="btn btn-glass btn-sm" id="add-color" type="button" style="align-self:flex-start"><i data-icon="plus" data-size="16"></i> Add colour</button></div>
+                    </div>
+                    <div class="pd-panel col" id="pd-advanced" hidden>
+                      <div class="field"><label for="p-badge">Badge</label><select id="p-badge"><option value="">None</option><option>New</option><option>Best Seller</option><option>Sale</option><option>Set</option></select></div>
+                      <label class="check"><input type="checkbox" id="p-featured"> Featured product <span class="muted small">(shown first in the shop)</span></label>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              <section class="metabox card">
+                <div class="metabox-h"><h3>Product short description</h3><button class="mb-toggle" type="button" aria-label="Toggle panel"><i data-icon="chevron-up" data-size="18"></i></button></div>
+                <div class="metabox-b"><textarea id="p-short" rows="3" placeholder="One or two sentences shown next to the price" aria-label="Short description"></textarea></div>
+              </section>
+            </div>
+
+            <!-- sidebar -->
+            <aside class="col gap-16">
+              <section class="metabox card">
+                <div class="metabox-h"><h3>Publish</h3><button class="mb-toggle" type="button" aria-label="Toggle panel"><i data-icon="chevron-up" data-size="18"></i></button></div>
+                <div class="metabox-b col">
+                  <div class="field"><label for="p-status">Status</label><select id="p-status"><option value="draft">Draft</option><option value="publish">Published</option></select></div>
+                  <div class="meta-line"><i data-icon="eye" data-size="16"></i> Visibility: <b>Public</b></div>
+                  <div class="meta-line"><i data-icon="calendar" data-size="16"></i> Created: <b id="pub-date">immediately</b></div>
+                  <div class="row between wrap" style="margin-top:6px"><button class="btn-link danger small" id="btn-trash" type="button" hidden>Move to trash</button><div class="row gap-8"><button class="btn btn-glass btn-sm" id="btn-draft" type="button">Save draft</button><button class="btn btn-violet" id="btn-publish" type="button">Publish</button></div></div>
+                </div>
+              </section>
+
+              <section class="metabox card">
+                <div class="metabox-h"><h3>Storefront preview</h3><button class="mb-toggle" type="button" aria-label="Toggle panel"><i data-icon="chevron-up" data-size="18"></i></button></div>
+                <div class="metabox-b" id="pe-preview"></div>
+              </section>
+
+              <section class="metabox card">
+                <div class="metabox-h"><h3>Product categories</h3><button class="mb-toggle" type="button" aria-label="Toggle panel"><i data-icon="chevron-up" data-size="18"></i></button></div>
+                <div class="metabox-b col"><div class="cat-checks" id="p-cats"></div>
+                  <div class="row gap-8"><input id="new-cat" type="text" placeholder="New category" aria-label="New category name" style="min-height:40px"><button class="btn btn-glass btn-sm" id="add-cat" type="button">Add</button></div></div>
+              </section>
+
+              <section class="metabox card">
+                <div class="metabox-h"><h3>Product tags</h3><button class="mb-toggle" type="button" aria-label="Toggle panel"><i data-icon="chevron-up" data-size="18"></i></button></div>
+                <div class="metabox-b"><input id="p-tags" type="text" placeholder="Separate tags with commas" aria-label="Tags"></div>
+              </section>
+
+              <section class="metabox card">
+                <div class="metabox-h"><h3>Product image</h3><button class="mb-toggle" type="button" aria-label="Toggle panel"><i data-icon="chevron-up" data-size="18"></i></button></div>
+                <div class="metabox-b col">
+                  <div id="img-preview" class="img-preview"></div>
+                  <label class="drop" id="img-drop"><input type="file" id="img-input" accept="image/*" hidden><i data-icon="upload" data-size="22"></i><span><b>Set product image</b><br><span class="xs muted">Click or drop a photo (JPG / PNG)</span></span></label>
+                </div>
+              </section>
+
+              <section class="metabox card">
+                <div class="metabox-h"><h3>Product gallery</h3><button class="mb-toggle" type="button" aria-label="Toggle panel"><i data-icon="chevron-up" data-size="18"></i></button></div>
+                <div class="metabox-b col"><div class="gal-list" id="gal-list"></div>
+                  <label class="btn btn-glass btn-sm" style="align-self:flex-start"><input type="file" id="gal-input" accept="image/*" multiple hidden><i data-icon="plus" data-size="16"></i> Add gallery images</label></div>
+              </section>
+            </aside>
+          </div>
+        </form>
+      </main>
+
+      <footer class="admin-footer" id="admin-footer"></footer>
+    </div>
+  </div>
+
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/charts.js"></script>
+  <script src="../assets/js/admin-core.js"></script>
+  <script src="../assets/js/admin-pages.js"></script>
+  <script src="../assets/js/admin-pages2.js"></script>
+  <script>Amnu.admin.boot('product-edit', Amnu.adminPages['product-edit']);</script>
+</body>
+</html>

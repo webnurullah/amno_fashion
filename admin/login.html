@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en" data-surface="admin">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log In ‹ Amnu Fashion Admin</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%236250d6'/%3E%3Cpath d='M32 14 18 50h7l3-8h8l3 8h7zm-2.6 22 2.6-8 2.6 8z' fill='white'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/glass.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <script src="../assets/js/core.js"></script>
+</head>
+<body data-page="login" class="login-body">
+  <div class="bg" aria-hidden="true"></div>
+  <main class="login-wrap">
+    <section class="login-card glass-strong" aria-labelledby="login-h">
+      <a class="side-brand login-brand" href="../index.html"><span class="logo-mark"><i data-icon="sparkle" data-size="20"></i></span><span class="nav-label"><b>Amnu Fashion</b><small>Admin</small></span></a>
+      <h1 id="login-h">Welcome back</h1>
+      <p class="muted">Log in to manage your store.</p>
+      <form id="login-form" class="col" novalidate>
+        <div class="field"><label for="l-user">Username or email</label><input id="l-user" name="user" type="text" autocomplete="username" placeholder="admin"><span class="msg">Enter your username.</span></div>
+        <div class="field"><label for="l-pass">Password</label>
+          <div class="pass-wrap"><input id="l-pass" name="pass" type="password" autocomplete="current-password" placeholder="••••••••"><button class="pass-toggle" id="toggle-pass" type="button" aria-label="Show password" aria-pressed="false"><i data-icon="eye" data-size="18"></i></button></div><span class="msg">Enter your password.</span></div>
+        <div class="row between"><label class="check small"><input type="checkbox" checked> Remember me</label><a class="btn-link small" href="#">Lost your password?</a></div>
+        <button class="btn btn-violet btn-lg btn-block" type="submit">Log in</button>
+      </form>
+      <p class="demo-note small"><i data-icon="info" data-size="16"></i><span><b>Demo only.</b> There is no real authentication in this template. <button class="btn-link" id="fill-demo" type="button">Fill demo credentials</button>, then log in. Connect this form to your backend (or WordPress <span class="mono">wp-login.php</span>) before going live.</span></p>
+      <a class="btn-link small login-back" href="../index.html">← Back to storefront</a>
+    </section>
+  </main>
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/admin-core.js"></script>
+  <script src="../assets/js/admin-pages.js"></script>
+  <script src="../assets/js/admin-pages2.js"></script>
+  <script>Amnu.admin.boot('login', Amnu.adminPages.login);</script>
+</body>
+</html>

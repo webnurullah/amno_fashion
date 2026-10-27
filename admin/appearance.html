@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en" data-surface="admin">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Customize ‹ Amnu Fashion Admin</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%236250d6'/%3E%3Cpath d='M32 14 18 50h7l3-8h8l3 8h7zm-2.6 22 2.6-8 2.6 8z' fill='white'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/glass.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <script src="../assets/js/core.js"></script>
+</head>
+<body data-page="appearance">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="admin" id="admin">
+    <aside class="sidebar glass" id="sidebar"></aside>
+
+    <div class="admin-main">
+      <header class="topbar glass" id="topbar"></header>
+
+      <main class="content" id="content">
+        <div class="page-head">
+          <div><h1>Customize</h1><p class="muted">Tune the glass look of your storefront and see it live before you publish.</p></div>
+          <div class="row gap-8 wrap"><button class="btn btn-ghost" id="c-reset" type="button">Reset</button><button class="btn btn-violet" id="c-publish" type="button"><i data-icon="check" data-size="18"></i> Publish</button></div>
+        </div>
+        <div class="customizer-layout">
+          <aside class="card customizer" id="customizer">
+            <section class="c-group">
+              <h3>Brand colour</h3>
+              <div class="swatches lg" id="presets" role="group" aria-label="Colour presets"></div>
+              <div class="field"><label for="c-accent">Custom colour</label><input id="c-accent" type="color" value="#e24b25"></div>
+            </section>
+            <section class="c-group">
+              <h3>Glass effect</h3>
+              <div class="field"><label for="c-blur" class="row between"><span>Blur</span><span class="muted" id="v-blur"></span></label><input id="c-blur" type="range" min="6" max="40" step="1"></div>
+              <div class="field"><label for="c-opacity" class="row between"><span>Panel opacity</span><span class="muted" id="v-opacity"></span></label><input id="c-opacity" type="range" min="0.15" max="0.75" step="0.01"></div>
+              <div class="field"><label for="c-radius" class="row between"><span>Corner radius</span><span class="muted" id="v-radius"></span></label><input id="c-radius" type="range" min="10" max="38" step="1"></div>
+              <div class="field"><label for="c-mode">Colour mode</label><select id="c-mode"><option value="light">Light</option><option value="dark">Dark</option><option value="auto">Match visitor's device</option></select></div>
+            </section>
+            <section class="c-group">
+              <h3>Homepage content</h3>
+              <div class="field"><label for="c-title">Hero headline</label><input id="c-title" type="text" maxlength="60"></div>
+              <div class="field"><label for="c-sub">Hero subtitle</label><input id="c-sub" type="text" maxlength="90"></div>
+              <div class="field"><label for="c-announce">Announcement bar</label><input id="c-announce" type="text" maxlength="140"></div>
+            </section>
+          </aside>
+          <section class="preview-pane">
+            <div class="preview-bar"><span class="muted small">Live preview</span>
+              <div class="seg" id="devices" role="group" aria-label="Preview size"><button type="button" data-w="100%" aria-pressed="true">Desktop</button><button type="button" data-w="820px" aria-pressed="false">Tablet</button><button type="button" data-w="390px" aria-pressed="false">Mobile</button></div></div>
+            <div class="frame-wrap" id="frame-wrap"><iframe id="preview-frame" src="../index.html" title="Storefront preview"></iframe></div>
+          </section>
+        </div>
+      </main>
+
+      <footer class="admin-footer" id="admin-footer"></footer>
+    </div>
+  </div>
+
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/charts.js"></script>
+  <script src="../assets/js/admin-core.js"></script>
+  <script src="../assets/js/admin-pages.js"></script>
+  <script src="../assets/js/admin-pages2.js"></script>
+  <script>Amnu.admin.boot('appearance', Amnu.adminPages['appearance']);</script>
+</body>
+</html>

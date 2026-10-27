@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en" data-surface="admin">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Settings ‹ Amnu Fashion Admin</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%236250d6'/%3E%3Cpath d='M32 14 18 50h7l3-8h8l3 8h7zm-2.6 22 2.6-8 2.6 8z' fill='white'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/glass.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <script src="../assets/js/core.js"></script>
+</head>
+<body data-page="settings">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="admin" id="admin">
+    <aside class="sidebar glass" id="sidebar"></aside>
+
+    <div class="admin-main">
+      <header class="topbar glass" id="topbar"></header>
+
+      <main class="content" id="content">
+        <div class="page-head">
+          <div><h1>Settings</h1><p class="muted">Store details, delivery charges and payment options.</p></div>
+          
+        </div>
+        <form id="settings-form" novalidate>
+          <div class="tabs" id="settings-tabs" role="tablist" style="margin-bottom:18px">
+            <button type="button" role="tab" data-tab="general" aria-selected="true">General</button>
+            <button type="button" role="tab" data-tab="shipping" aria-selected="false">Shipping</button>
+            <button type="button" role="tab" data-tab="payments" aria-selected="false">Payments</button>
+            <button type="button" role="tab" data-tab="store" aria-selected="false">Store</button>
+            <button type="button" role="tab" data-tab="advanced" aria-selected="false">Advanced</button>
+          </div>
+
+          <section class="card tab-panel" id="tab-general">
+            <h3 class="sub-h">Store details</h3>
+            <div class="form-grid2">
+              <div class="field"><label for="s-name">Store name</label><input id="s-name" data-key="storeName" type="text"></div>
+              <div class="field"><label for="s-tag">Tagline</label><input id="s-tag" data-key="tagline" type="text"></div>
+              <div class="field"><label for="s-email">Store email</label><input id="s-email" data-key="email" type="email"></div>
+              <div class="field"><label for="s-phone">Phone</label><input id="s-phone" data-key="phone" type="tel"></div>
+              <div class="field full"><label for="s-addr">Address</label><input id="s-addr" data-key="address" type="text"></div>
+              <div class="field"><label for="s-fb">Facebook page URL</label><input id="s-fb" data-key="facebook" type="url"></div>
+              <div class="field"><label for="s-msgr">Messenger link</label><input id="s-msgr" data-key="messenger" type="url"></div>
+              <div class="field"><label>Currency</label><input type="text" value="Bangladeshi Taka (৳ BDT)" disabled></div>
+              <div class="field"><label>Time zone</label><input type="text" value="Asia/Dhaka (UTC+6)" disabled></div>
+            </div>
+          </section>
+
+          <section class="card tab-panel" id="tab-shipping" hidden>
+            <h3 class="sub-h">Delivery charges</h3>
+            <div class="form-grid2">
+              <div class="field"><label for="s-dhaka">Inside Dhaka (৳)</label><input id="s-dhaka" data-key="shipping.dhaka" type="number" min="0"><span class="msg">Enter 0 or more.</span></div>
+              <div class="field"><label for="s-out">Outside Dhaka (৳)</label><input id="s-out" data-key="shipping.outside" type="number" min="0"><span class="msg">Enter 0 or more.</span></div>
+              <div class="field"><label for="s-free">Free delivery over (৳)</label><input id="s-free" data-key="shipping.freeOver" type="number" min="0"><span class="hint">Orders at or above this subtotal ship free.</span><span class="msg">Enter 0 or more.</span></div>
+            </div>
+          </section>
+
+          <section class="card tab-panel" id="tab-payments" hidden>
+            <h3 class="sub-h">Payment methods</h3>
+            <div class="pay-list">
+              <label class="row between pay-row"><span><b>Cash on Delivery</b><span class="xs muted" style="display:block">Pay when the parcel arrives</span></span><span class="switch"><input type="checkbox" data-key="payments.cod"><span></span></span></label>
+              <label class="row between pay-row"><span><b>bKash</b><span class="xs muted" style="display:block">Customer sends money, then enters the transaction ID</span></span><span class="switch"><input type="checkbox" data-key="payments.bkash"><span></span></span></label>
+              <label class="row between pay-row"><span><b>Nagad</b><span class="xs muted" style="display:block">Customer sends money, then enters the transaction ID</span></span><span class="switch"><input type="checkbox" data-key="payments.nagad"><span></span></span></label>
+              <label class="row between pay-row"><span><b>Card / internet banking</b><span class="xs muted" style="display:block">Needs a gateway such as SSLCommerz (demo placeholder)</span></span><span class="switch"><input type="checkbox" data-key="payments.card"><span></span></span></label>
+            </div>
+            <div class="form-grid2" style="margin-top:18px">
+              <div class="field"><label for="s-bk">bKash number</label><input id="s-bk" data-key="bkashNumber" type="text"></div>
+              <div class="field"><label for="s-ng">Nagad number</label><input id="s-ng" data-key="nagadNumber" type="text"></div>
+            </div>
+          </section>
+
+          <section class="card tab-panel" id="tab-store" hidden>
+            <h3 class="sub-h">Inventory</h3>
+            <div class="form-grid2"><div class="field"><label for="s-low">Low-stock threshold</label><input id="s-low" data-key="lowStock" type="number" min="0"><span class="hint">Products at or below this quantity are flagged as low stock.</span><span class="msg">Enter 0 or more.</span></div></div>
+          </section>
+
+          <section class="card tab-panel" id="tab-advanced" hidden>
+            <h3 class="sub-h">Demo data</h3>
+            <p class="muted small" style="max-width:62ch">This template stores products, orders, settings and uploads in your browser's local storage so every screen works without a server. Replace <span class="mono">Amnu.store</span> in <span class="mono">assets/js/data.js</span> with calls to your backend or the WordPress REST API.</p>
+            <div class="row gap-8 wrap" style="margin-top:16px"><button class="btn btn-glass" id="export-data" type="button"><i data-icon="download" data-size="18"></i> Export data (JSON)</button><button class="btn btn-danger" id="reset-data" type="button"><i data-icon="refresh" data-size="18"></i> Reset demo data</button></div>
+          </section>
+
+          <div class="save-bar" id="save-bar"><button class="btn btn-violet btn-lg" type="submit">Save changes</button></div>
+        </form>
+      </main>
+
+      <footer class="admin-footer" id="admin-footer"></footer>
+    </div>
+  </div>
+
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/charts.js"></script>
+  <script src="../assets/js/admin-core.js"></script>
+  <script src="../assets/js/admin-pages.js"></script>
+  <script src="../assets/js/admin-pages2.js"></script>
+  <script>Amnu.admin.boot('settings', Amnu.adminPages['settings']);</script>
+</body>
+</html>
