@@ -1,17 +1,17 @@
 # Amnu Fashion — Panjabi store: online shop + store counter + finance, one HTML template
 
 A complete, dependency-free HTML/CSS/JS template for a Panjabi brand that sells **online and in its
-own showrooms** and wants both managed from one place:
+own store** and wants both managed from one place:
 
 * a glassmorphism **storefront** (neutral black / grey / red palette, laid out like a modern
   fashion e-commerce site);
-* a **WordPress-style admin** with a **POS register**, multi-location **inventory**, **purchasing**,
+* a **WordPress-style admin** with a **POS register**, per-size **inventory**, **purchasing**,
   daily **cash close**, and **finance & revenue** screens (P&L, expenses, accounts, reports).
 
 No build step, no framework.
 
 > **Everything here is sample content.** Product names, prices, reviews, orders, customers,
-> phone numbers, showroom addresses and the about-us copy are placeholders. The only real value
+> phone numbers, store address and the about-us copy are placeholders. The only real value
 > taken from the brief is the Facebook page link (`https://www.facebook.com/amnufashionbd/`).
 > Replace the rest with the real business details (see [Making it real](#making-it-real)).
 
@@ -39,15 +39,15 @@ from **one inventory**, so the numbers always agree:
 | | Online | Store (POS) |
 | --- | --- | --- |
 | Where it's sold | `checkout.html` | `admin/pos.html` |
-| Stock leaves | the online-fulfilment location (Settings → Store & POS) or, for click & collect, the chosen showroom | the showroom running the register |
-| Stock granularity | per size, per location | per size, per location |
+| Stock leaves | the store's stock (one single-store setup) | the same store stock |
+| Stock granularity | per size | per size |
 | Payment tenders | COD, bKash, Nagad, card | cash, card, bKash, Nagad, on credit (due), split across several |
 | Money lands in | bank / wallets (COD settles into the bank) | cash drawer, bank, wallets |
 | Customer record | by phone number | optional phone number; walk-ins allowed |
 | Loyalty points | earn and redeem | earn and redeem |
 
-What this gives you on the storefront side: **Find in store** (live stock per showroom), **click &
-collect** at checkout (deducts from that showroom), and a **Store Purchases** list in the customer's
+What this gives you on the storefront side: **Find in store** (live stock in the store), **click &
+collect** at checkout (deducts from the store's stock), and a **Store Purchases** list in the customer's
 account next to their online orders. Points earned at the counter appear in the same account.
 
 ## What's included
@@ -60,7 +60,7 @@ account next to their online orders. Points earned at the counter appear in the 
 | Category landing · Shop (filters, sort, grid, pagination) | `category.html`, `shop.html` |
 | Product: colour + size pickers, per-size stock, Find in store, size guide, reviews, related | `product.html` |
 | Shopping bag (select items, coupon, summary) · slide-in bag on every page | `bag.html` |
-| Checkout: address book, delivery method (home / courier / showroom pickup), COD or digital payment (bKash / Nagad / card), pay-online discount, loyalty points, VAT line when enabled | `checkout.html` |
+| Checkout: address book, delivery method (home / courier / store pickup), COD or digital payment (bKash / Nagad / card), pay-online discount, loyalty points, VAT line when enabled | `checkout.html` |
 | Order received · Track order | `thank-you.html`, `track-order.html` |
 | Log in / register · My account (profile, order history split Online vs Store, addresses, loyalty points) | `login.html`, `account.html` |
 | Store locations · Policies (shipping, terms, privacy, payment, exchange, size guide, loyalty) · About · Contact | `stores.html`, `policy.html`, `about.html`, `contact.html` |
@@ -69,11 +69,11 @@ account next to their online orders. Points earned at the counter appear in the 
 
 | Area | Screens |
 | --- | --- |
-| **Sales** | Orders (online + store, filter by channel / location / payment, split tenders, restock on cancel) · Order detail (receipt, invoice, notes) · **POS register** · Customers (points, dues, online vs store spend, collect due) · Coupons · **Loyalty points** |
-| **Catalog** | Products · Product editor (cost price, opening stock by size) · Categories · **Inventory** (stock by showroom / warehouse / size, adjust, transfer, movement history, low-stock) · Media · Pages & Posts |
-| **Purchasing** | **Suppliers** · **Purchase orders** (order, receive into a location, pay in part or full, what you owe) |
+| **Sales** | Orders (online + store, filter by channel / payment, split tenders, restock on cancel) · Order detail (receipt, invoice, notes) · **POS register** · Customers (points, dues, online vs store spend, collect due) · Coupons · **Loyalty points** |
+| **Catalog** | Products · Product editor (cost price, opening stock by size) · Categories · **Inventory** (stock by size, adjust, movement history, low-stock) · Media · Pages & Posts |
+| **Purchasing** | **Suppliers** · **Purchase orders** (order, receive into stock, pay in part or full, what you owe) |
 | **Finance** | **Finance overview** (revenue online vs store, gross profit, expenses, net profit, cash position) · **Expenses** · **Accounts & ledger** (cash, bank, bKash, Nagad; transfers; other income) · **Day close** (count the drawer, variance, deposit, Z-report) · **Reports** (sales, P&L, expenses, stock value, VAT, dues; CSV + print) · Analytics (channel filter) |
-| **Site** | Appearance → Customize (live preview) · **Locations** · Plugins · Users (Cashier / Accountant roles) · Settings (Store & POS: fulfilment location, VAT, BIN, receipt footer, pay-online discount) |
+| **Site** | Appearance → Customize (live preview) · Plugins · Users (Cashier / Accountant roles) · Settings (Store & POS: VAT, BIN, receipt footer, pay-online discount) |
 
 Extras: command palette (`Ctrl/⌘ + K`), collapsible sidebar, light/dark mode, WordPress-style list
 tables (views, bulk actions, filters, sort, Screen Options), responsive down to phones,
@@ -81,7 +81,7 @@ keyboard-accessible charts with a "view as table" fallback.
 
 ### Typical day at the store
 
-1. **Open** `pos.html`, pick the showroom and cashier. The drawer starts with yesterday's float.
+1. **Open** `pos.html`, pick the cashier. The drawer starts with yesterday's float.
 2. **Sell**: tap a product (or type a SKU such as `AMN-1004-M` and press Enter), pick colour + size, add a
    customer's mobile number for points, apply a discount or redeem points, then **Pay**. Split the
    payment across cash / card / bKash / Nagad, or put part of it on credit. The receipt prints from the
@@ -114,15 +114,19 @@ in the browser's `localStorage` (`amnu.*` keys), so every screen is functional w
 * Place an order on the storefront → it appears in **Admin → Orders**, reduces stock and moves money.
 * Ring up a sale on the **POS** → it shows in Orders (channel *Store*), the customer's account,
   Day close, the ledger and the dashboard.
-* Receive a **purchase order** → stock rises at that location and the supplier balance updates.
+* Receive a **purchase order** → stock rises and the supplier balance updates.
 * **Settings → Advanced** exports the data as JSON or resets everything to the sample content.
 
 Sample data (about 60 days: online orders, store sales, expenses, purchases, day closes) is generated
 deterministically relative to today, so dashboards and reports always have recent numbers. Traffic,
 sessions and funnel stages are **simulated**; revenue and profit come from the orders.
 
-Sample setup: one **Central Warehouse** (fulfils online orders) and two showrooms (**Dhanmondi**,
-**Chattogram**), four suppliers, four accounts, and staff users including two cashiers and an accountant.
+Sample setup: **one store** (it also fulfils online orders), four suppliers, four accounts, and staff users
+including a cashier and an accountant. There is deliberately no multi-branch feature.
+
+**Brand:** your logo and the tagline *The Style You Love!* are in `assets/img/` and appear in the storefront
+header and footer, the admin sidebar and login, the favicon and printed receipts. The admin uses a black +
+gold palette taken from the logo.
 
 ## Design system
 
@@ -131,7 +135,7 @@ Sample setup: one **Central Warehouse** (fulfils online orders) and two showroom
 ```css
 :root {
   --accent: #121216;        /* storefront accent: black (Appearance → Customize edits this) */
-  --primary: #6250d6;       /* admin violet */
+  --primary: #946a14;       /* admin gold (from the logo) */
   --glass-a: .4;            /* panel opacity */
   --blur: 22px;             /* backdrop blur */
   --r-lg: 24px;             /* corner radius */
@@ -154,7 +158,7 @@ admin/*.html                                                 admin pages
 assets/css/  glass.css  store.css  admin.css
 assets/js/   core.js          icons, storage, formatting, Panjabi SVG, modal/toast, theme
              data.js          sample data + the Amnu.store API  ← swap for your backend
-             ops.js           store operations layer: locations, per-size inventory, accounts +
+             ops.js           store operations layer: store, per-size inventory, accounts +
                               ledger, expenses, suppliers / purchases, day close, loyalty, P&L
              store-core.js    storefront shell: header, footer, bag, search, auth
              store-pages.js   home · category · shop · product · bag · checkout · thank-you
@@ -163,7 +167,7 @@ assets/js/   core.js          icons, storage, formatting, Panjabi SVG, modal/toa
              admin-core.js    admin shell, command palette, WP-style list table
              admin-pages.js   dashboard · products · editor · categories · orders · customers
              admin-pages2.js  coupons · media · pages · customize · analytics · users · plugins · settings
-             admin-ops.js     POS · inventory · locations · suppliers · purchases · day close · receipts
+             admin-ops.js     POS · inventory · suppliers · purchases · day close · receipts
              admin-fin.js     finance overview · expenses · accounts · reports · loyalty
 ```
 
@@ -174,7 +178,7 @@ the page scripts.
 ## Making it real
 
 1. **Content.** Replace the arrays in `assets/js/data.js` (categories, products, copy), the
-   locations / suppliers / accounts in `assets/js/ops.js`, the contact details in
+   store details / suppliers / accounts in `assets/js/ops.js`, the contact details in
    *Admin → Settings → General*, and the placeholder about-us text in `about.html`. Facebook content
    wasn't available when this was built, so no real photos, prices or descriptions were imported.
 2. **Backend.** `Amnu.store` (in `data.js` and `ops.js`) is the only data layer: every screen calls it.

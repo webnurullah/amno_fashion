@@ -7,6 +7,8 @@
   'use strict';
   const A = window.Amnu;
   const DAY = 864e5;
+  /* schema 2: single store. Older demo data (multiple locations) is cleared once. */
+  if (A.DB.get('schema', 0) < 2) { A.DB.reset(); A.DB.set('schema', 2); }
   const daysAgo = (n) => new Date(Date.now() - n * DAY).toISOString();
 
   /* deterministic PRNG so seeded orders are identical on every load */
@@ -20,7 +22,7 @@
   /* ---------- settings ---------- */
   const DEFAULT_SETTINGS = {
     storeName: 'Amnu Fashion',
-    tagline: 'Premium Panjabi collection for every occasion',
+    tagline: 'The Style You Love!',
     email: 'hello@example.com',
     phone: '+880 1700-000000',
     address: 'House 00, Road 00, Dhaka, Bangladesh',
@@ -32,7 +34,7 @@
     bkashNumber: '01700-000000',
     nagadNumber: '01700-000001',
     lowStock: 5,
-    onlineLoc: 'w1',               /* location that fulfils online orders */
+    onlineLoc: 's1',               /* store location that fulfils online orders */
     vatRate: 0,                    /* % added on top of the subtotal (0 = no VAT line) */
     bin: '',                       /* business identification number printed on receipts */
     digitalDiscountPct: 5,         /* % off when paying with bKash / Nagad / card online (0 = off) */
@@ -142,7 +144,7 @@
   const PAY_KEYS = ['cod', 'cod', 'cod', 'bkash', 'bkash', 'nagad', 'card'];
   const PAY_LABEL = { cod: 'Cash on Delivery', bkash: 'bKash', nagad: 'Nagad', card: 'Card', cash: 'Cash', due: 'On credit (due)', points: 'Loyalty points' };
   const WALK_IN = { name: 'Walk-in customer', phone: '', email: '', district: '', address: '' };
-  const CASHIERS = { s1: 'Rafi Hossain', s2: 'Nusrat Jahan' };
+  const CASHIERS = { s1: 'Rafi Hossain' };
 
   function shippingFor(district, subtotal, settings) {
     const s = (settings || A.store.settings()).shipping;
@@ -197,7 +199,7 @@
           else if (tr < 0.88) payments = [{ method: 'nagad', amount: total }];
           else if (tr < 0.92 || walkIn) { const c = Math.round(total * 0.5 / 50) * 50; payments = [{ method: 'cash', amount: c }, { method: 'card', amount: total - c }]; }
           else { const paid = Math.round(total * 0.6 / 50) * 50; payments = [{ method: 'cash', amount: paid }, { method: 'due', amount: total - paid }]; }
-          const storeId = r() < 0.65 ? 's1' : 's2';
+          r(); const storeId = 's1';
           list.push({
             date: new Date(ts).toISOString(), channel: 'store', storeId, cashier: CASHIERS[storeId],
             status: roll < 0.02 ? 'refunded' : 'completed', customer: cust, items, subtotal, shipping: 0, discount, coupon: '', vat: 0, total,
@@ -211,7 +213,7 @@
         else if (age > 2) status = roll < 0.55 ? 'completed' : roll < 0.9 ? 'processing' : 'on-hold';
         else status = roll < 0.25 ? 'pending' : roll < 0.8 ? 'processing' : 'on-hold';
         list.push({
-          date: new Date(ts).toISOString(), channel: 'online', storeId: 'w1',
+          date: new Date(ts).toISOString(), channel: 'online', storeId: 's1',
           status, customer: cust, items, subtotal, shipping, discount, coupon: useCoupon ? 'EID200' : '', vat: 0,
           total, payment: payKey, payRef: payKey === 'cod' ? '' : 'TX' + Math.floor(r() * 9e7 + 1e7), note: '', notes: []
         });
@@ -251,7 +253,6 @@
     { id: 3, name: 'Content Editor', username: 'editor', email: 'editor@example.com', role: 'Editor', date: daysAgo(210), posts: 3 },
     { id: 4, name: 'Support Agent', username: 'support', email: 'support@example.com', role: 'Customer Support', date: daysAgo(90), posts: 0 },
     { id: 5, name: 'Rafi Hossain', username: 'rafi', email: 'rafi@example.com', role: 'Cashier', date: daysAgo(180), posts: 0, loc: 's1' },
-    { id: 6, name: 'Nusrat Jahan', username: 'nusrat', email: 'nusrat@example.com', role: 'Cashier', date: daysAgo(150), posts: 0, loc: 's2' },
     { id: 7, name: 'Accounts Officer', username: 'accounts', email: 'accounts@example.com', role: 'Accountant', date: daysAgo(120), posts: 0 }
   ];
 

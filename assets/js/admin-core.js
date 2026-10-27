@@ -40,7 +40,7 @@
     footer: `<button class="btn btn-ghost" data-close>Close</button><button class="btn btn-violet" data-print>${icon('printer', 16)} Print</button>`,
     onOpen(el) { el.querySelector('[data-print]').addEventListener('click', () => { document.body.classList.add('printing'); window.print(); document.body.classList.remove('printing'); }); }
   });
-  Admin.channelBadge = (o) => (S.channelOf(o) === 'store' ? `<span class="badge b-violet">Store · ${esc(S.locName(o.storeId).replace(' Showroom', ''))}</span>` : '<span class="badge b-info">Online</span>');
+  Admin.channelBadge = (o) => (S.channelOf(o) === 'store' ? '<span class="badge b-violet">In store</span>' : '<span class="badge b-info">Online</span>');
   Admin.pageBadge = (status) => (status === 'publish' ? '<span class="badge b-ok">Published</span>' : status === 'draft' ? '<span class="badge b-warn">Draft</span>' : `<span class="badge">${esc(status)}</span>`);
   Admin.stockHTML = (p) => {
     const st = S.stockState(p);
@@ -80,7 +80,6 @@
       { id: 'analytics', label: 'Analytics', icon: 'chart', href: 'analytics.html' },
       { heading: 'Site' },
       { id: 'appearance', label: 'Appearance', icon: 'layout', href: 'appearance.html' },
-      { id: 'locations', label: 'Locations', icon: 'building', href: 'locations.html' },
       { id: 'plugins', label: 'Plugins', icon: 'plug', href: 'plugins.html' },
       { id: 'users', label: 'Users', icon: 'user', href: 'users.html' },
       { id: 'settings', label: 'Settings', icon: 'sliders', href: 'settings.html' }
@@ -96,7 +95,7 @@
       const sub = n.sub && on ? `<ul class="subnav">${n.sub.map(([l, h, id]) => `<li><a href="${h}" class="${id === page ? 'on' : ''}">${l}</a></li>`).join('')}</ul>` : '';
       return `<a class="nav-item ${on ? 'on' : ''}" href="${n.href}" ${on ? 'aria-current="page"' : ''} title="${esc(n.label)}">${icon(n.icon, 20)}<span class="nav-label">${n.label}</span>${n.badge ? `<span class="nav-count">${n.badge}</span>` : ''}</a>${sub}`;
     }).join('');
-    return `<div class="side-top"><a class="side-brand" href="index.html" title="${esc(settings.storeName)}"><span class="logo-mark">${icon('sparkle', 20)}</span><span class="nav-label"><b>${esc(settings.storeName)}</b><small>Admin</small></span></a></div>
+    return `<div class="side-top"><a class="side-brand" href="index.html" title="${esc(settings.storeName)}"><span class="logo-mark"><img src="../assets/img/favicon.png" alt="" width="42" height="42"></span><span class="nav-label"><b>${esc(settings.storeName)}</b><small>Admin</small></span></a></div>
       <nav class="side-nav" aria-label="Admin">${items}
         <div class="nav-heading">Channels</div>
         <a class="nav-item" href="../index.html" target="_blank" rel="noopener" title="Online store">${icon('store', 20)}<span class="nav-label">Online Store</span><span class="nav-ext">${icon('external', 14)}</span></a>

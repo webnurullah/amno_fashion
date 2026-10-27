@@ -269,7 +269,7 @@
     const renderInv = () => {
       if (isNew) {
         draft.sizes.forEach((z) => { if (opening[z] == null) opening[z] = 5; });
-        $('#p-inv').innerHTML = `<div class="small muted" style="margin-bottom:8px">Opening stock, received at ${esc(S.locName(S.onlineLoc()))}</div><div class="row wrap gap-8">${draft.sizes.map((z) => `<label class="os-cell"><span class="xs muted">${esc(S.sizeLabel(z))}</span><input type="number" min="0" data-os="${z}" value="${opening[z]}" aria-label="Opening stock for ${esc(z)}"></label>`).join('') || '<span class="muted small">Choose sizes under Attributes first.</span>'}</div>`;
+        $('#p-inv').innerHTML = `<div class="small muted" style="margin-bottom:8px">Opening stock by size</div><div class="row wrap gap-8">${draft.sizes.map((z) => `<label class="os-cell"><span class="xs muted">${esc(S.sizeLabel(z))}</span><input type="number" min="0" data-os="${z}" value="${opening[z]}" aria-label="Opening stock for ${esc(z)}"></label>`).join('') || '<span class="muted small">Choose sizes under Attributes first.</span>'}</div>`;
       } else {
         const total = S.stock(draft.id);
         $('#p-inv').innerHTML = `<table class="mini-table inv-mini"><tbody>${S.locations().map((l) => `<tr><td>${esc(l.name)}</td><td class="right num">${S.stock(draft.id, l.id)}</td></tr>`).join('')}<tr><td><b>Total</b></td><td class="right"><b class="num">${total}</b> ${stateBadge(total)}</td></tr></tbody></table>`;
@@ -437,11 +437,10 @@
     const idx = Admin.listTable({
       id: 'orders', mount: $('#list'), perPage: 12, empty: 'No orders found', searchPlaceholder: 'Search orders, customers, phone',
       rows: () => S.orders().sort((a, b) => new Date(b.date) - new Date(a.date)), rowId: (o) => o.id,
-      initialView: A.qs.get('status') || undefined, initialQ: A.qs.get('q') || '', initialFilters: { channel: A.qs.get('channel') || '', loc: A.qs.get('loc') || '' },
+      initialView: A.qs.get('status') || undefined, initialQ: A.qs.get('q') || '', initialFilters: { channel: A.qs.get('channel') || '' },
       views: [{ id: 'all', label: 'All' }].concat(statuses.map(([k, l]) => ({ id: k, label: l, filter: (o) => o.status === k }))),
       filters: [
         { id: 'channel', label: 'All channels', options: [['online', 'Online'], ['store', 'In store (POS)']], test: (o, v) => S.channelOf(o) === v },
-        { id: 'loc', label: 'All locations', options: S.locations().map((l) => [l.id, l.name]), test: (o, v) => o.storeId === v },
         { id: 'pay', label: 'All payment methods', options: Object.entries(S.payLabel), test: (o, v) => S.tenders(o).some((t) => t.method === v) },
         { id: 'district', label: 'All districts', options: [...new Set(S.orders().map((o) => o.customer.district))].sort().map((d) => [d, d]), test: (o, v) => o.customer.district === v }
       ],
@@ -480,13 +479,13 @@
       const isStore = S.channelOf(o) === 'store';
       const tenders = S.tenders(o);
       root.innerHTML = `
-      <div class="page-head"><div><div class="row gap-8 wrap"><h1>Order #${o.id}</h1>${S.statusBadge(o.status)}${Admin.channelBadge(o)}</div><p class="muted">${isStore ? `Sold at ${esc(S.locName(o.storeId))}${o.cashier ? ' by ' + esc(o.cashier) : ''}` : 'Placed online'} on ${A.dateTime(o.date)} · ${tenders.map((t) => esc(S.payLabel[t.method] || t.method)).join(' + ')}${o.payRef ? ` · TrxID <span class="mono">${esc(o.payRef)}</span>` : ''}</p></div>
+      <div class="page-head"><div><div class="row gap-8 wrap"><h1>Order #${o.id}</h1>${S.statusBadge(o.status)}${Admin.channelBadge(o)}</div><p class="muted">${isStore ? `Sold at the store${o.cashier ? ' by ' + esc(o.cashier) : ''}` : 'Placed online'} on ${A.dateTime(o.date)} · ${tenders.map((t) => esc(S.payLabel[t.method] || t.method)).join(' + ')}${o.payRef ? ` · TrxID <span class="mono">${esc(o.payRef)}</span>` : ''}</p></div>
         <div class="row gap-8 wrap no-print"><a class="btn btn-glass" href="orders.html">${icon('chevron-left', 16)} All orders</a>${isStore ? `<button class="btn btn-glass" id="print-rc">${icon('receipt', 16)} Receipt</button>` : ''}<button class="btn btn-glass" id="print">${icon('printer', 16)} Print invoice</button></div></div>
       <div class="editor-layout">
         <div class="col gap-16">
           <section class="card"><div class="detail-cols">
             <div><h3 class="sub-h">Billing</h3><p>${esc(o.customer.name)}${o.customer.address ? `<br>${esc(o.customer.address)}` : ''}${o.customer.district ? `<br>${esc(o.customer.district)}, Bangladesh` : ''}</p><p class="muted small">${o.customer.phone ? `${icon('phone', 14)} <a href="tel:${esc(o.customer.phone)}">${esc(o.customer.phone)}</a>` : 'No phone recorded'}${o.customer.email ? `<br>${icon('mail', 14)} <a href="mailto:${esc(o.customer.email)}">${esc(o.customer.email)}</a>` : ''}</p></div>
-            <div><h3 class="sub-h">${isStore ? 'Sold at' : 'Delivery'}</h3>${isStore ? `<p>${esc(S.locName(o.storeId))}<br><span class="muted small">Counter sale, taken away by the customer</span></p>` : `<p>${esc(o.customer.name)}<br>${esc(o.customer.address)}<br>${esc(o.customer.district)}, Bangladesh</p><p class="muted small">${o.pickup ? `Click &amp; collect at ${esc(o.pickup)}` : o.shippingMethod ? esc(o.shippingMethod) : o.customer.district === 'Dhaka' ? 'Inside Dhaka' : 'Outside Dhaka'}</p>`}</div>
+            <div><h3 class="sub-h">${isStore ? 'Sold at' : 'Delivery'}</h3>${isStore ? `<p>${esc(settings.storeName)}<br><span class="muted small">Counter sale, taken away by the customer</span></p>` : `<p>${esc(o.customer.name)}<br>${esc(o.customer.address)}<br>${esc(o.customer.district)}, Bangladesh</p><p class="muted small">${o.pickup ? `Click &amp; collect at ${esc(o.pickup)}` : o.shippingMethod ? esc(o.shippingMethod) : o.customer.district === 'Dhaka' ? 'Inside Dhaka' : 'Outside Dhaka'}</p>`}</div>
             <div><h3 class="sub-h">Payment</h3>${tenders.map((t) => `<div class="draft-row"><span>${esc(S.payLabel[t.method] || t.method)}</span><b class="num">${money(t.amount)}</b></div>`).join('')}${o.change ? `<p class="xs muted">Change given: ${money(o.change)}</p>` : ''}${o.due ? `<p class="small err"><b>Due: ${money(o.due)}</b></p>` : ''}${o.note ? `<h3 class="sub-h" style="margin-top:12px">Customer note</h3><p class="muted small">${esc(o.note)}</p>` : ''}</div></div></section>
           <section class="card"><div class="table-wrap"><table class="wp-table items-table"><thead><tr><th>Item</th><th class="right">Price</th><th class="right">Qty</th><th class="right">Total</th></tr></thead><tbody>
             ${o.items.map((i) => { const p = S.product(i.pid); return `<tr><td><div class="row gap-8">${p ? Admin.thumb(p, 'sm') : `<span class="thumb sm">${A.panjabi(i.hex || '#888', i.style || 'plain')}</span>`}<div><b>${p ? `<a class="row-title" href="product-edit.html?id=${p.id}">${esc(i.name)}</a>` : esc(i.name)}</b><div class="xs muted">Size ${esc(i.size)} · ${esc(i.color)}${p ? ` · SKU ${esc(p.sku)}` : ''}</div></div></div></td><td class="right num">${money(i.price)}</td><td class="right num">× ${i.qty}</td><td class="right num"><b>${money(i.price * i.qty)}</b></td></tr>`; }).join('')}</tbody></table></div>

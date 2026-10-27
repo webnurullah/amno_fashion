@@ -23,7 +23,7 @@
     const earned = o.customer.phone ? Math.floor(Math.max(0, o.subtotal - (o.discount || 0)) / cfg.loyalty.earnPer) : 0;
     const tenders = S.tenders(o);
     return `<div class="receipt">
-      <div class="rc-c"><b class="rc-big">${esc(cfg.storeName)}</b><div>${esc(loc.name || '')}</div><div>${esc(loc.address || '')}</div><div>${esc(loc.phone || '')}</div>${cfg.bin ? `<div>BIN: ${esc(cfg.bin)}</div>` : ''}</div>
+      <div class="rc-c"><b class="rc-big">${esc(cfg.storeName)}</b><div><i>${esc(cfg.tagline)}</i></div><div>${esc(loc.name || '')}</div><div>${esc(loc.address || '')}</div><div>${esc(loc.phone || '')}</div>${cfg.bin ? `<div>BIN: ${esc(cfg.bin)}</div>` : ''}</div>
       <div class="rc-dash"></div>
       <div class="rc-row"><span>Receipt #${o.id}</span><span>${A.dateTime(o.date)}</span></div>
       <div class="rc-row"><span>Cashier: ${esc(o.cashier || '-')}</span><span>${esc(o.customer.name)}</span></div>
@@ -44,7 +44,7 @@
   Admin.zReportHTML = (c) => {
     const loc = S.locName(c.loc);
     return `<div class="receipt">
-      <div class="rc-c"><b class="rc-big">${esc(settings.storeName)}</b><div>${esc(loc)}</div><b>DAY CLOSE (Z-REPORT)</b></div><div class="rc-dash"></div>
+      <div class="rc-c"><b class="rc-big">${esc(settings.storeName)}</b><div><i>${esc(settings.tagline)}</i></div><div>${esc(loc)}</div><b>DAY CLOSE (Z-REPORT)</b></div><div class="rc-dash"></div>
       <div class="rc-row"><span>Date</span><span>${A.date(c.date)}</span></div><div class="rc-row"><span>Cashier</span><span>${esc(c.cashier)}</span></div><div class="rc-row"><span>Orders</span><span>${c.orders}</span></div>
       <div class="rc-dash"></div>
       ${Object.entries(c.byTender || {}).map(([k, v]) => `<div class="rc-row"><span>${esc(S.payLabel[k] || k)}</span><span>${money(v)}</span></div>`).join('')}
@@ -80,7 +80,6 @@
 
     /* ---------- header ---------- */
     const paintTop = () => {
-      $('#pos-loc').innerHTML = rooms.map((r) => `<option value="${r.id}" ${r.id === st.loc ? 'selected' : ''}>${esc(r.name)}</option>`).join('');
       $('#pos-cashier').innerHTML = cashiers.map((u) => `<option ${u.name === st.cashier ? 'selected' : ''}>${esc(u.name)}</option>`).join('');
       const closed = S.closeFor(st.loc, today());
       $('#pos-status').className = 'badge ' + (closed ? 'b-err' : 'b-ok');
@@ -222,7 +221,6 @@
     };
 
     /* ---------- events ---------- */
-    $('#pos-loc').addEventListener('change', (e) => { st.loc = e.target.value; DB.set('pos.loc', st.loc); st.cart = []; pickCashier(); paintTop(); paintGrid(); paintCart(); });
     $('#pos-cashier').addEventListener('change', (e) => { st.cashier = e.target.value; });
     $('#pos-cats').addEventListener('click', (e) => { const b = e.target.closest('[data-cat]'); if (b) { st.cat = b.dataset.cat; paintCats(); paintGrid(); } });
     $('#pos-grid').addEventListener('click', (e) => { const b = e.target.closest('[data-pid]'); if (b) picker(S.product(Number(b.dataset.pid))); });
@@ -303,7 +301,7 @@
       const cur = {}; locs.forEach((l) => { cur[l.id] = S.stockBySize(p.id, l.id); });
       const m = A.modal({
         title: `Adjust stock · ${p.name}`, wide: true,
-        body: `<div class="table-wrap"><table class="wp-table inv-grid"><thead><tr><th>Size</th>${locs.map((l) => `<th class="right">${esc(l.name)}</th>`).join('')}</tr></thead><tbody>${p.sizes.map((z) => `<tr><td><b>${esc(S.sizeLabel(z))}</b></td>${locs.map((l) => `<td class="right"><input type="number" min="0" data-loc="${l.id}" data-size="${z}" value="${cur[l.id][z] || 0}" style="width:84px;min-height:38px;text-align:right"></td>`).join('')}</tr>`).join('')}</tbody></table></div>
+        body: `<div class="table-wrap"><table class="wp-table inv-grid"><thead><tr><th>Size</th><th class="right">Quantity</th></tr></thead><tbody>${p.sizes.map((z) => `<tr><td><b>${esc(S.sizeLabel(z))}</b></td>${locs.map((l) => `<td class="right"><input type="number" min="0" data-loc="${l.id}" data-size="${z}" value="${cur[l.id][z] || 0}" style="width:84px;min-height:38px;text-align:right"></td>`).join('')}</tr>`).join('')}</tbody></table></div>
           <div class="form-grid2" style="margin-top:16px"><div class="field"><label>Reason</label><select id="adj-reason"><option value="stocktake">Stocktake / recount</option><option value="damage">Damaged or lost</option><option value="correction">Correction</option><option value="opening">Opening stock</option></select></div><div class="field"><label>Note (optional)</label><input id="adj-note" placeholder="e.g. Monthly stocktake"></div></div>`,
         footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Save adjustment</button>'
       });
@@ -317,25 +315,6 @@
         m.close(); api.refresh(); kpis(); moves.refresh(); A.toast(changed ? `${changed} stock level${changed === 1 ? '' : 's'} updated` : 'No changes');
       });
     };
-    const transfer = (p, api) => {
-      const m = A.modal({
-        title: `Transfer stock · ${p.name}`,
-        body: `<div class="form-grid2"><div class="field"><label>Size</label><select id="tr-size">${p.sizes.map((z) => `<option value="${z}">${esc(S.sizeLabel(z))}</option>`).join('')}</select></div><div class="field"><label>Quantity</label><input id="tr-qty" type="number" min="1" value="1"></div>
-          <div class="field"><label>From</label><select id="tr-from">${Admin.locOptions(S.onlineLoc())}</select></div><div class="field"><label>To</label><select id="tr-to">${Admin.locOptions(S.showrooms()[0] && S.showrooms()[0].id)}</select></div></div><p class="xs muted" id="tr-avail"></p>`,
-        footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-go>Transfer</button>'
-      });
-      const avail = () => { $('#tr-avail', m.el).textContent = `Available at ${S.locName($('#tr-from', m.el).value)}: ${S.stock(p.id, $('#tr-from', m.el).value, $('#tr-size', m.el).value)}`; };
-      m.el.addEventListener('change', avail); avail();
-      m.el.addEventListener('click', (e) => {
-        if (!e.target.closest('[data-go]')) return;
-        const from = $('#tr-from', m.el).value; const to = $('#tr-to', m.el).value; const size = $('#tr-size', m.el).value; const qty = Math.round(Number($('#tr-qty', m.el).value) || 0);
-        if (from === to) { A.toast('Choose two different locations', 'err'); return; }
-        if (qty < 1 || qty > S.stock(p.id, from, size)) { A.toast('Not enough stock at the source location', 'err'); return; }
-        const ref = S.transferStock(p.id, size, from, to, qty, 'Amnu Admin');
-        m.close(); api.refresh(); moves.refresh(); A.toast(`Transferred ${qty} × ${S.sizeLabel(size)} (${ref})`);
-      });
-    };
-
     const api = Admin.listTable({
       id: 'inventory', mount: $('#list'), perPage: 12, empty: 'No products', searchPlaceholder: 'Search by name or SKU',
       rows: () => prods(), rowId: (p) => p.id, initialView: A.qs.get('view') || undefined, initialQ: A.qs.get('q') || '',
@@ -344,26 +323,25 @@
       search: (p, q) => (p.name + ' ' + p.sku).toLowerCase().includes(q),
       columns: [
         { id: 'img', label: '', cls: 'thumb-col', render: (p) => Admin.thumb(p) },
-        { id: 'name', label: 'Product', sort: (a, b) => a.name.localeCompare(b.name), render: (p) => `<a class="row-title" href="product-edit.html?id=${p.id}">${esc(p.name)}</a><div class="xs muted mono">${esc(p.sku)}</div>${Admin.actions([{ label: 'Adjust stock', act: 'adj', id: p.id }, { label: 'Transfer', act: 'tr', id: p.id }])}` }
-      ].concat(locs.map((l) => ({ id: 'loc_' + l.id, label: l.name.replace(' Showroom', '').replace('Central ', ''), cls: 'right', sort: (a, b) => S.stock(a.id, l.id) - S.stock(b.id, l.id), render: (p) => { const n = S.stock(p.id, l.id); return `<span class="num ${n === 0 ? 'muted' : ''}">${n}</span>`; } }))).concat([
+        { id: 'name', label: 'Product', sort: (a, b) => a.name.localeCompare(b.name), render: (p) => `<a class="row-title" href="product-edit.html?id=${p.id}">${esc(p.name)}</a><div class="xs muted mono">${esc(p.sku)}</div>${Admin.actions([{ label: 'Adjust stock', act: 'adj', id: p.id }])}` }
+      ].concat([
         { id: 'sizes', label: 'Sizes (all locations)', render: (p) => `<div class="size-mini">${p.sizes.map((z) => { const n = S.stock(p.id, null, z); return `<span class="${n <= 0 ? 'off' : n <= 2 ? 'low' : ''}" title="${n} in stock">${esc(z)}<b>${n}</b></span>`; }).join('')}</div>` },
         { id: 'total', label: 'Total', cls: 'right', sort: (a, b) => S.stock(a.id) - S.stock(b.id), render: (p) => { const n = S.stock(p.id); return `<b class="num">${n}</b> ${n <= 0 ? '<span class="badge b-err">Out</span>' : n <= settings.lowStock ? '<span class="badge b-warn">Low</span>' : ''}`; } },
         { id: 'value', label: 'Cost value', cls: 'right', hidden: false, sort: (a, b) => S.stock(a.id) * a.cost - S.stock(b.id) * b.cost, render: (p) => `<span class="num">${money(S.stock(p.id) * (p.cost || 0))}</span>` }
       ]),
-      actions: { adj: (id, p, a) => adjust(p, a), tr: (id, p, a) => transfer(p, a) }
+      actions: { adj: (id, p, a) => adjust(p, a) }
     });
 
     const REASON = { sale: ['Sale', 'b-info'], purchase: ['Purchase', 'b-ok'], 'transfer-in': ['Transfer in', 'b-violet'], 'transfer-out': ['Transfer out', 'b-violet'], stocktake: ['Stocktake', 'b-warn'], damage: ['Damaged', 'b-err'], correction: ['Correction', 'b-warn'], opening: ['Opening', 'b-ok'], adjustment: ['Adjustment', 'b-warn'], return: ['Return', 'b-ok'] };
     const moves = Admin.listTable({
       id: 'moves', mount: $('#moves'), perPage: 10, empty: 'No stock movements yet. Sell something, receive a purchase or transfer stock.', searchPlaceholder: 'Search movements',
       rows: () => S.moves(), rowId: (m) => m.id,
-      filters: [{ id: 'loc', label: 'All locations', options: locs.map((l) => [l.id, l.name]), test: (m, v) => m.loc === v }, { id: 'reason', label: 'All reasons', options: Object.entries(REASON).map(([k, v]) => [k, v[0]]), test: (m, v) => m.reason === v }],
+      filters: [{ id: 'reason', label: 'All reasons', options: Object.entries(REASON).map(([k, v]) => [k, v[0]]), test: (m, v) => m.reason === v }],
       search: (m, q) => ((S.product(m.pid) || {}).name + ' ' + (m.ref || '') + ' ' + (m.note || '')).toLowerCase().includes(q),
       columns: [
         { id: 'date', label: 'When', sort: (a, b) => new Date(a.date) - new Date(b.date), render: (m) => `<span class="small">${A.dateTime(m.date)}</span>` },
         { id: 'p', label: 'Product', render: (m) => { const p = S.product(m.pid); return p ? `<div class="row gap-8">${Admin.thumb(p, 'sm')}<b class="small">${esc(p.name)}</b></div>` : '—'; } },
         { id: 'size', label: 'Size', render: (m) => esc(S.sizeLabel(m.size)) },
-        { id: 'loc', label: 'Location', render: (m) => esc(S.locName(m.loc)) },
         { id: 'delta', label: 'Change', cls: 'right', render: (m) => `<b class="num ${m.delta > 0 ? 'ok' : 'err'}">${m.delta > 0 ? '+' : ''}${m.delta}</b>` },
         { id: 'reason', label: 'Reason', render: (m) => { const r = REASON[m.reason] || [m.reason, '']; return `<span class="badge ${r[1]}">${esc(r[0])}</span>`; } },
         { id: 'ref', label: 'Ref', render: (m) => `<span class="mono xs">${esc(m.ref ? (typeof m.ref === 'number' ? '#' + m.ref : m.ref) : '—')}</span>${m.note ? `<div class="xs muted">${esc(m.note)}</div>` : ''}` },
@@ -377,56 +355,10 @@
       $('#list').hidden = b.dataset.tab !== 'stock'; $('#moves').hidden = b.dataset.tab !== 'moves';
     });
     $('#inv-export').addEventListener('click', () => {
-      Admin.csv('amnu-stock.csv', [['SKU', 'Product', 'Size'].concat(locs.map((l) => l.name), ['Total', 'Unit cost', 'Cost value'])].concat(prods().flatMap((p) => p.sizes.map((z) => [p.sku, p.name, z].concat(locs.map((l) => S.stock(p.id, l.id, z)), [S.stock(p.id, null, z), p.cost, S.stock(p.id, null, z) * p.cost])))));
+      Admin.csv('amnu-stock.csv', [['SKU', 'Product', 'Size', 'Quantity', 'Unit cost', 'Cost value']].concat(prods().flatMap((p) => p.sizes.map((z) => [p.sku, p.name, z, S.stock(p.id, null, z), p.cost, S.stock(p.id, null, z) * p.cost]))));
     });
     $('#list').hidden = false; $('#moves').hidden = true;
     void api;
-  };
-
-  /* ======================================================================
-     Locations
-     ====================================================================== */
-  P.locations = () => {
-    const edit = (id, api) => {
-      const list = S.locations(); const l = id ? list.find((x) => x.id === id) : null;
-      const m = A.modal({
-        title: l ? 'Edit location' : 'Add location', wide: true,
-        body: `<form id="lf" class="form-grid2" novalidate><div class="field"><label>Name *</label><input name="name" value="${esc(l ? l.name : '')}"><span class="msg">Enter a name.</span></div><div class="field"><label>Type</label><select name="type"><option value="showroom">Showroom (sells in store)</option><option value="warehouse">Warehouse (stock only)</option></select></div>
-          <div class="field full"><label>Address *</label><input name="address" value="${esc(l ? l.address : '')}"><span class="msg">Enter an address.</span></div><div class="field"><label>District</label><select name="district">${S.districts.map((d) => `<option ${l && l.district === d ? 'selected' : ''}>${d}</option>`).join('')}</select></div><div class="field"><label>Phone</label><input name="phone" value="${esc(l ? l.phone : '')}"></div>
-          <div class="field"><label>Opening hours</label><input name="hours" value="${esc(l ? l.hours : 'Sat – Thu · 10:00 am – 9:00 pm')}"></div><div class="field"><label>Manager</label><input name="manager" value="${esc(l ? l.manager : '')}"></div>
-          <label class="row between full"><span class="bold small">Active</span><span class="switch"><input type="checkbox" name="active" ${!l || l.active !== false ? 'checked' : ''}><span></span></span></label></form>`,
-        footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Save location</button>'
-      });
-      const f = $('#lf', m.el).elements; f.type.value = l ? l.type : 'showroom';
-      m.el.addEventListener('click', (e) => {
-        if (!e.target.closest('[data-save]')) return;
-        const bad = { name: !f.name.value.trim(), address: !f.address.value.trim() };
-        Object.keys(bad).forEach((k) => f[k].closest('.field').classList.toggle('err', bad[k]));
-        if (Object.values(bad).some(Boolean)) return;
-        const rec = { id: l ? l.id : (f.type.value === 'warehouse' ? 'w' : 's') + A.uid().slice(0, 4), name: f.name.value.trim(), type: f.type.value, address: f.address.value.trim(), district: f.district.value, phone: f.phone.value.trim(), hours: f.hours.value.trim(), manager: f.manager.value.trim(), active: f.active.checked };
-        if (l) list[list.indexOf(l)] = rec; else list.push(rec);
-        S.saveLocations(list); m.close(); api.refresh(); A.toast(l ? 'Location updated' : 'Location added');
-      });
-    };
-    const api = Admin.listTable({
-      id: 'locations', mount: $('#list'), perPage: 10, empty: 'No locations', searchPlaceholder: 'Search locations',
-      rows: () => S.locations(), rowId: (l) => l.id,
-      search: (l, q) => (l.name + l.address + l.district).toLowerCase().includes(q),
-      columns: [
-        { id: 'name', label: 'Location', sort: (a, b) => a.name.localeCompare(b.name), render: (l) => `<div class="row gap-8"><span class="loc-ico">${icon(l.type === 'warehouse' ? 'building' : 'store', 18)}</span><div><b class="row-title">${esc(l.name)}</b><div class="xs muted">${esc(l.address)}</div></div></div>${Admin.actions([{ label: 'Edit', act: 'edit', id: l.id }, l.id === S.onlineLoc() ? null : { label: 'Use for online orders', act: 'online', id: l.id }, { label: 'Delete', act: 'del', id: l.id, danger: true }])}` },
-        { id: 'type', label: 'Type', render: (l) => `<span class="badge ${l.type === 'warehouse' ? 'b-info' : 'b-violet'}">${l.type === 'warehouse' ? 'Warehouse' : 'Showroom'}</span>${l.id === S.onlineLoc() ? ' <span class="badge b-ok">Online fulfilment</span>' : ''}` },
-        { id: 'phone', label: 'Phone', render: (l) => `<span class="mono">${esc(l.phone)}</span>` },
-        { id: 'hours', label: 'Hours', render: (l) => `<span class="small muted">${esc(l.hours)}</span>` },
-        { id: 'units', label: 'Units', cls: 'right', render: (l) => `<span class="num">${sum(S.products(), (p) => S.stock(p.id, l.id))}</span>` },
-        { id: 'status', label: 'Status', render: (l) => (l.active === false ? '<span class="badge">Inactive</span>' : '<span class="badge b-ok">Active</span>') }
-      ],
-      actions: {
-        edit: (id, l, a) => edit(id, a),
-        online: (id, l, a) => { S.saveSettings({ onlineLoc: id }); a.refresh(); A.toast(`${l.name} now fulfils online orders`); },
-        del: (id, l, a) => { const units = sum(S.products(), (p) => S.stock(p.id, id)); if (units > 0) { A.toast(`${l.name} still holds ${units} units. Transfer them first.`, 'err'); return; } if (id === S.onlineLoc()) { A.toast('This location fulfils online orders. Choose another first.', 'err'); return; } A.confirm(`Delete ${l.name}?`, 'Delete').then((ok) => { if (ok) { S.saveLocations(S.locations().filter((x) => x.id !== id)); a.refresh(); A.toast('Location deleted'); } }); }
-      }
-    });
-    $('#add-loc').addEventListener('click', () => edit(null, api));
   };
 
   /* ======================================================================
@@ -484,11 +416,11 @@
           <div class="table-wrap"><table class="wp-table"><thead><tr><th>Product</th><th>Size</th><th class="right">Qty</th><th class="right">Unit cost</th><th class="right">Total</th></tr></thead><tbody>${po.items.map((i) => `<tr><td>${esc((S.product(i.pid) || { name: '#' + i.pid }).name)}</td><td>${esc(S.sizeLabel(i.size))}</td><td class="right num">${i.qty}</td><td class="right num">${money(i.cost)}</td><td class="right num">${money(i.qty * i.cost)}</td></tr>`).join('')}</tbody></table></div>
           <div class="totals"><div><span>Items</span><b class="num">${money(sum(po.items, (i) => i.qty * i.cost))}</b></div>${po.shipping ? `<div><span>Freight</span><b class="num">${money(po.shipping)}</b></div>` : ''}<div class="grand"><span>Total</span><b class="num">${money(S.poTotal(po))}</b></div><div><span>Paid</span><b class="num ok">${money(S.poPaid(po))}</b></div><div><span>Due</span><b class="num err">${money(Math.max(0, S.poTotal(po) - S.poPaid(po)))}</b></div></div>
           ${(po.payments || []).length ? `<h4 class="sub-h" style="margin-top:14px">Payments</h4>${po.payments.map((p) => `<div class="draft-row"><span>${A.date(p.date)} · ${esc(S.accountName(p.account))}${p.note ? ' · ' + esc(p.note) : ''}</span><b class="num">${money(p.amount)}</b></div>`).join('')}` : ''}
-          ${po.status === 'ordered' ? `<div class="row gap-8 wrap" style="margin-top:16px"><select id="rc-loc" style="width:auto">${Admin.locOptions(po.locId)}</select><button class="btn btn-violet" data-receive>Receive stock</button></div>` : ''}
+          ${po.status === 'ordered' ? `<div class="row gap-8 wrap" style="margin-top:16px"><button class="btn btn-violet" data-receive>Receive stock</button></div>` : ''}
           ${S.poTotal(po) - S.poPaid(po) > 0 ? `<div class="row gap-8 wrap" style="margin-top:14px"><input id="pp-amt" type="number" min="1" value="${S.poTotal(po) - S.poPaid(po)}" style="width:140px"><select id="pp-acc" style="width:auto">${Admin.accountOptions('bank')}</select><input id="pp-note" placeholder="Note" style="width:180px"><button class="btn btn-glass" data-pay>Record payment</button></div>` : ''}`
       });
       m.el.addEventListener('click', (e) => {
-        if (e.target.closest('[data-receive]')) { S.receivePO(id, $('#rc-loc', m.el).value); m.close(); api.refresh(); A.toast(`Stock received into ${S.locName($('#rc-loc', m.el) ? '' : po.locId) || 'location'}`); return; }
+        if (e.target.closest('[data-receive]')) { S.receivePO(id, po.locId); m.close(); api.refresh(); A.toast('Stock received'); return; }
         if (e.target.closest('[data-pay]')) {
           const amt = Number($('#pp-amt', m.el).value);
           if (!(amt > 0) || amt > S.poTotal(po) - S.poPaid(po)) { A.toast('Enter an amount up to the balance due', 'err'); return; }
@@ -502,7 +434,7 @@
       const lines = [{ pid: prods[0].id, size: prods[0].sizes[0], qty: 5, cost: prods[0].cost }];
       const m = A.modal({
         title: 'New purchase order', wide: true,
-        body: `<div class="form-grid2"><div class="field"><label>Supplier *</label><select id="po-sup">${S.suppliers().map((s) => `<option value="${s.id}" ${s.id === supId ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div><div class="field"><label>Receive into</label><select id="po-loc">${Admin.locOptions(S.onlineLoc())}</select></div></div>
+        body: `<div class="form-grid2"><div class="field"><label>Supplier *</label><select id="po-sup">${S.suppliers().map((s) => `<option value="${s.id}" ${s.id === supId ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div></div>
           <h4 class="sub-h" style="margin:16px 0 8px">Items</h4><div id="po-lines" class="col gap-8"></div><button class="btn btn-glass btn-sm" id="po-add" type="button" style="align-self:flex-start;margin-top:8px">${icon('plus', 14)} Add line</button>
           <div class="form-grid2" style="margin-top:16px"><div class="field"><label>Freight / other charges (৳)</label><input id="po-ship" type="number" min="0" value="0"></div><div class="field"><label>Note</label><input id="po-note" placeholder="Optional"></div></div>
           <div class="row between wrap" style="margin-top:12px"><label class="check small"><input type="checkbox" id="po-recv"> Mark as received now (adds stock)</label><b class="big-n" id="po-total"></b></div>
@@ -529,7 +461,7 @@
         const list = S.purchases();
         const id = S.nextPoId();
         const pay = Number($('#po-pay', m.el).value) || 0;
-        const po = { id, n: Number(id.slice(3)), date: new Date().toISOString(), supplierId: $('#po-sup', m.el).value, locId: $('#po-loc', m.el).value, status: 'ordered', items: lines.map((l) => ({ pid: l.pid, size: l.size, qty: l.qty, cost: l.cost })), shipping: Number($('#po-ship', m.el).value) || 0, payments: pay > 0 ? [{ id: A.uid(), date: new Date().toISOString(), account: $('#po-acc', m.el).value, amount: pay, note: 'Paid at order' }] : [], note: $('#po-note', m.el).value.trim() };
+        const po = { id, n: Number(id.slice(3)), date: new Date().toISOString(), supplierId: $('#po-sup', m.el).value, locId: S.onlineLoc(), status: 'ordered', items: lines.map((l) => ({ pid: l.pid, size: l.size, qty: l.qty, cost: l.cost })), shipping: Number($('#po-ship', m.el).value) || 0, payments: pay > 0 ? [{ id: A.uid(), date: new Date().toISOString(), account: $('#po-acc', m.el).value, amount: pay, note: 'Paid at order' }] : [], note: $('#po-note', m.el).value.trim() };
         if (pay > S.poTotal(po)) { A.toast('Payment cannot exceed the order total', 'err'); return; }
         list.unshift(po); S.savePurchases(list);
         if ($('#po-recv', m.el).checked) S.receivePO(id, po.locId);
@@ -546,7 +478,6 @@
       columns: [
         { id: 'id', label: 'Order', sort: (a, b) => a.n - b.n, render: (p) => `<a class="row-title" href="#" data-act="view" data-id="${p.id}">${p.id}</a><div class="xs muted">${A.date(p.date)}</div>${Admin.actions([{ label: 'View', act: 'view', id: p.id }, p.status === 'ordered' ? { label: 'Receive', act: 'recv', id: p.id } : null])}` },
         { id: 'sup', label: 'Supplier', render: (p) => esc((S.supplier(p.supplierId) || { name: '—' }).name) },
-        { id: 'loc', label: 'Receive at', render: (p) => esc(S.locName(p.locId)) },
         { id: 'items', label: 'Pieces', cls: 'right', render: (p) => `<span class="num">${sum(p.items, (i) => i.qty)}</span>` },
         { id: 'total', label: 'Total', cls: 'right', sort: (a, b) => S.poTotal(a) - S.poTotal(b), render: (p) => `<b class="num">${money(S.poTotal(p))}</b>` },
         { id: 'due', label: 'Due', cls: 'right', render: (p) => { const d = S.poDue(p); return d ? `<b class="num err">${money(d)}</b>` : '<span class="muted">—</span>'; } },
@@ -574,7 +505,7 @@
     const counts = {}; S.denoms.forEach((n) => { counts[n] = 0; });
     let opening = 0; let deposit = 0; let notes = ''; let float = 5000;
 
-    const sel = () => { $('#dc-loc').innerHTML = rooms.map((r) => `<option value="${r.id}" ${r.id === st.loc ? 'selected' : ''}>${esc(r.name)}</option>`).join(''); $('#dc-date').value = st.date; $('#dc-date').max = today(); };
+    const sel = () => { $('#dc-date').value = st.date; $('#dc-date').max = today(); };
     const render = () => {
       const sales = S.salesFor(st.loc, st.date);
       const closed = S.closeFor(st.loc, st.date);
@@ -618,7 +549,6 @@
     const cashiers = S.users().filter((u) => ['Cashier', 'Shop Manager', 'Administrator'].includes(u.role));
     $('#dc-cashier').innerHTML = cashiers.map((u) => `<option>${esc(u.name)}</option>`).join('');
     sel(); render();
-    $('#dc-loc').addEventListener('change', (e) => { st.loc = e.target.value; render(); history.refresh(); });
     $('#dc-date').addEventListener('change', (e) => { st.date = e.target.value || today(); render(); });
     $('#dc-count').addEventListener('input', (e) => {
       const n = e.target.dataset.d; if (!n) return;

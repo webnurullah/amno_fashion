@@ -93,7 +93,7 @@
         ${plRow('Owed to suppliers', '− ' + money(owe))}
         ${plRow('Estimated business value', money(liquid + dues + cod + stock - owe), 'sum grand')}</div>`;
 
-      const locRows = [['Online store', p.ch.online.revenue]].concat(S.showrooms().map((l) => [l.name, sum(ordersIn(r[0], r[1]).filter((o) => S.channelOf(o) === 'store' && o.storeId === l.id), rev)]));
+      const locRows = [['Online store', p.ch.online.revenue], ['Store counter (POS)', p.ch.store.revenue]];
       A.charts.hbars($('#f-loc'), locRows.sort((a, b) => b[1] - a[1]).map(([l, v]) => ({ label: l, value: v, display: `${money(v)}${p.revenue ? ` · ${Math.round((v / p.revenue) * 100)}%` : ''}` })));
       const cats = Object.entries(p.byCat).sort((a, b) => b[1] - a[1]);
       if (cats.length) A.charts.hbars($('#f-exp'), cats.map(([l, v]) => ({ label: l, value: v, display: `${money(v)} · ${Math.round((v / p.expenses) * 100)}%` })));
@@ -127,19 +127,17 @@
           <div class="field"><label for="ex-amount">Amount (৳) *</label><input id="ex-amount" name="amount" type="number" min="1" value="${e ? e.amount : ''}" placeholder="0"><span class="msg">Enter an amount above 0.</span></div>
           <div class="field"><label for="ex-cat">Category</label><select id="ex-cat" name="category">${S.expenseCats.map((c) => `<option ${e && e.category === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
           <div class="field"><label for="ex-acc">Paid from</label><select id="ex-acc" name="account">${Admin.accountOptions(e ? e.account : 'cash')}</select></div>
-          <div class="field"><label for="ex-loc">For</label><select id="ex-loc" name="loc"><option value="all">Whole business</option>${Admin.locOptions(e ? e.loc : '')}</select></div>
           <div class="field"><label for="ex-vendor">Paid to</label><input id="ex-vendor" name="vendor" value="${esc(e ? e.vendor || '' : '')}" placeholder="Vendor or person"></div>
           <div class="field full"><label for="ex-note">Note</label><input id="ex-note" name="note" value="${esc(e ? e.note || '' : '')}" placeholder="Optional"></div></form>`,
         footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Save expense</button>'
       });
       const f = $('#ef', m.el).elements;
-      if (e) f.loc.value = e.loc || 'all';
       m.el.addEventListener('click', (ev) => {
         if (!ev.target.closest('[data-save]')) return;
         const amount = Math.round(Number(f.amount.value));
         f.amount.closest('.field').classList.toggle('err', !(amount > 0));
         if (!(amount > 0)) { f.amount.focus(); return; }
-        const rec = { date: new Date((f.date.value || today()) + 'T12:00:00').toISOString(), category: f.category.value, amount, account: f.account.value, loc: f.loc.value, vendor: f.vendor.value.trim(), note: f.note.value.trim() };
+        const rec = { date: new Date((f.date.value || today()) + 'T12:00:00').toISOString(), category: f.category.value, amount, account: f.account.value, loc: 's1', vendor: f.vendor.value.trim(), note: f.note.value.trim() };
         if (e) S.patchExpense(e.id, rec); else S.addExpense(rec);
         m.close(); api.refresh(); kp(); A.toast(e ? 'Expense updated' : 'Expense added');
       });
@@ -152,7 +150,6 @@
       views: [{ id: 'all', label: 'All' }, { id: 'cash', label: 'Paid in cash', filter: (x) => x.account === 'cash' }, { id: 'bank', label: 'Bank and wallets', filter: (x) => x.account !== 'cash' }],
       filters: [
         { id: 'cat', label: 'All categories', options: S.expenseCats.map((c) => [c, c]), test: (x, v) => x.category === v },
-        { id: 'loc', label: 'All locations', options: [['all', 'Whole business']].concat(S.locations().map((l) => [l.id, l.name])), test: (x, v) => x.loc === v },
         { id: 'month', label: 'All time', options: [['month', 'This month'], ['lastmonth', 'Last month'], ['30', 'Last 30 days']], test: (x, v) => { const r = S.range(v); return S.within(x.date, r[0], r[1]); } }
       ],
       search: (x, q) => [x.category, x.vendor, x.note].join(' ').toLowerCase().includes(q),
@@ -161,7 +158,6 @@
         { id: 'date', label: 'Date', sort: (a, b) => new Date(a.date) - new Date(b.date), render: (x) => `<b class="row-title">${A.date(x.date)}</b>${Admin.actions([{ label: 'Edit', act: 'edit', id: x.id }, { label: 'Delete', act: 'del', id: x.id, danger: true }])}` },
         { id: 'cat', label: 'Category', sort: (a, b) => a.category.localeCompare(b.category), render: (x) => `<span class="badge b-violet">${esc(x.category)}</span>` },
         { id: 'vendor', label: 'Paid to', render: (x) => `${esc(x.vendor || '—')}${x.note ? `<div class="xs muted">${esc(x.note)}</div>` : ''}` },
-        { id: 'loc', label: 'For', render: (x) => esc(x.loc === 'all' ? 'Whole business' : S.locName(x.loc)) },
         { id: 'acc', label: 'Paid from', render: (x) => esc(S.accountName(x.account)) },
         { id: 'amount', label: 'Amount', cls: 'right', sort: (a, b) => a.amount - b.amount, render: (x) => `<b class="num">${money(x.amount)}</b>` }
       ],
@@ -171,7 +167,7 @@
       }
     });
     $('#add-exp').addEventListener('click', () => edit(null, api));
-    $('#exp-export').addEventListener('click', () => Admin.csv('amnu-expenses.csv', [['Date', 'Category', 'Paid to', 'Location', 'Paid from', 'Amount', 'Note']].concat(S.expenses().map((x) => [A.ymd(x.date), x.category, x.vendor || '', x.loc === 'all' ? 'Whole business' : S.locName(x.loc), S.accountName(x.account), x.amount, x.note || '']))));
+    $('#exp-export').addEventListener('click', () => Admin.csv('amnu-expenses.csv', [['Date', 'Category', 'Paid to', 'Paid from', 'Amount', 'Note']].concat(S.expenses().map((x) => [A.ymd(x.date), x.category, x.vendor || '', S.accountName(x.account), x.amount, x.note || '']))));
     if (A.qs.get('new')) edit(null, api);
   };
 
@@ -332,14 +328,14 @@
       const total = sum(list, (e) => e.amount);
       return [
         sec('By category', ['Category', 'Entries', 'Amount', 'Share'], Object.entries(by).sort((a, b) => b[1] - a[1]).map(([c, v]) => [esc(c), list.filter((e) => e.category === c).length, n(v), Math.round((v / total) * 100) + '%']), ['Total', list.length, n(total), '']),
-        sec('All entries', ['Date', 'Category', 'Paid to', 'For', 'Paid from', 'Amount'], list.map((e) => [A.date(e.date), esc(e.category), esc(e.vendor || ''), esc(e.loc === 'all' ? 'Whole business' : S.locName(e.loc)), esc(S.accountName(e.account)), n(e.amount)]))
+        sec('All entries', ['Date', 'Category', 'Paid to', 'Paid from', 'Amount'], list.map((e) => [A.date(e.date), esc(e.category), esc(e.vendor || ''), esc(S.accountName(e.account)), n(e.amount)]))
       ];
     },
     stock: () => {
-      const v = S.valuation(); const locs = S.locations();
-      return [sec('Stock valuation (today)', ['SKU', 'Product', 'Unit cost'].concat(locs.map((l) => l.name), ['Units', 'Cost value', 'Retail value']),
-        v.rows.filter((x) => x.qty > 0).sort((a, b) => b.cost - a.cost).map((x) => [esc(x.p.sku), esc(x.p.name), n(x.p.cost || 0)].concat(locs.map((l) => x.byLoc[l.id] || 0), [x.qty, n(x.cost), n(x.retail)])),
-        ['', 'Total', ''].concat(locs.map((l) => sum(v.rows, (x) => x.byLoc[l.id] || 0)), [v.qty, n(v.cost), n(v.retail)]))];
+      const v = S.valuation();
+      return [sec('Stock valuation (today)', ['SKU', 'Product', 'Unit cost', 'Units', 'Cost value', 'Retail value'],
+        v.rows.filter((x) => x.qty > 0).sort((a, b) => b.cost - a.cost).map((x) => [esc(x.p.sku), esc(x.p.name), n(x.p.cost || 0), x.qty, n(x.cost), n(x.retail)]),
+        ['', 'Total', '', v.qty, n(v.cost), n(v.retail)])];
     },
     vat: (r) => {
       const cfg = S.settings(); const orders = ordersIn(r[0], r[1]);

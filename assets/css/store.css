@@ -128,6 +128,14 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
 .logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; font-size: 21px; letter-spacing: -.02em; flex: none; }
 .logo-mark { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; color: #fff; background: linear-gradient(160deg, var(--accent-2), var(--accent)); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25), 0 8px 14px -8px rgba(0, 0, 0, .6); }
 [data-theme=dark] .logo-mark { color: #111; }
+.logo { gap: 14px; }
+.logo-plate { display: grid; place-items: center; height: 48px; padding: 0 12px; border-radius: 12px; background: #000; box-shadow: 0 8px 18px -10px rgba(0, 0, 0, .7); }
+.logo-plate img { display: block; height: 38px; width: auto; }
+.logo-tag { font-size: 12.5px; font-weight: 700; font-style: italic; letter-spacing: .01em; color: var(--ink-2); padding-left: 14px; border-left: 2px solid #c8963e; line-height: 1.2; white-space: nowrap; }
+.footer-brand { display: flex; align-items: center; gap: 22px; padding: 30px 0 4px; }
+.footer-brand img { display: block; width: 146px; height: auto; border-radius: 16px; }
+.footer-brand p { font-size: 22px; font-weight: 700; font-style: italic; letter-spacing: -.01em; }
+.footer-brand p span { display: block; margin-top: 4px; font-size: 13.5px; font-weight: 400; font-style: normal; color: var(--ink-3); letter-spacing: 0; }
 .logo-text { display: flex; flex-direction: column; line-height: 1; }
 .logo-text small { font-size: 10px; font-weight: 600; letter-spacing: .3em; text-transform: uppercase; color: var(--ink-3); margin-top: 4px; }
 .menu { display: flex; justify-content: center; gap: 4px; flex: 1; min-width: 0; }
@@ -659,6 +667,10 @@ a.contact-card:hover { transform: translateX(4px); }
   .pdp-cta .btn { min-height: 52px; }
   .nav-actions .icon-btn { width: 40px; height: 40px; }
   .logo-text small { display: none; }
+  .logo-tag { display: none; }
+  .logo-plate { height: 42px; padding: 0 10px; }
+  .logo-plate img { height: 32px; }
+  .footer-brand { flex-direction: column; align-items: flex-start; gap: 12px; }
   .fb { min-width: 0; padding: 0 12px; }
   .fb-wrap.sort .fb { min-width: 0; }
   .filter-row { gap: 8px; }

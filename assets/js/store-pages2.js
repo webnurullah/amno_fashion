@@ -225,7 +225,7 @@
     $('#about-art').innerHTML = [pub.find((p) => p.id === 1), pub.find((p) => p.id === 4), pub.find((p) => p.id === 2)].filter(Boolean).map((p, i) => `<div class="tile-pj p${i}">${S.thumb(p)}</div>`).join('');
     const rated = pub.filter((p) => p.rating);
     const avg = (rated.reduce((n, p) => n + p.rating, 0) / rated.length).toFixed(1);
-    $('#about-stats').innerHTML = [[pub.length, 'Panjabi designs'], [S.showrooms().length, 'Showrooms'], [avg + '★', 'Average rating (sample)'], ['64', 'Districts delivered']].map(([n, l]) => `<div><b>${n}</b><span class="muted small">${l}</span></div>`).join('');
+    $('#about-stats').innerHTML = [[pub.length, 'Panjabi designs'], [S.showrooms().length, S.showrooms().length === 1 ? 'Store' : 'Stores'], [avg + '★', 'Average rating (sample)'], ['64', 'Districts delivered']].map(([n, l]) => `<div><b>${n}</b><span class="muted small">${l}</span></div>`).join('');
   };
   P.contact = () => {
     $('#cc-msgr').href = settings.messenger;
