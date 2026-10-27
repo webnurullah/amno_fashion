@@ -180,12 +180,12 @@
      Appearance → Customize (live preview in an iframe)
      ====================================================================== */
   P.appearance = () => {
-    const DEF = { accent: '#e24b25', blur: 22, opacity: 0.4, radius: 24 };
+    const DEF = { accent: '#121216', blur: 22, opacity: 0.4, radius: 24 };
     const set = S.settings();
     const saved = Object.assign({}, DEF, S.look());
     const st = { look: Object.assign({}, saved), heroTitle: set.heroTitle, heroSub: set.heroSub, announcement: set.announcement };
     const frame = $('#preview-frame');
-    const presets = [['#e24b25', 'Coral'], ['#d6336c', 'Rose'], ['#6250d6', 'Violet'], ['#0f8a5f', 'Emerald'], ['#d98b00', 'Amber'], ['#2563c9', 'Ocean']];
+    const presets = [['#121216', 'Black'], ['#c8102e', 'Red'], ['#1f3a5f', 'Navy'], ['#0f6b4e', 'Forest'], ['#8a5a35', 'Camel'], ['#6250d6', 'Violet']];
 
     $('#presets').innerHTML = presets.map(([hex, n]) => `<button type="button" class="swatch lg ${hex === st.look.accent ? 'on' : ''}" data-hex="${hex}" style="--c:${hex}" title="${n}" aria-label="${n}"></button>`).join('');
     const fill = () => {
@@ -234,9 +234,10 @@
   P.analytics = () => {
     const M = Admin.metrics;
     const sel = $('#a-range'); sel.value = DB.get('an.range', '30');
+    const chSel = $('#a-channel'); chSel.value = DB.get('an.channel', '');
     const render = () => {
-      const N = Number(sel.value); DB.set('an.range', String(N));
-      const orders = S.orders();
+      const N = Number(sel.value); DB.set('an.range', String(N)); DB.set('an.channel', chSel.value);
+      const orders = S.orders().filter((o) => !chSel.value || S.channelOf(o) === chSel.value);
       const cur = M.buckets(orders, N, 0);
       const inWin = orders.filter((o) => M.startOf(o.date) >= M.dayStart(N - 1));
       const valid = inWin.filter(M.isValid);
@@ -253,7 +254,7 @@
       valid.forEach((o) => o.items.forEach((i) => { const p = S.product(i.pid); const c = p ? S.categories().find((x) => x.slug === p.cats[0]) : null; const k = c ? c.name : 'Other'; byCat.set(k, (byCat.get(k) || 0) + i.price * i.qty); }));
       A.charts.hbars($('#a-cats'), [...byCat].sort((a, b) => b[1] - a[1]).slice(0, 7).map(([l, v]) => ({ label: l, value: v, display: money(v) })));
       A.charts.hbars($('#a-status'), tally(inWin, (o) => S.statusLabel(o.status), () => 1).map(([l, v]) => ({ label: l, value: v, display: String(v) })));
-      A.charts.hbars($('#a-pay'), tally(valid, (o) => S.payLabel[o.payment], () => 1).map(([l, v]) => ({ label: l, value: v, display: `${v} · ${Math.round((v / valid.length) * 100)}%` })));
+      A.charts.hbars($('#a-pay'), tally(valid, (o) => S.tenders(o).map((t) => S.payLabel[t.method] || t.method).join(' + '), () => 1).map(([l, v]) => ({ label: l, value: v, display: `${v} · ${Math.round((v / valid.length) * 100)}%` })));
       A.charts.hbars($('#a-dist'), tally(valid, (o) => o.customer.district, (o) => o.total).slice(0, 6).map(([l, v]) => ({ label: l, value: v, display: money(v) })));
 
       /* funnel – sessions are simulated, purchases are real */
@@ -266,10 +267,10 @@
       $('#a-kpis').innerHTML = [['Revenue', money(rev)], ['Orders', valid.length], ['Avg. order value', money(aov)], ['Active customers', custs.size], ['Cancel / refund rate', inWin.length ? ((inWin.length - valid.length) / inWin.length * 100).toFixed(1) + '%' : '0%']]
         .map(([l, v]) => `<div class="card kpi-lite"><span class="kpi-label">${l}</span><b class="num">${v}</b></div>`).join('');
     };
-    sel.addEventListener('change', render);
+    sel.addEventListener('change', render); chSel.addEventListener('change', render);
     render();
     $('#a-export').addEventListener('click', () => {
-      const rows = [['Order', 'Date', 'Status', 'Customer', 'District', 'Payment', 'Total']].concat(S.orders().map((o) => [o.id, o.date.slice(0, 10), o.status, o.customer.name, o.customer.district, o.payment, o.total]));
+      const rows = [['Order', 'Date', 'Channel', 'Status', 'Customer', 'District', 'Payment', 'Total']].concat(S.orders().map((o) => [o.id, o.date.slice(0, 10), S.channelOf(o), o.status, o.customer.name, o.customer.district, S.tenders(o).map((t) => S.payLabel[t.method] || t.method).join(' + '), o.total]));
       const csv = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
       const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' })); a.download = 'amnu-orders.csv'; a.click();
       A.toast('Orders exported as CSV');
@@ -279,7 +280,7 @@
   /* ======================================================================
      Users
      ====================================================================== */
-  const ROLES = { Administrator: 'Full access to every setting', 'Shop Manager': 'Products, orders, coupons and customers', Editor: 'Pages, posts and media', 'Customer Support': 'View orders and customers' };
+  const ROLES = { Administrator: 'Full access to every setting', 'Shop Manager': 'Products, orders, coupons, customers and stock', Cashier: 'POS register and day close for one showroom', Accountant: 'Finance, expenses, accounts and reports', Editor: 'Pages, posts and media', 'Customer Support': 'View orders and customers' };
   P.users = () => {
     const edit = (id, api) => {
       const list = S.users(); const u = id ? list.find((x) => String(x.id) === String(id)) : null;
@@ -287,7 +288,7 @@
         title: u ? 'Edit user' : 'Add user',
         body: `<form id="uf" class="form-grid2" novalidate><div class="field full"><label>Full name</label><input name="name" value="${esc(u ? u.name : '')}"><span class="msg">Enter a name.</span></div>
           <div class="field"><label>Username</label><input name="username" value="${esc(u ? u.username : '')}"><span class="msg">Enter a username.</span></div><div class="field"><label>Email</label><input name="email" type="email" value="${esc(u ? u.email : '')}"><span class="msg">Enter a valid email.</span></div>
-          <div class="field full"><label>Role</label><select name="role">${Object.keys(ROLES).map((r) => `<option>${r}</option>`).join('')}</select><span class="hint" id="role-hint"></span></div></form>`,
+          <div class="field"><label>Role</label><select name="role">${Object.keys(ROLES).map((r) => `<option>${r}</option>`).join('')}</select><span class="hint" id="role-hint"></span></div><div class="field"><label>Showroom</label><select name="loc"><option value="">None / all</option>${S.showrooms().map((r) => `<option value="${r.id}" ${u && u.loc === r.id ? 'selected' : ''}>${esc(r.name)}</option>`).join('')}</select><span class="hint">Cashiers sell from this showroom.</span></div></form>`,
         footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Save user</button>'
       });
       const f = $('#uf', m.el).elements;
@@ -298,7 +299,7 @@
         const checks = { name: (v) => v.trim().length > 1, username: (v) => /^[a-z0-9_.-]{3,}$/i.test(v.trim()), email: (v) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.trim()) };
         const bad = Object.keys(checks).filter((k) => { const ok = checks[k](f[k].value); f[k].closest('.field').classList.toggle('err', !ok); return !ok; });
         if (bad.length) { f[bad[0]].focus(); return; }
-        const rec = { id: u ? u.id : list.reduce((n, x) => Math.max(n, x.id), 0) + 1, name: f.name.value.trim(), username: f.username.value.trim(), email: f.email.value.trim(), role: f.role.value, date: u ? u.date : new Date().toISOString(), posts: u ? u.posts : 0 };
+        const rec = { id: u ? u.id : list.reduce((n, x) => Math.max(n, x.id), 0) + 1, name: f.name.value.trim(), username: f.username.value.trim(), email: f.email.value.trim(), role: f.role.value, loc: f.loc.value, date: u ? u.date : new Date().toISOString(), posts: u ? u.posts : 0 };
         if (u) list[list.indexOf(u)] = rec; else list.push(rec);
         S.saveUsers(list); m.close(); api.refresh(); A.toast(u ? 'User updated' : 'User added');
       });
@@ -311,7 +312,7 @@
       columns: [
         { id: 'name', label: 'Name', sort: (a, b) => a.name.localeCompare(b.name), render: (u) => `<div class="row gap-8">${Admin.avatar(u.name)}<div><b class="row-title">${esc(u.name)}</b><div class="xs muted">@${esc(u.username)}</div></div></div>${Admin.actions([{ label: 'Edit', act: 'edit', id: u.id }, u.id === 1 ? null : { label: 'Delete', act: 'del', id: u.id, danger: true }])}` },
         { id: 'email', label: 'Email', render: (u) => `<a class="u" href="mailto:${esc(u.email)}">${esc(u.email)}</a>` },
-        { id: 'role', label: 'Role', render: (u) => `<span class="badge b-violet">${esc(u.role)}</span>` },
+        { id: 'role', label: 'Role', render: (u) => `<span class="badge b-violet">${esc(u.role)}</span>${u.loc ? `<div class="xs muted">${esc(S.locName(u.loc))}</div>` : ''}` },
         { id: 'posts', label: 'Posts', cls: 'right', render: (u) => `<span class="num">${u.posts}</span>` },
         { id: 'date', label: 'Registered', render: (u) => `<span class="muted small">${A.date(u.date)}</span>` }
       ],
@@ -349,6 +350,7 @@
     const get = (o, path) => path.split('.').reduce((a, k) => (a == null ? a : a[k]), o);
     const setPath = (o, path, v) => { const ks = path.split('.'); ks.slice(0, -1).reduce((a, k) => (a[k] = a[k] || {}), o)[ks[ks.length - 1]] = v; };
     const s = S.settings();
+    const online = $('#s-online'); if (online) online.innerHTML = S.locations().map((l) => `<option value="${l.id}">${esc(l.name)}</option>`).join('');
     $$('[data-key]').forEach((el) => { const v = get(s, el.dataset.key); if (el.type === 'checkbox') el.checked = !!v; else el.value = v == null ? '' : v; });
 
     $('#settings-tabs').addEventListener('click', (e) => {
@@ -371,7 +373,7 @@
       });
       if (bad) { A.toast('Please fix the highlighted fields', 'err'); bad.focus(); return; }
       const cur = DB.get('settings', {});
-      S.saveSettings({ ...patch, shipping: { ...(cur.shipping || {}), ...patch.shipping }, payments: { ...(cur.payments || {}), ...patch.payments } });
+      S.saveSettings({ ...patch, shipping: { ...(cur.shipping || {}), ...patch.shipping }, payments: { ...(cur.payments || {}), ...patch.payments }, loyalty: { ...(cur.loyalty || {}), ...patch.loyalty } });
       A.toast('Settings saved');
     });
 

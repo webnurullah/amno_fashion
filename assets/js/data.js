@@ -27,11 +27,17 @@
     facebook: 'https://www.facebook.com/amnufashionbd/',
     messenger: 'https://m.me/amnufashionbd',
     currency: 'BDT',
-    shipping: { dhaka: 70, outside: 130, freeOver: 5000 },
+    shipping: { dhaka: 70, outside: 130, pickup: 100, freeOver: 5000 },
     payments: { cod: true, bkash: true, nagad: true, card: false },
     bkashNumber: '01700-000000',
     nagadNumber: '01700-000001',
     lowStock: 5,
+    onlineLoc: 'w1',               /* location that fulfils online orders */
+    vatRate: 0,                    /* % added on top of the subtotal (0 = no VAT line) */
+    bin: '',                       /* business identification number printed on receipts */
+    digitalDiscountPct: 5,         /* % off when paying with bKash / Nagad / card online (0 = off) */
+    loyalty: { earnPer: 100, pointValue: 1, minRedeem: 100 },   /* 1 point per ৳100; 1 point = ৳1 */
+    receiptFooter: 'Thank you for shopping with us. Exchange within 7 days with this receipt.',
     heroTitle: 'Choose Your Best Panjabi',
     heroSub: "They're all so nice",
     announcement: 'Free delivery on orders over ৳5,000  ·  Cash on Delivery available all over Bangladesh'
@@ -39,7 +45,7 @@
 
   const DISTRICTS = ['Bagerhat', 'Bandarban', 'Barguna', 'Barishal', 'Bhola', 'Bogura', 'Brahmanbaria', 'Chandpur', 'Chapainawabganj', 'Chattogram', 'Chuadanga', "Cox's Bazar", 'Cumilla', 'Dhaka', 'Dinajpur', 'Faridpur', 'Feni', 'Gaibandha', 'Gazipur', 'Gopalganj', 'Habiganj', 'Jamalpur', 'Jashore', 'Jhalokathi', 'Jhenaidah', 'Joypurhat', 'Khagrachhari', 'Khulna', 'Kishoreganj', 'Kurigram', 'Kushtia', 'Lakshmipur', 'Lalmonirhat', 'Madaripur', 'Magura', 'Manikganj', 'Meherpur', 'Moulvibazar', 'Munshiganj', 'Mymensingh', 'Naogaon', 'Narail', 'Narayanganj', 'Narsingdi', 'Natore', 'Netrokona', 'Nilphamari', 'Noakhali', 'Pabna', 'Panchagarh', 'Patuakhali', 'Pirojpur', 'Rajbari', 'Rajshahi', 'Rangamati', 'Rangpur', 'Satkhira', 'Shariatpur', 'Sherpur', 'Sirajganj', 'Sunamganj', 'Sylhet', 'Tangail', 'Thakurgaon'];
 
-  const SIZES_MEN = ['M', 'L', 'XL', 'XXL'];
+  const SIZES_MEN = ['S', 'M', 'L', 'XL', 'XXL'];
   const SIZES_KIDS = ['2Y', '4Y', '6Y', '8Y', '10Y'];
 
   /* ---------- categories ---------- */
@@ -134,7 +140,9 @@
   }));
 
   const PAY_KEYS = ['cod', 'cod', 'cod', 'bkash', 'bkash', 'nagad', 'card'];
-  const PAY_LABEL = { cod: 'Cash on Delivery', bkash: 'bKash', nagad: 'Nagad', card: 'Card' };
+  const PAY_LABEL = { cod: 'Cash on Delivery', bkash: 'bKash', nagad: 'Nagad', card: 'Card', cash: 'Cash', due: 'On credit (due)', points: 'Loyalty points' };
+  const WALK_IN = { name: 'Walk-in customer', phone: '', email: '', district: '', address: '' };
+  const CASHIERS = { s1: 'Rafi Hossain', s2: 'Nusrat Jahan' };
 
   function shippingFor(district, subtotal, settings) {
     const s = (settings || A.store.settings()).shipping;
@@ -142,6 +150,7 @@
     return district === 'Dhaka' ? s.dhaka : s.outside;
   }
 
+  /* online + in-store sales in one list, deterministic and relative to today */
   function genOrders() {
     const r = rng(2027);
     const days = 60;
@@ -152,7 +161,10 @@
       const growth = 1 + ((days - d) / days) * 0.8;
       const count = Math.round((3 + r() * 1.8) * growth);
       for (let k = 0; k < count; k++) {
-        const cust = SEED_CUSTOMERS[Math.floor(Math.pow(r(), 1.15) * SEED_CUSTOMERS.length)];
+        const store = r() < 0.38;
+        const walkIn = store && r() < 0.55;
+        const known = SEED_CUSTOMERS[Math.floor(Math.pow(r(), 1.15) * SEED_CUSTOMERS.length)];
+        const cust = walkIn ? WALK_IN : known;
         const lines = 1 + Math.floor(r() * r() * 3);
         const items = [];
         for (let l = 0; l < lines; l++) {
@@ -162,22 +174,46 @@
           if (!items.some((x) => x.pid === p.id)) items.push({ pid: p.id, name: p.name, price, cost: p.cost, qty: 1 + (r() > 0.82 ? 1 : 0), size, color: p.colorName, hex: p.color, style: p.style });
         }
         const subtotal = items.reduce((s, i) => s + i.price * i.qty, 0);
-        const shipping = shippingFor(cust.district, subtotal, DEFAULT_SETTINGS);
-        const useCoupon = r() > 0.82 && subtotal >= 2000;
-        const discount = useCoupon ? 200 : 0;
-        /* calendar-day based; today's orders are spread over the hours so far */
-        const ts = d === 0 ? Math.min(now, t0 + r() * Math.max(now - t0, 1)) : t0 - d * DAY + r() * DAY;
-        const age = (now - ts) / DAY;
         const roll = r();
+        const payKey = PAY_KEYS[Math.floor(r() * PAY_KEYS.length)];
+        const useCoupon = !store && r() > 0.82 && subtotal >= 2000;
+        const manual = store && r() < 0.15 ? Math.round(subtotal * (r() < 0.5 ? 0.05 : 0.1) / 50) * 50 : 0;
+        const discount = useCoupon ? 200 : manual;
+        const shipping = store ? 0 : shippingFor(cust.district, subtotal, DEFAULT_SETTINGS);
+        const total = subtotal + shipping - discount;
+        /* store hours 10:00–21:00; online any time. Today only covers the hours so far. */
+        const base = d === 0 ? t0 : t0 - d * DAY;
+        const span = d === 0 ? Math.max(now - t0, 1) : DAY;
+        let ts = store ? base + 10 * 36e5 + r() * 11 * 36e5 : base + r() * span;
+        if (d === 0) ts = Math.min(now, ts);
+        const age = (now - ts) / DAY;
+
+        if (store) {
+          const tr = r();
+          let payments;
+          if (tr < 0.46) payments = [{ method: 'cash', amount: total }];
+          else if (tr < 0.66) payments = [{ method: 'card', amount: total }];
+          else if (tr < 0.8) payments = [{ method: 'bkash', amount: total }];
+          else if (tr < 0.88) payments = [{ method: 'nagad', amount: total }];
+          else if (tr < 0.92 || walkIn) { const c = Math.round(total * 0.5 / 50) * 50; payments = [{ method: 'cash', amount: c }, { method: 'card', amount: total - c }]; }
+          else { const paid = Math.round(total * 0.6 / 50) * 50; payments = [{ method: 'cash', amount: paid }, { method: 'due', amount: total - paid }]; }
+          const storeId = r() < 0.65 ? 's1' : 's2';
+          list.push({
+            date: new Date(ts).toISOString(), channel: 'store', storeId, cashier: CASHIERS[storeId],
+            status: roll < 0.02 ? 'refunded' : 'completed', customer: cust, items, subtotal, shipping: 0, discount, coupon: '', vat: 0, total,
+            payment: payments[0].method, payments, due: (payments.find((x) => x.method === 'due') || {}).amount || 0, payRef: '', note: '', notes: []
+          });
+          continue;
+        }
+
         let status;
         if (age > 6) status = roll < 0.84 ? 'completed' : roll < 0.92 ? 'cancelled' : roll < 0.96 ? 'refunded' : 'completed';
         else if (age > 2) status = roll < 0.55 ? 'completed' : roll < 0.9 ? 'processing' : 'on-hold';
         else status = roll < 0.25 ? 'pending' : roll < 0.8 ? 'processing' : 'on-hold';
-        const payment = PAY_KEYS[Math.floor(r() * PAY_KEYS.length)];
         list.push({
-          date: new Date(ts).toISOString(),
-          status, customer: cust, items, subtotal, shipping, discount, coupon: useCoupon ? 'EID200' : '',
-          total: subtotal + shipping - discount, payment, payRef: payment === 'cod' ? '' : 'TX' + Math.floor(r() * 9e7 + 1e7), note: '', notes: []
+          date: new Date(ts).toISOString(), channel: 'online', storeId: 'w1',
+          status, customer: cust, items, subtotal, shipping, discount, coupon: useCoupon ? 'EID200' : '', vat: 0,
+          total, payment: payKey, payRef: payKey === 'cod' ? '' : 'TX' + Math.floor(r() * 9e7 + 1e7), note: '', notes: []
         });
       }
     }
@@ -213,7 +249,10 @@
     { id: 1, name: 'Amnu Admin', username: 'admin', email: 'admin@example.com', role: 'Administrator', date: daysAgo(400), posts: 6 },
     { id: 2, name: 'Shop Manager', username: 'manager', email: 'manager@example.com', role: 'Shop Manager', date: daysAgo(300), posts: 2 },
     { id: 3, name: 'Content Editor', username: 'editor', email: 'editor@example.com', role: 'Editor', date: daysAgo(210), posts: 3 },
-    { id: 4, name: 'Support Agent', username: 'support', email: 'support@example.com', role: 'Customer Support', date: daysAgo(90), posts: 0 }
+    { id: 4, name: 'Support Agent', username: 'support', email: 'support@example.com', role: 'Customer Support', date: daysAgo(90), posts: 0 },
+    { id: 5, name: 'Rafi Hossain', username: 'rafi', email: 'rafi@example.com', role: 'Cashier', date: daysAgo(180), posts: 0, loc: 's1' },
+    { id: 6, name: 'Nusrat Jahan', username: 'nusrat', email: 'nusrat@example.com', role: 'Cashier', date: daysAgo(150), posts: 0, loc: 's2' },
+    { id: 7, name: 'Accounts Officer', username: 'accounts', email: 'accounts@example.com', role: 'Accountant', date: daysAgo(120), posts: 0 }
   ];
 
   const SEED_PLUGINS = [
@@ -251,7 +290,12 @@
   store.statusLabel = (s) => (store.statuses.find((x) => x[0] === s) || [s, s])[1];
   store.statusBadge = (s) => `<span class="badge ${(store.statuses.find((x) => x[0] === s) || [])[2] || ''}">${A.esc(store.statusLabel(s))}</span>`;
 
-  store.settings = () => Object.assign({}, DEFAULT_SETTINGS, DB.get('settings', {}), { shipping: Object.assign({}, DEFAULT_SETTINGS.shipping, (DB.get('settings', {}) || {}).shipping), payments: Object.assign({}, DEFAULT_SETTINGS.payments, (DB.get('settings', {}) || {}).payments) });
+  store.settings = () => {
+    const saved = DB.get('settings', {}) || {};
+    const out = Object.assign({}, DEFAULT_SETTINGS, saved);
+    ['shipping', 'payments', 'loyalty'].forEach((k) => { out[k] = Object.assign({}, DEFAULT_SETTINGS[k], saved[k]); });
+    return out;
+  };
   store.saveSettings = (patch) => DB.set('settings', Object.assign({}, DB.get('settings', {}), patch));
   store.look = () => DB.get('look', null);
   store.shipping = shippingFor;
@@ -315,15 +359,18 @@
     seedOrders = seedOrders || genOrders();
     const fresh = DB.get('orders.new', []);
     const id = 1001 + seedOrders.length + fresh.length;
-    const order = Object.assign({ id, date: new Date().toISOString(), status: 'pending', notes: [] }, o);
+    const order = Object.assign({ id, date: new Date().toISOString(), status: 'pending', notes: [], channel: 'online', vat: 0 }, o);
+    if (!order.storeId) order.storeId = order.channel === 'store' ? 's1' : store.onlineLoc();
     fresh.push(order);
     DB.set('orders.new', fresh);
-    /* reduce stock */
+    /* stock leaves the location that fulfils the sale (per size) */
+    order.items.forEach((it) => store.adjust(it.pid, order.storeId, it.size, -it.qty, 'sale', { ref: order.id }));
     const list = store.products();
-    order.items.forEach((it) => { const p = list.find((x) => x.id === it.pid); if (p) { p.stock = Math.max(0, p.stock - it.qty); p.sold = (p.sold || 0) + it.qty; } });
+    order.items.forEach((it) => { const p = list.find((x) => x.id === it.pid); if (p) p.sold = (p.sold || 0) + it.qty; });
     store.saveProducts(list);
     return order;
   };
+  store.channelOf = (o) => o.channel || 'online';
   store.patchOrder = (id, patch) => { const all = DB.get('orders.patch', {}); all[id] = Object.assign({}, all[id], patch); return DB.set('orders.patch', all); };
   store.deleteOrders = (ids) => DB.set('orders.del', DB.get('orders.del', []).concat(ids));
 
@@ -331,9 +378,10 @@
     const map = new Map();
     store.orders().forEach((o) => {
       const key = o.customer.phone;
-      const c = map.get(key) || Object.assign({}, o.customer, { orders: 0, spent: 0, first: o.date, last: o.date });
+      if (!key) return;                                  /* walk-in sales have no customer record */
+      const c = map.get(key) || Object.assign({}, o.customer, { orders: 0, spent: 0, online: 0, instore: 0, first: o.date, last: o.date });
       c.orders += 1;
-      if (o.status !== 'cancelled' && o.status !== 'refunded') c.spent += o.total;
+      if (o.status !== 'cancelled' && o.status !== 'refunded') { c.spent += o.total; if (store.channelOf(o) === 'store') c.instore += o.total; else c.online += o.total; }
       if (new Date(o.date) > new Date(c.last)) c.last = o.date;
       if (new Date(o.date) < new Date(c.first)) c.first = o.date;
       map.set(key, c);

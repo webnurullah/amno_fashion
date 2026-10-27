@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" data-surface="admin">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Finance Overview ‹ Amnu Fashion Admin</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%236250d6'/%3E%3Cpath d='M32 14 18 50h7l3-8h8l3 8h7zm-2.6 22 2.6-8 2.6 8z' fill='white'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/glass.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <script src="../assets/js/core.js"></script>
+</head>
+<body data-page="finance">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="admin" id="admin">
+    <aside class="sidebar glass" id="sidebar"></aside>
+
+    <div class="admin-main">
+      <header class="topbar glass" id="topbar"></header>
+
+      <main class="content" id="content">
+        <div class="page-head">
+          <div><h1>Finance overview</h1><p class="muted">Revenue, profit, cash and what is owed, for online and store sales together.</p></div>
+          <div class="row gap-8 wrap"><select id="f-range" class="pill-select" aria-label="Date range"><option value="today">Today</option><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="month">This month</option><option value="90">Last 90 days</option></select><a class="btn btn-glass" href="reports.html"><i data-icon="file" data-size="18"></i> Reports</a></div>
+        </div>
+        <section class="kpis" id="f-kpis"></section>
+        <section class="card">
+          <div class="card-h"><div><span class="card-title">Revenue by channel</span><div class="big-row"><b class="big num" id="f-total"></b><span id="f-delta"></span></div></div></div>
+          <div id="f-rev"></div>
+        </section>
+        <section class="dash-two">
+          <div class="card"><div class="card-h"><span class="card-title">Profit &amp; loss</span><span class="xs muted" id="f-period"></span></div><div id="f-pnl"></div></div>
+          <div class="card"><div class="card-h"><span class="card-title">Money position</span></div><div id="f-pos"></div></div>
+        </section>
+        <section class="dash-two">
+          <div class="card"><div class="card-h"><span class="card-title">Sales by location</span></div><div id="f-loc"></div></div>
+          <div class="card"><div class="card-h"><span class="card-title">Expenses by category</span></div><div id="f-exp"></div></div>
+        </section>
+      </main>
+
+      <footer class="admin-footer" id="admin-footer"></footer>
+    </div>
+  </div>
+
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/ops.js"></script>
+  <script src="../assets/js/charts.js"></script>
+  <script src="../assets/js/admin-core.js"></script>
+  <script src="../assets/js/admin-pages.js"></script>
+  <script src="../assets/js/admin-pages2.js"></script>
+  <script src="../assets/js/admin-ops.js"></script>
+  <script src="../assets/js/admin-fin.js"></script>
+  <script>Amnu.admin.boot('finance', Amnu.adminPages['finance']);</script>
+</body>
+</html>

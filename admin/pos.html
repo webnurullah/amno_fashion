@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en" data-surface="admin">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>POS Register ‹ Amnu Fashion Admin</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%236250d6'/%3E%3Cpath d='M32 14 18 50h7l3-8h8l3 8h7zm-2.6 22 2.6-8 2.6 8z' fill='white'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/glass.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <script src="../assets/js/core.js"></script>
+</head>
+<body data-page="pos">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="admin" id="admin">
+    <aside class="sidebar glass" id="sidebar"></aside>
+
+    <div class="admin-main">
+      <header class="topbar glass" id="topbar"></header>
+
+      <main class="content" id="content">
+        <div class="pos-page">
+          <div class="pos-top glass">
+            <div class="row gap-8 wrap">
+              <select id="pos-loc" class="pill-select" aria-label="Showroom"></select>
+              <select id="pos-cashier" class="pill-select" aria-label="Cashier"></select>
+              <span id="pos-status" class="badge"></span>
+            </div>
+            <div class="row gap-8 wrap">
+              <span class="muted small hide-sm" id="pos-clock"></span>
+              <button class="btn btn-glass btn-sm" id="pos-holds" type="button"><i data-icon="pause" data-size="16"></i> Held bills <span class="count-pill" id="holds-n">0</span></button>
+              <a class="btn btn-glass btn-sm" href="day-close.html"><i data-icon="lock" data-size="16"></i> Day close</a>
+            </div>
+          </div>
+          <div class="pos-layout">
+            <section class="pos-catalog">
+              <div class="input-group"><i data-icon="barcode"></i><input id="pos-q" type="search" placeholder="Search products, or type a SKU (e.g. AMN-1004-M) and press Enter" aria-label="Search or scan" autocomplete="off"></div>
+              <div class="chips" id="pos-cats"></div>
+              <div class="pos-grid" id="pos-grid"></div>
+            </section>
+            <aside class="pos-cart glass-strong" id="pos-cart" aria-label="Current sale"></aside>
+          </div>
+        </div>
+      </main>
+
+      <footer class="admin-footer" id="admin-footer"></footer>
+    </div>
+  </div>
+
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/ops.js"></script>
+  <script src="../assets/js/charts.js"></script>
+  <script src="../assets/js/admin-core.js"></script>
+  <script src="../assets/js/admin-pages.js"></script>
+  <script src="../assets/js/admin-pages2.js"></script>
+  <script src="../assets/js/admin-ops.js"></script>
+  <script src="../assets/js/admin-fin.js"></script>
+  <script>Amnu.admin.boot('pos', Amnu.adminPages['pos']);</script>
+</body>
+</html>

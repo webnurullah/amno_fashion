@@ -23,12 +23,13 @@
 
       <main class="content" id="content">
         <div class="page-head">
-          <div><h1>Dashboard</h1><p class="muted">Welcome back. Here's what's happening in your store.</p></div>
+          <div><h1>Dashboard</h1><p class="muted">Welcome back. Here is how your online and store sales are doing.</p></div>
           <div class="row gap-8 wrap">
             <select id="range" aria-label="Date range" class="pill-select">
               <option value="7">Last 7 days</option><option value="14">Last 14 days</option><option value="30">Last 30 days</option><option value="60">Last 60 days</option>
             </select>
-            <a class="btn btn-violet" href="product-edit.html"><i data-icon="plus" data-size="18"></i> Add product</a>
+            <a class="btn btn-glass" href="product-edit.html"><i data-icon="plus" data-size="18"></i> Add product</a>
+            <a class="btn btn-violet" href="pos.html"><i data-icon="receipt" data-size="18"></i> Open POS</a>
           </div>
         </div>
 
@@ -47,6 +48,17 @@
 
         <section class="dash-two">
           <div class="card">
+            <div class="card-h"><div><span class="card-title">Online vs store sales</span><div class="big-row"><b class="small" id="ch-split"></b></div></div></div>
+            <div id="channel-chart"></div>
+          </div>
+          <div class="card">
+            <div class="card-h"><span class="card-title">Stores today</span><a class="btn-link small" href="day-close.html">Day close</a></div>
+            <div id="stores-today"></div>
+          </div>
+        </section>
+
+        <section class="dash-two">
+          <div class="card">
             <div class="card-h"><span class="card-title">Recent orders</span><a class="btn-link small" href="orders.html">View all orders</a></div>
             <div class="table-wrap"><table class="mini-table" id="recent-orders"></table></div>
           </div>
@@ -57,7 +69,7 @@
         </section>
 
         <section class="dash-three">
-          <div class="card"><div class="card-h"><span class="card-title">At a glance</span></div><div id="glance" class="glance"></div></div>
+          <div class="card"><div class="card-h"><span class="card-title">Money snapshot</span><a class="btn-link small" href="finance.html">Finance</a></div><div id="money-snap"></div></div>
           <div class="card"><div class="card-h"><span class="card-title">Stock alerts</span><a class="btn-link small" href="products.html?stock=low">Manage</a></div><div id="stock-alerts" class="top-list"></div></div>
           <div class="card">
             <div class="card-h"><span class="card-title">Quick draft</span></div>
@@ -78,10 +90,13 @@
   </div>
 
   <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/ops.js"></script>
   <script src="../assets/js/charts.js"></script>
   <script src="../assets/js/admin-core.js"></script>
   <script src="../assets/js/admin-pages.js"></script>
   <script src="../assets/js/admin-pages2.js"></script>
+  <script src="../assets/js/admin-ops.js"></script>
+  <script src="../assets/js/admin-fin.js"></script>
   <script>Amnu.admin.boot('dashboard', Amnu.adminPages.dashboard);</script>
 </body>
 </html>

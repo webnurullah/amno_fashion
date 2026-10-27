@@ -23,6 +23,24 @@
   Admin.actions = (list) => `<div class="row-actions">${list.filter(Boolean).map((a) => (a.href
     ? `<a href="${a.href}" ${a.target ? `target="${a.target}"` : ''} class="${a.danger ? 'danger' : ''}">${esc(a.label)}</a>`
     : `<button type="button" data-act="${a.act}" data-id="${esc(a.id)}" class="${a.danger ? 'danger' : ''}">${esc(a.label)}</button>`)).join('<span class="sep">|</span>')}</div>`;
+  /** <option> list of locations (optionally with an "All" entry) */
+  Admin.locOptions = (sel, all) => `${all ? `<option value="">${all}</option>` : ''}${S.locations().map((l) => `<option value="${l.id}" ${sel === l.id ? 'selected' : ''}>${esc(l.name)}</option>`).join('')}`;
+  Admin.accountOptions = (sel) => S.accounts().map((a) => `<option value="${a.id}" ${sel === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('');
+  /** download rows as CSV */
+  Admin.csv = (name, rows) => {
+    const csv = rows.map((r) => r.map((c) => `"${String(c == null ? '' : c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = name; a.click();
+    A.toast('Exported ' + name);
+  };
+  /** show html in a modal and print only that (receipts, Z-reports, invoices) */
+  Admin.printModal = (title, html, wide) => A.modal({
+    title, wide, body: `<div class="print-area">${html}</div>`,
+    footer: `<button class="btn btn-ghost" data-close>Close</button><button class="btn btn-violet" data-print>${icon('printer', 16)} Print</button>`,
+    onOpen(el) { el.querySelector('[data-print]').addEventListener('click', () => { document.body.classList.add('printing'); window.print(); document.body.classList.remove('printing'); }); }
+  });
+  Admin.channelBadge = (o) => (S.channelOf(o) === 'store' ? `<span class="badge b-violet">Store · ${esc(S.locName(o.storeId).replace(' Showroom', ''))}</span>` : '<span class="badge b-info">Online</span>');
   Admin.pageBadge = (status) => (status === 'publish' ? '<span class="badge b-ok">Published</span>' : status === 'draft' ? '<span class="badge b-warn">Draft</span>' : `<span class="badge">${esc(status)}</span>`);
   Admin.stockHTML = (p) => {
     const st = S.stockState(p);
@@ -39,15 +57,30 @@
     const open = S.orders().filter((o) => o.status === 'processing' || o.status === 'pending').length;
     return [
       { id: 'dashboard', label: 'Dashboard', icon: 'home', href: 'index.html' },
+      { heading: 'Sales' },
       { id: 'orders', label: 'Orders', icon: 'bag', href: 'orders.html', badge: open },
-      { id: 'products', label: 'Products', icon: 'package', href: 'products.html', sub: [['All Products', 'products.html', 'products'], ['Add New', 'product-edit.html', 'product-edit'], ['Categories', 'categories.html', 'categories']] },
+      { id: 'pos', label: 'POS register', icon: 'receipt', href: 'pos.html' },
       { id: 'customers', label: 'Customers', icon: 'users', href: 'customers.html' },
       { id: 'coupons', label: 'Coupons', icon: 'tag', href: 'coupons.html' },
+      { id: 'loyalty', label: 'Loyalty points', icon: 'sparkle', href: 'loyalty.html' },
+      { heading: 'Catalog' },
+      { id: 'products', label: 'Products', icon: 'package', href: 'products.html', sub: [['All Products', 'products.html', 'products'], ['Add New', 'product-edit.html', 'product-edit'], ['Categories', 'categories.html', 'categories']] },
+      { id: 'inventory', label: 'Inventory', icon: 'barcode', href: 'inventory.html' },
       { id: 'media', label: 'Media', icon: 'image', href: 'media.html' },
       { id: 'pages', label: 'Pages & Posts', icon: 'file', href: 'pages.html' },
+      { heading: 'Purchasing' },
+      { id: 'suppliers', label: 'Suppliers', icon: 'truck', href: 'suppliers.html' },
+      { id: 'purchases', label: 'Purchases', icon: 'swap', href: 'purchases.html' },
+      { heading: 'Finance' },
+      { id: 'finance', label: 'Finance overview', icon: 'coins', href: 'finance.html' },
+      { id: 'expenses', label: 'Expenses', icon: 'trend-down', href: 'expenses.html' },
+      { id: 'accounts', label: 'Accounts & ledger', icon: 'bank', href: 'accounts.html' },
+      { id: 'day-close', label: 'Day close', icon: 'lock', href: 'day-close.html' },
+      { id: 'reports', label: 'Reports', icon: 'file', href: 'reports.html' },
       { id: 'analytics', label: 'Analytics', icon: 'chart', href: 'analytics.html' },
       { heading: 'Site' },
       { id: 'appearance', label: 'Appearance', icon: 'layout', href: 'appearance.html' },
+      { id: 'locations', label: 'Locations', icon: 'building', href: 'locations.html' },
       { id: 'plugins', label: 'Plugins', icon: 'plug', href: 'plugins.html' },
       { id: 'users', label: 'Users', icon: 'user', href: 'users.html' },
       { id: 'settings', label: 'Settings', icon: 'sliders', href: 'settings.html' }
@@ -79,17 +112,21 @@
     const lowStock = S.products().filter((p) => p.status === 'publish' && p.stock <= settings.lowStock).length;
     const openOrders = S.orders().filter((o) => o.status === 'processing' || o.status === 'pending').length;
     const drafts = S.pages().filter((p) => p.status === 'draft').length;
+    const today = A.ymd(Date.now());
+    const unclosed = S.showrooms().filter((l) => !S.closeFor(l.id, today)).length;
     const alerts = openOrders + lowStock + drafts;
     return `<button class="icon-btn only-mobile" id="side-open" aria-label="Open menu">${icon('menu', 22)}</button>
       <button class="search-btn" id="search-open" type="button" aria-label="Search">${icon('search', 18)}<span>Search anything…</span><kbd>⌘ K</kbd></button>
       <div class="top-actions">
         <div class="dd"><button class="btn btn-violet btn-sm" data-dd aria-haspopup="true">${icon('plus', 16)} <span class="hide-sm">New</span></button>
-          <div class="dd-menu glass-strong"><a href="product-edit.html">${icon('package', 18)} Product</a><a href="pages.html?new=post">${icon('file', 18)} Post</a><a href="pages.html?new=page">${icon('file', 18)} Page</a><a href="coupons.html?new=1">${icon('tag', 18)} Coupon</a><a href="media.html">${icon('image', 18)} Media</a><a href="users.html?new=1">${icon('user', 18)} User</a></div></div>
+          <div class="dd-menu glass-strong"><a href="pos.html">${icon('receipt', 18)} POS sale</a><a href="product-edit.html">${icon('package', 18)} Product</a><a href="expenses.html?new=1">${icon('trend-down', 18)} Expense</a><a href="purchases.html?new=1">${icon('swap', 18)} Purchase order</a><a href="pages.html?new=post">${icon('file', 18)} Post</a><a href="coupons.html?new=1">${icon('tag', 18)} Coupon</a><a href="users.html?new=1">${icon('user', 18)} User</a></div></div>
         <div class="dd"><button class="icon-btn" data-dd aria-label="Notifications" aria-haspopup="true">${icon('bell', 20)}${alerts ? '<span class="pulse"></span>' : ''}</button>
           <div class="dd-menu glass-strong wide"><div class="dd-h">Notifications</div>
             <a href="orders.html?status=processing">${icon('bag', 18)}<span><b>${openOrders}</b> orders waiting to be processed</span></a>
             <a href="products.html?stock=low">${icon('alert', 18)}<span><b>${lowStock}</b> products low or out of stock</span></a>
-            <a href="pages.html?view=draft">${icon('file', 18)}<span><b>${drafts}</b> drafts to review</span></a></div></div>
+            <a href="pages.html?view=draft">${icon('file', 18)}<span><b>${drafts}</b> drafts to review</span></a>
+            <a href="day-close.html">${icon('lock', 18)}<span><b>${unclosed}</b> showroom${unclosed === 1 ? '' : 's'} not closed for today</span></a>
+            <a href="finance.html">${icon('coins', 18)}<span><b>${money(S.payables())}</b> owed to suppliers</span></a></div></div>
         <button class="icon-btn" data-theme-toggle aria-label="Toggle dark mode">${A.themeIcon()}</button>
         <a class="btn btn-glass btn-sm hide-sm" href="../index.html" target="_blank" rel="noopener">${icon('external', 16)} Visit site</a>
         <div class="dd"><button class="user-btn" data-dd aria-haspopup="true">${Admin.avatar('Amnu Admin', 'sm')}<span class="hide-sm">Howdy, <b>Admin</b></span>${icon('chevron-down', 16)}</button>
