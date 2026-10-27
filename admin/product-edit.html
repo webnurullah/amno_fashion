@@ -62,8 +62,8 @@
                     </div>
                     <div class="pd-panel col" id="pd-inventory" hidden>
                       <div class="field"><label for="p-sku">SKU</label><input id="p-sku" type="text" placeholder="Auto-generated if empty"></div>
-                      <div class="field"><label for="p-stock">Stock quantity</label><input id="p-stock" type="number" min="0" step="1"></div>
-                      <div class="field"><span class="label">Stock status</span><div id="p-stockstate"></div><span class="hint">Calculated from the quantity and your low-stock threshold (Settings → Store).</span></div>
+                      <div class="field"><label for="p-cost">Unit cost (৳)</label><input id="p-cost" type="number" min="0" step="1" placeholder="0"><span class="hint">What one piece costs you. Used for gross profit and stock value.</span></div>
+                      <div class="field"><span class="label">Stock by location</span><div id="p-inv"></div><span class="hint">Edit quantities in <a class="btn-link" href="inventory.html">Inventory</a> after saving, or receive stock through a purchase order.</span></div>
                     </div>
                     <div class="pd-panel col" id="pd-shipping" hidden>
                       <div class="field"><label for="p-weight">Weight (kg)</label><input id="p-weight" type="number" min="0" step="0.1"></div>
@@ -142,10 +142,13 @@
   </div>
 
   <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/ops.js"></script>
   <script src="../assets/js/charts.js"></script>
   <script src="../assets/js/admin-core.js"></script>
   <script src="../assets/js/admin-pages.js"></script>
   <script src="../assets/js/admin-pages2.js"></script>
+  <script src="../assets/js/admin-ops.js"></script>
+  <script src="../assets/js/admin-fin.js"></script>
   <script>Amnu.admin.boot('product-edit', Amnu.adminPages['product-edit']);</script>
 </body>
 </html>

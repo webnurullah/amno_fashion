@@ -1,12 +1,19 @@
-# Amnu Fashion — Panjabi e-commerce HTML template
+# Amnu Fashion — Panjabi store: online shop + store counter + finance, one HTML template
 
-A complete, dependency-free HTML/CSS/JS template for a Panjabi store: a glassmorphism
-**storefront** plus a **WordPress-style admin dashboard**. No build step, no framework.
+A complete, dependency-free HTML/CSS/JS template for a Panjabi brand that sells **online and in its
+own showrooms** and wants both managed from one place:
+
+* a glassmorphism **storefront** (neutral black / grey / red palette, laid out like a modern
+  fashion e-commerce site);
+* a **WordPress-style admin** with a **POS register**, multi-location **inventory**, **purchasing**,
+  daily **cash close**, and **finance & revenue** screens (P&L, expenses, accounts, reports).
+
+No build step, no framework.
 
 > **Everything here is sample content.** Product names, prices, reviews, orders, customers,
-> phone numbers and the about-us copy are placeholders. The only real value taken from the
-> brief is the Facebook page link (`https://www.facebook.com/amnufashionbd/`). Replace the rest
-> with the real business details (see [Making it real](#making-it-real)).
+> phone numbers, showroom addresses and the about-us copy are placeholders. The only real value
+> taken from the brief is the Facebook page link (`https://www.facebook.com/amnufashionbd/`).
+> Replace the rest with the real business details (see [Making it real](#making-it-real)).
 
 ## Quick start
 
@@ -18,10 +25,30 @@ python3 -m http.server 8000      # then open http://localhost:8000
 
 * Storefront: `index.html`
 * Admin: `admin/login.html` (demo only: any non-empty username and password signs in) or `admin/index.html`
+* Store counter: `admin/pos.html`
 
 > Opening files straight from disk works in Chromium-based browsers. Firefox gives every
 > `file://` page its own storage, so storefront and admin won't share demo data there. Use a
 > local server in Firefox/Safari.
+
+## One system, two channels
+
+Online orders and store sales live in **one orders table** (`channel: 'online' | 'store'`) and draw
+from **one inventory**, so the numbers always agree:
+
+| | Online | Store (POS) |
+| --- | --- | --- |
+| Where it's sold | `checkout.html` | `admin/pos.html` |
+| Stock leaves | the online-fulfilment location (Settings → Store & POS) or, for click & collect, the chosen showroom | the showroom running the register |
+| Stock granularity | per size, per location | per size, per location |
+| Payment tenders | COD, bKash, Nagad, card | cash, card, bKash, Nagad, on credit (due), split across several |
+| Money lands in | bank / wallets (COD settles into the bank) | cash drawer, bank, wallets |
+| Customer record | by phone number | optional phone number; walk-ins allowed |
+| Loyalty points | earn and redeem | earn and redeem |
+
+What this gives you on the storefront side: **Find in store** (live stock per showroom), **click &
+collect** at checkout (deducts from that showroom), and a **Store Purchases** list in the customer's
+account next to their online orders. Points earned at the counter appear in the same account.
 
 ## What's included
 
@@ -29,42 +56,73 @@ python3 -m http.server 8000      # then open http://localhost:8000
 
 | Page | File |
 | --- | --- |
-| Home (hero, categories, new arrivals, Eid promo + countdown, trending tabs, reviews, Facebook CTA, newsletter) | `index.html` |
-| Shop: category / price / size / colour / stock / sale filters, sort, grid ↔ list, pagination, wishlist view | `shop.html` |
-| Product: colour + size pickers, 4 gallery views, size guide, tabs, reviews, related | `product.html` |
-| Cart: quantity, coupons, order summary · slide-in mini-cart on every page | `cart.html` |
-| Checkout: BD phone validation, 64 districts, inside/outside Dhaka delivery, COD / bKash / Nagad / card | `checkout.html` |
-| Order received · Track order (timeline) | `thank-you.html`, `track-order.html` |
-| About · Contact (Messenger, phone, email) | `about.html`, `contact.html` |
+| Home: hero tiles, category circles, new arrivals, offers, trending, reviews | `index.html` |
+| Category landing · Shop (filters, sort, grid, pagination) | `category.html`, `shop.html` |
+| Product: colour + size pickers, per-size stock, Find in store, size guide, reviews, related | `product.html` |
+| Shopping bag (select items, coupon, summary) · slide-in bag on every page | `bag.html` |
+| Checkout: address book, delivery method (home / courier / showroom pickup), COD or digital payment (bKash / Nagad / card), pay-online discount, loyalty points, VAT line when enabled | `checkout.html` |
+| Order received · Track order | `thank-you.html`, `track-order.html` |
+| Log in / register · My account (profile, order history split Online vs Store, addresses, loyalty points) | `login.html`, `account.html` |
+| Store locations · Policies (shipping, terms, privacy, payment, exchange, size guide, loyalty) · About · Contact | `stores.html`, `policy.html`, `about.html`, `contact.html` |
 
-### Admin (`/admin`) — WordPress-style
+### Admin (`/admin`)
 
-| Screen | File |
+| Area | Screens |
 | --- | --- |
-| Dashboard: KPI tiles, sales chart, sparkline stats, recent orders, top products, at-a-glance, stock alerts, quick draft | `index.html` |
-| Products: list table with views, bulk actions, filters, sort, **Screen Options**, quick edit, duplicate | `products.html` |
-| Product editor: rich-text box, Product-data tabs, Publish box, categories, tags, image + gallery upload, live storefront preview | `product-edit.html` |
-| Categories · Orders · Order detail (status, notes, print invoice) · Customers · Coupons | `categories.html`, `orders.html`, `order-view.html`, `customers.html`, `coupons.html` |
-| Media library · Pages & Posts · Users · Plugins | `media.html`, `pages.html`, `users.html`, `plugins.html` |
-| Appearance → **Customize** with live iframe preview (accent colour, blur, opacity, radius, hero text) | `appearance.html` |
-| Analytics (revenue, orders/day, category, status, payment, district, funnel, CSV export) · Settings · Login | `analytics.html`, `settings.html`, `login.html` |
+| **Sales** | Orders (online + store, filter by channel / location / payment, split tenders, restock on cancel) · Order detail (receipt, invoice, notes) · **POS register** · Customers (points, dues, online vs store spend, collect due) · Coupons · **Loyalty points** |
+| **Catalog** | Products · Product editor (cost price, opening stock by size) · Categories · **Inventory** (stock by showroom / warehouse / size, adjust, transfer, movement history, low-stock) · Media · Pages & Posts |
+| **Purchasing** | **Suppliers** · **Purchase orders** (order, receive into a location, pay in part or full, what you owe) |
+| **Finance** | **Finance overview** (revenue online vs store, gross profit, expenses, net profit, cash position) · **Expenses** · **Accounts & ledger** (cash, bank, bKash, Nagad; transfers; other income) · **Day close** (count the drawer, variance, deposit, Z-report) · **Reports** (sales, P&L, expenses, stock value, VAT, dues; CSV + print) · Analytics (channel filter) |
+| **Site** | Appearance → Customize (live preview) · **Locations** · Plugins · Users (Cashier / Accountant roles) · Settings (Store & POS: fulfilment location, VAT, BIN, receipt footer, pay-online discount) |
 
-Extras: command palette (`Ctrl/⌘ + K`), collapsible sidebar, light/dark mode, responsive down to
-phones, keyboard-accessible charts with a "view as table" fallback.
+Extras: command palette (`Ctrl/⌘ + K`), collapsible sidebar, light/dark mode, WordPress-style list
+tables (views, bulk actions, filters, sort, Screen Options), responsive down to phones,
+keyboard-accessible charts with a "view as table" fallback.
+
+### Typical day at the store
+
+1. **Open** `pos.html`, pick the showroom and cashier. The drawer starts with yesterday's float.
+2. **Sell**: tap a product (or type a SKU such as `AMN-1004-M` and press Enter), pick colour + size, add a
+   customer's mobile number for points, apply a discount or redeem points, then **Pay**. Split the
+   payment across cash / card / bKash / Nagad, or put part of it on credit. The receipt prints from the
+   browser. **Hold** a bill to serve someone else first.
+3. **Spend**: record cash paid out (tea, courier, repairs) under *Expenses*, paid from *Cash in hand*.
+4. **Close**: in *Day close* count notes by denomination. The system shows expected cash (float + cash
+   sales − cash expenses) against what you counted, the variance, and how much to deposit to the bank.
+   Submitting locks the day and posts a **Z-report**.
+5. **Owner view**: *Finance overview* shows online and store revenue side by side, profit and loss,
+   and where the money is (cash, bank, wallets, owed by customers, owed to suppliers, stock at cost).
+
+### How the money is counted
+
+* **Revenue** = item subtotal − discounts (delivery charges and VAT are excluded). **Gross profit** =
+  revenue − cost of goods sold (each product's unit cost × quantity). **Net profit** = gross profit +
+  delivery charges collected − operating expenses.
+* Cancelled and refunded orders are excluded and their pieces return to stock.
+* Online prepaid orders count as cash received once they are *processing*; COD counts once *completed*
+  (and is assumed to settle into the bank). Wallet receipts are settled to the bank weekly in the
+  sample data.
+* Customer dues (credit sales) and supplier balances are tracked as receivables / payables.
+* Loyalty: 1 point per ৳100 spent, 1 point = ৳1, redeem from 100 points (all editable in
+  *Loyalty points*). VAT defaults to **0 %** (off); set a rate in *Settings → Store & POS*.
 
 ## How the demo works
 
-Products, orders, coupons, settings and uploads are saved in the browser's `localStorage`
-(`amnu.*` keys), so every screen is functional without a server:
+Products, orders, inventory, expenses, purchase orders, day closes, settings and uploads are saved
+in the browser's `localStorage` (`amnu.*` keys), so every screen is functional without a server:
 
-* Place an order on the storefront → it appears in **Admin → Orders** and on the dashboard.
-* Publish a product in the admin → it shows up in the shop immediately.
-* Change **Settings → Shipping** → checkout totals change.
+* Place an order on the storefront → it appears in **Admin → Orders**, reduces stock and moves money.
+* Ring up a sale on the **POS** → it shows in Orders (channel *Store*), the customer's account,
+  Day close, the ledger and the dashboard.
+* Receive a **purchase order** → stock rises at that location and the supplier balance updates.
 * **Settings → Advanced** exports the data as JSON or resets everything to the sample content.
 
-Sample orders are generated on load (deterministic, relative to today) so the dashboard always
-has recent data. Traffic / sessions / funnel stages are **simulated**; purchases and revenue
-come from the orders.
+Sample data (about 60 days: online orders, store sales, expenses, purchases, day closes) is generated
+deterministically relative to today, so dashboards and reports always have recent numbers. Traffic,
+sessions and funnel stages are **simulated**; revenue and profit come from the orders.
+
+Sample setup: one **Central Warehouse** (fulfils online orders) and two showrooms (**Dhanmondi**,
+**Chattogram**), four suppliers, four accounts, and staff users including two cashiers and an accountant.
 
 ## Design system
 
@@ -72,7 +130,7 @@ come from the orders.
 
 ```css
 :root {
-  --accent: #e24b25;        /* storefront coral   (Appearance → Customize edits this) */
+  --accent: #121216;        /* storefront accent: black (Appearance → Customize edits this) */
   --primary: #6250d6;       /* admin violet */
   --glass-a: .4;            /* panel opacity */
   --blur: 22px;             /* backdrop blur */
@@ -85,42 +143,55 @@ come from the orders.
 * Product pictures are SVG illustrations generated from each product's colour + style
   (`Amnu.panjabi()` in `core.js`), so the template looks complete with no image assets.
   Uploading a photo in the admin replaces the illustration automatically.
-* Fonts: Poppins and Hind Siliguri (Bangla) from Google Fonts; system fonts are the fallback.
+* Charts follow one-axis, thin-mark rules with a colour-blind-safe blue / orange pair for online vs store.
+* Fonts: Poppins, Manrope and Hind Siliguri (Bangla) from Google Fonts; system fonts are the fallback.
 
 ## Project structure
 
 ```
-index.html shop.html product.html cart.html checkout.html …   storefront pages
-admin/*.html                                                  admin pages
+index.html shop.html product.html bag.html checkout.html …   storefront pages
+admin/*.html                                                 admin pages
 assets/css/  glass.css  store.css  admin.css
-assets/js/   core.js         icons, storage, formatting, Panjabi SVG, modal/toast, theme
-             data.js         sample data + the Amnu.store API  ← swap for your backend
-             store.js        storefront: header/footer/cart/search + page renderers
-             charts.js       dependency-free SVG charts
-             admin-core.js   admin shell, command palette, WP-style list table
-             admin-pages.js  dashboard · products · editor · categories · orders · customers
-             admin-pages2.js coupons · media · pages · customize · analytics · users · plugins · settings
+assets/js/   core.js          icons, storage, formatting, Panjabi SVG, modal/toast, theme
+             data.js          sample data + the Amnu.store API  ← swap for your backend
+             ops.js           store operations layer: locations, per-size inventory, accounts +
+                              ledger, expenses, suppliers / purchases, day close, loyalty, P&L
+             store-core.js    storefront shell: header, footer, bag, search, auth
+             store-pages.js   home · category · shop · product · bag · checkout · thank-you
+             store-pages2.js  login · account · stores · policy · about · contact · track
+             charts.js        dependency-free SVG charts (area, columns, stacked, bars)
+             admin-core.js    admin shell, command palette, WP-style list table
+             admin-pages.js   dashboard · products · editor · categories · orders · customers
+             admin-pages2.js  coupons · media · pages · customize · analytics · users · plugins · settings
+             admin-ops.js     POS · inventory · locations · suppliers · purchases · day close · receipts
+             admin-fin.js     finance overview · expenses · accounts · reports · loyalty
 ```
 
 Header, footer and the admin shell are injected from JavaScript so they are written once. Page
-bodies are plain HTML.
+bodies are plain HTML. Script order matters (classic scripts, no modules): `core` → `data` → `ops` →
+the page scripts.
 
 ## Making it real
 
-1. **Content.** Replace the arrays in `assets/js/data.js` (categories, products, copy), the contact
-   details in *Admin → Settings → General*, and the placeholder about-us text in `about.html`.
-   Facebook content wasn't available when this was built, so no real photos, prices or
-   descriptions were imported.
-2. **Backend.** `Amnu.store` (in `data.js`) is the only data layer: every screen calls it. Replace
-   its methods with `fetch()` calls to your API, or to the WordPress / WooCommerce REST API.
-3. **Authentication.** `admin/login.html` is a demo and does **not** authenticate anyone. Anything in
-   `/admin` is publicly reachable until you protect it server-side.
-4. **Payments & couriers.** bKash / Nagad show the manual "send money + enter TrxID" flow; card
-   payment, courier APIs and SMS are placeholders (see *Plugins*). Integrate real gateways
-   server-side. Never trust totals computed in the browser.
-5. **As a WordPress theme.** This is an HTML template, not a theme. A typical mapping:
+1. **Content.** Replace the arrays in `assets/js/data.js` (categories, products, copy), the
+   locations / suppliers / accounts in `assets/js/ops.js`, the contact details in
+   *Admin → Settings → General*, and the placeholder about-us text in `about.html`. Facebook content
+   wasn't available when this was built, so no real photos, prices or descriptions were imported.
+2. **Backend.** `Amnu.store` (in `data.js` and `ops.js`) is the only data layer: every screen calls it.
+   Replace its methods with `fetch()` calls to your API. The money logic (ledger, P&L, stock moves)
+   must run **server-side** in production: never trust totals computed in the browser.
+3. **Authentication & roles.** `admin/login.html` is a demo and does **not** authenticate anyone, and
+   the Cashier / Accountant roles are labels only. Anything in `/admin` is publicly reachable until you
+   protect it server-side; a real system should limit cashiers to the POS and day close.
+4. **Payments, receipts & hardware.** bKash / Nagad show the manual "send money + enter TrxID" flow;
+   card payment, courier APIs and SMS are placeholders. Receipts print through the browser; for a
+   thermal printer or barcode scanner, use a browser-print setup or a vendor SDK (a keyboard-style
+   scanner already works in the POS search box).
+5. **Tax.** VAT is a simple percentage on the order. Confirm rates, invoicing and BIN rules with your
+   accountant before relying on the VAT report.
+6. **As a WordPress / WooCommerce theme.** This is an HTML template, not a theme. A typical mapping:
    `index.html → front-page.php`, `shop.html → archive-product.php`,
-   `product.html → single-product.php`, `cart.html` / `checkout.html → WooCommerce templates`,
+   `product.html → single-product.php`, `bag.html` / `checkout.html → WooCommerce templates`,
    `assets/` → theme assets. The admin screens are a visual design you can build as a custom
    admin or use as a reference to restyle `wp-admin`.
 

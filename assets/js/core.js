@@ -153,7 +153,23 @@
     info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
     alert: '<path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/>',
     lock: '<rect x="4" y="10" width="16" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
-    gift: '<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M5 12v9h14v-9M12 8v13M12 8c-2.5 0-4.5-.8-4.5-2.5S9.5 3 12 8zM12 8c2.5 0 4.5-.8 4.5-2.5S14.5 3 12 8z"/>'
+    'bag-plus': '<path d="M5.5 8h13l1 12.5h-15z"/><path d="M9 8V7a3 3 0 0 1 6 0v1M12 12.5v5M9.5 15h5"/>',
+    ruler: '<path d="m3 17 14-14 4 4L7 21z"/><path d="m7 13 2 2M10 10l2 2M13 7l2 2"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+    receipt: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6"/>',
+    barcode: '<path d="M4 5v14M7 5v14M11 5v14M14 5v14M17 5v14M20 5v14"/>',
+    building: '<path d="M4 21V5l8-2 8 2v16M4 21h16M9 9h2M13 9h2M9 13h2M13 13h2M10 21v-4h4v4"/>',
+    swap: '<path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/>',
+    pause: '<path d="M8 5v14M16 5v14"/>',
+    coins: '<ellipse cx="9" cy="7" rx="6" ry="3"/><path d="M3 7v5c0 1.7 2.7 3 6 3s6-1.3 6-3V7M15 10.5c3 .2 6 1.3 6 2.5v4c0 1.7-2.7 3-6 3-2 0-3.8-.5-4.9-1.2"/>',
+    bank: '<path d="M3 10 12 4l9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/>',
+    history: '<path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2"/>',
+    'check-circle': '<circle cx="12" cy="12" r="9"/><path d="m8 12.5 3 3 5-6"/>',
+    'trend-down': '<path d="m3 7 6 6 4-4 8 8M15 17h6v-6"/>',
+    scale: '<path d="M12 3v18M5 21h14M5 7h14M5 7l-3 7a3 3 0 0 0 6 0zM19 7l-3 7a3 3 0 0 0 6 0z"/>',
+    whatsapp: '<path d="M3 21l1.6-5A8.5 8.5 0 1 1 8 19.4zM9 9c0 3.5 3 6 6 6l1.2-1.5-2-1-1 .7c-.9-.4-1.7-1.2-2.1-2.1l.7-1-1-2z"/>',
+    mapnav: '<path d="m3 11 18-8-8 18-2-8z"/>',
+    user2: '<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/><path d="M17 3l1 1 2-2"/>'
   };
   A.icon = (name, size, cls) => {
     const body = P[name] || P.info;
@@ -177,7 +193,8 @@
      the template looks complete with zero image assets.
      style: plain | embroidered | jacquard | stripe     view: front | back | detail | fabric */
   let pjId = 0;
-  A.panjabi = (color = '#1f2a5c', style = 'plain', view = 'front') => {
+  A.panjabi = (color = '#1f2a5c', style = 'plain', view = 'front', stand) => {
+    if (stand == null) stand = view === 'front' || view === 'back';
     const id = 'pj' + ++pjId;
     const light = A.shade(color, 0.24);
     const dark = A.shade(color, -0.3);
@@ -201,6 +218,7 @@
       <linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${light}"/><stop offset=".5" stop-color="${color}"/><stop offset="1" stop-color="${dark}"/></linearGradient>
       <linearGradient id="${id}s" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".26"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".18"/></linearGradient>
       <linearGradient id="${id}f" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${light}"/><stop offset="1" stop-color="${dark}"/></linearGradient>
+      <linearGradient id="${id}k" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#b98f35"/><stop offset=".5" stop-color="#f0d58a"/><stop offset="1" stop-color="#b98f35"/></linearGradient>
       ${pattern}</defs>`;
 
     if (view === 'fabric') {
@@ -227,8 +245,9 @@
         `<path d="M86 16 Q100 38 114 16 L121 19 Q100 48 79 19 Z" fill="${dark}"/><path d="M86 16 Q100 38 114 16" stroke="${trim}" stroke-opacity=".7" stroke-width="1" fill="none"/>`;
     }
     const seams = `<path d="M62 92 L57 38 M138 92 L143 38" stroke="${edge}" stroke-width="1" fill="none"/><path d="M55.5 226 L54 252 M144.5 226 L146 252" stroke="${edge}" stroke-width="1.4"/>`;
-    const vb = view === 'detail' ? '48 4 104 104' : '0 0 200 262';
-    return `<svg class="pj" viewBox="${vb}" role="img" aria-label="Panjabi illustration">${defs}
+    const vb = view === 'detail' ? '48 4 104 104' : stand ? '0 0 200 304' : '0 0 200 262';
+    const standSvg = stand ? `<ellipse cx="100" cy="298" rx="46" ry="4" fill="rgba(0,0,0,.16)"/><rect x="97.5" y="236" width="5" height="56" rx="2" fill="url(#${id}k)"/><path d="M100 290 L70 298 M100 290 L130 298" stroke="#c4a04a" stroke-width="3.6" stroke-linecap="round"/><ellipse cx="100" cy="9" rx="8" ry="4.2" fill="#b98f35"/>` : '';
+    return `<svg class="pj" viewBox="${vb}" role="img" aria-label="Panjabi illustration">${defs}${standSvg}
       <path d="${body}" fill="url(#${id}g)" stroke="${edge}" stroke-width="1.4" stroke-linejoin="round"/>
       ${overlay}<path d="${body}" fill="url(#${id}s)"/>${seams}${front}</svg>`;
   };

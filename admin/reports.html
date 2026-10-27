@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en" data-surface="admin">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reports ‹ Amnu Fashion Admin</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%236250d6'/%3E%3Cpath d='M32 14 18 50h7l3-8h8l3 8h7zm-2.6 22 2.6-8 2.6 8z' fill='white'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/glass.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <script src="../assets/js/core.js"></script>
+</head>
+<body data-page="reports">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="admin" id="admin">
+    <aside class="sidebar glass" id="sidebar"></aside>
+
+    <div class="admin-main">
+      <header class="topbar glass" id="topbar"></header>
+
+      <main class="content" id="content">
+        <div class="page-head">
+          <div><h1>Reports</h1><p class="muted">Printable summaries for your accountant: sales, profit, expenses, stock value, VAT and dues.</p></div>
+          <div class="row gap-8 wrap"><select id="rep-range" class="pill-select" aria-label="Date range"><option value="today">Today</option><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="month">This month</option><option value="90">Last 90 days</option><option value="365">Last 12 months</option></select><button class="btn btn-glass" id="rep-csv" type="button"><i data-icon="download" data-size="18"></i> CSV</button><button class="btn btn-violet" id="rep-print" type="button"><i data-icon="printer" data-size="18"></i> Print</button></div>
+        </div>
+        <div class="tabs" id="rep-tabs" role="tablist" style="align-self:flex-start;max-width:100%;overflow-x:auto">
+          <button type="button" role="tab" data-tab="sales" aria-selected="true">Sales</button>
+          <button type="button" role="tab" data-tab="pnl" aria-selected="false">Profit &amp; loss</button>
+          <button type="button" role="tab" data-tab="expenses" aria-selected="false">Expenses</button>
+          <button type="button" role="tab" data-tab="stock" aria-selected="false">Stock value</button>
+          <button type="button" role="tab" data-tab="vat" aria-selected="false">VAT</button>
+          <button type="button" role="tab" data-tab="dues" aria-selected="false">Dues</button>
+        </div>
+        <section class="card report-card" id="rep-body"></section>
+      </main>
+
+      <footer class="admin-footer" id="admin-footer"></footer>
+    </div>
+  </div>
+
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/ops.js"></script>
+  <script src="../assets/js/charts.js"></script>
+  <script src="../assets/js/admin-core.js"></script>
+  <script src="../assets/js/admin-pages.js"></script>
+  <script src="../assets/js/admin-pages2.js"></script>
+  <script src="../assets/js/admin-ops.js"></script>
+  <script src="../assets/js/admin-fin.js"></script>
+  <script>Amnu.admin.boot('reports', Amnu.adminPages['reports']);</script>
+</body>
+</html>

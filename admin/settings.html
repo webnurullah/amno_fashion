@@ -31,7 +31,7 @@
             <button type="button" role="tab" data-tab="general" aria-selected="true">General</button>
             <button type="button" role="tab" data-tab="shipping" aria-selected="false">Shipping</button>
             <button type="button" role="tab" data-tab="payments" aria-selected="false">Payments</button>
-            <button type="button" role="tab" data-tab="store" aria-selected="false">Store</button>
+            <button type="button" role="tab" data-tab="store" aria-selected="false">Store &amp; POS</button>
             <button type="button" role="tab" data-tab="advanced" aria-selected="false">Advanced</button>
           </div>
 
@@ -74,8 +74,19 @@
           </section>
 
           <section class="card tab-panel" id="tab-store" hidden>
-            <h3 class="sub-h">Inventory</h3>
-            <div class="form-grid2"><div class="field"><label for="s-low">Low-stock threshold</label><input id="s-low" data-key="lowStock" type="number" min="0"><span class="hint">Products at or below this quantity are flagged as low stock.</span><span class="msg">Enter 0 or more.</span></div></div>
+            <h3 class="sub-h">Inventory &amp; fulfilment</h3>
+            <div class="form-grid2">
+              <div class="field"><label for="s-low">Low-stock threshold</label><input id="s-low" data-key="lowStock" type="number" min="0"><span class="hint">Products at or below this quantity are flagged as low stock.</span><span class="msg">Enter 0 or more.</span></div>
+              <div class="field"><label for="s-online">Online orders ship from</label><select id="s-online" data-key="onlineLoc"></select><span class="hint">Online orders take stock from this location. Showrooms keep their own stock for the counter.</span></div>
+              <div class="field"><label for="s-pickup">Click &amp; collect fee (৳)</label><input id="s-pickup" data-key="shipping.pickup" type="number" min="0"><span class="hint">Charged when a customer picks up an online order at a showroom. Use 0 for free.</span><span class="msg">Enter 0 or more.</span></div>
+            </div>
+            <h3 class="sub-h" style="margin-top:26px">Tax, receipts &amp; discounts</h3>
+            <div class="form-grid2">
+              <div class="field"><label for="s-vat">VAT rate (%)</label><input id="s-vat" data-key="vatRate" type="number" min="0" step="0.5"><span class="hint">Applied to store and online orders. Leave at 0 if you are not VAT registered.</span><span class="msg">Enter 0 or more.</span></div>
+              <div class="field"><label for="s-bin">BIN (business identification number)</label><input id="s-bin" data-key="bin" type="text" placeholder="Printed on receipts"></div>
+              <div class="field"><label for="s-digi">Pay-online discount (%)</label><input id="s-digi" data-key="digitalDiscountPct" type="number" min="0" max="50"><span class="hint">Off the order when the customer pays with bKash, Nagad or card at checkout.</span><span class="msg">Enter 0 or more.</span></div>
+              <div class="field full"><label for="s-foot">Receipt footer</label><input id="s-foot" data-key="receiptFooter" type="text" maxlength="120"></div>
+            </div>
           </section>
 
           <section class="card tab-panel" id="tab-advanced" hidden>
@@ -93,10 +104,13 @@
   </div>
 
   <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/ops.js"></script>
   <script src="../assets/js/charts.js"></script>
   <script src="../assets/js/admin-core.js"></script>
   <script src="../assets/js/admin-pages.js"></script>
   <script src="../assets/js/admin-pages2.js"></script>
+  <script src="../assets/js/admin-ops.js"></script>
+  <script src="../assets/js/admin-fin.js"></script>
   <script>Amnu.admin.boot('settings', Amnu.adminPages['settings']);</script>
 </body>
 </html>

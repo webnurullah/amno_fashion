@@ -24,7 +24,7 @@
       <main class="content" id="content">
         <div class="page-head">
           <div><h1>Analytics</h1><p class="muted">Revenue, orders and where your customers come from.</p></div>
-          <div class="row gap-8 wrap"><select id="a-range" class="pill-select" aria-label="Date range"><option value="14">Last 14 days</option><option value="30">Last 30 days</option><option value="60">Last 60 days</option></select><button class="btn btn-glass" id="a-export" type="button"><i data-icon="download" data-size="18"></i> Export CSV</button></div>
+          <div class="row gap-8 wrap"><select id="a-channel" class="pill-select" aria-label="Channel"><option value="">All channels</option><option value="online">Online only</option><option value="store">Store only</option></select><select id="a-range" class="pill-select" aria-label="Date range"><option value="14">Last 14 days</option><option value="30">Last 30 days</option><option value="60">Last 60 days</option></select><button class="btn btn-glass" id="a-export" type="button"><i data-icon="download" data-size="18"></i> Export CSV</button></div>
         </div>
         <section class="kpis five" id="a-kpis"></section>
         <section class="card">
@@ -50,10 +50,13 @@
   </div>
 
   <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/ops.js"></script>
   <script src="../assets/js/charts.js"></script>
   <script src="../assets/js/admin-core.js"></script>
   <script src="../assets/js/admin-pages.js"></script>
   <script src="../assets/js/admin-pages2.js"></script>
+  <script src="../assets/js/admin-ops.js"></script>
+  <script src="../assets/js/admin-fin.js"></script>
   <script>Amnu.admin.boot('analytics', Amnu.adminPages['analytics']);</script>
 </body>
 </html>

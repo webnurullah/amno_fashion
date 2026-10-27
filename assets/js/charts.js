@@ -214,6 +214,65 @@
     if (window.ResizeObserver) { let w = stage.clientWidth; new ResizeObserver(() => { if (Math.abs(stage.clientWidth - w) > 2) { w = stage.clientWidth; draw(); } }).observe(stage); }
   }
 
+  /* --------------------------------------------------------------- stacked */
+  /** data: [{ label, tip?, values: [n, n] }]  series: [{ name, cls }]  – legend + per-day tooltip with total */
+  function stacked(host, data, series, opts = {}) {
+    const fmt = opts.fmt || A.money;
+    const H = opts.height || 260;
+    host.classList.add('viz');
+    host.innerHTML = `<div class="viz-legend">${series.map((s) => `<span><i class="${s.cls}"></i>${A.esc(s.name)}</span>`).join('')}</div>`;
+    const stage = document.createElement('div');
+    stage.className = 'viz-stage';
+    host.appendChild(stage);
+    const draw = () => {
+      stage.querySelectorAll('svg').forEach((x) => x.remove());
+      const W = Math.max(280, stage.clientWidth);
+      const m = { l: 54, r: 10, t: 14, b: 28 };
+      const iw = W - m.l - m.r; const ih = H - m.t - m.b;
+      const totals = data.map((d) => d.values.reduce((a, b) => a + b, 0));
+      const scale = niceScale(Math.max(...totals, 1) * 1.05, 4);
+      const band = iw / data.length;
+      const bw = Math.min(24, band * 0.62);
+      const Y = (v) => m.t + ih - (v / scale.max) * ih;
+      const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, 'aria-hidden': 'true' });
+      stage.insertBefore(svg, stage.firstChild);
+      scale.ticks.forEach((v) => {
+        svgEl('line', { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v), class: 'viz-grid' }, svg);
+        svgEl('text', { x: m.l - 10, y: Y(v) + 4, class: 'viz-axis', 'text-anchor': 'end' }, svg).textContent = v === 0 ? '0' : '৳' + A.compact(v);
+      });
+      const every = Math.max(1, Math.ceil(data.length / Math.max(2, Math.floor(iw / 60))));
+      const tip = tipFor(stage);
+      data.forEach((d, i) => {
+        const x = m.l + band * i + (band - bw) / 2;
+        let base = Y(0);
+        const last = d.values.reduce((k, v, j) => (v > 0 ? j : k), -1);
+        const bars = [];
+        d.values.forEach((v, k) => {
+          if (v <= 0) return;
+          const h = (v / scale.max) * ih;
+          const gap = k < last ? 2 : 0;                 /* 2px surface gap between stacked segments */
+          const top = base - h; const hh = Math.max(1, h - gap);
+          const r = Math.min(4, bw / 2, hh);
+          const path = k === last
+            ? `M${x} ${top + hh}V${top + r}Q${x} ${top} ${x + r} ${top}H${x + bw - r}Q${x + bw} ${top} ${x + bw} ${top + r}V${top + hh}Z`
+            : `M${x} ${top + gap}H${x + bw}V${base}H${x}Z`;
+          bars.push(svgEl('path', { d: path, class: 'viz-bar ' + series[k].cls }, svg));
+          base = top;
+        });
+        const hit = svgEl('rect', { x: m.l + band * i, y: m.t, width: band, height: ih, fill: 'transparent' }, svg);
+        hit.addEventListener('pointerenter', () => {
+          bars.forEach((b) => b.classList.add('hot'));
+          tip.innerHTML = `<div class="viz-tip-h">${A.esc(d.tip || d.label)}</div>${series.map((s, k) => `<div class="viz-tip-r"><span class="viz-key ${s.cls}"></span>${A.esc(s.name)}<b>${fmt(d.values[k])}</b></div>`).join('')}<div class="viz-tip-s">Total ${fmt(totals[i])}</div>`;
+          tip.classList.add('on'); placeTip(stage, tip, x + bw / 2, Y(totals[i]));
+        });
+        hit.addEventListener('pointerleave', () => { bars.forEach((b) => b.classList.remove('hot')); tip.classList.remove('on'); });
+        if (i % every === 0) svgEl('text', { x: x + bw / 2, y: H - 8, class: 'viz-axis', 'text-anchor': 'middle' }, svg).textContent = d.label;
+      });
+    };
+    draw();
+    if (window.ResizeObserver) { let w = stage.clientWidth; new ResizeObserver(() => { if (Math.abs(stage.clientWidth - w) > 2) { w = stage.clientWidth; draw(); } }).observe(stage); }
+  }
+
   /* ---------------------------------------------------------------- hbars */
   /** rows: [{ label, value, display?, sub? }] – value at the bar tip, bars ≤ 14px */
   function hbars(host, rows, opts = {}) {
@@ -225,5 +284,5 @@
       <b class="hb-val num">${A.esc(r.display || (opts.fmt || String)(r.value))}</b></div>`).join('');
   }
 
-  A.charts = { area, spark, columns, hbars };
+  A.charts = { area, spark, columns, stacked, hbars };
 })();

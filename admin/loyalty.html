@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" data-surface="admin">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Loyalty Points ‹ Amnu Fashion Admin</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%236250d6'/%3E%3Cpath d='M32 14 18 50h7l3-8h8l3 8h7zm-2.6 22 2.6-8 2.6 8z' fill='white'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/glass.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <script src="../assets/js/core.js"></script>
+</head>
+<body data-page="loyalty">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="admin" id="admin">
+    <aside class="sidebar glass" id="sidebar"></aside>
+
+    <div class="admin-main">
+      <header class="topbar glass" id="topbar"></header>
+
+      <main class="content" id="content">
+        <div class="page-head">
+          <div><h1>Loyalty points</h1><p class="muted">Customers earn points online and at the store counter, and spend them at checkout or at the register.</p></div>
+          
+        </div>
+        <section class="kpis three" id="loy-kpis"></section>
+        <div class="split-layout">
+          <section class="card">
+            <h3 class="sub-h">Points programme</h3>
+            <form id="loy-form" class="col" novalidate>
+              <div class="field"><label for="l-earn">Customer earns 1 point per (৳)</label><input id="l-earn" type="number" min="1"><span class="msg">Enter 1 or more.</span></div>
+              <div class="field"><label for="l-val">Value of 1 point (৳)</label><input id="l-val" type="number" min="0.1" step="0.1"></div>
+              <div class="field"><label for="l-min">Minimum points to redeem</label><input id="l-min" type="number" min="0"></div>
+              <button class="btn btn-violet" type="submit">Save programme</button>
+            </form>
+          </section>
+          <div id="members"></div>
+        </div>
+      </main>
+
+      <footer class="admin-footer" id="admin-footer"></footer>
+    </div>
+  </div>
+
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/ops.js"></script>
+  <script src="../assets/js/charts.js"></script>
+  <script src="../assets/js/admin-core.js"></script>
+  <script src="../assets/js/admin-pages.js"></script>
+  <script src="../assets/js/admin-pages2.js"></script>
+  <script src="../assets/js/admin-ops.js"></script>
+  <script src="../assets/js/admin-fin.js"></script>
+  <script>Amnu.admin.boot('loyalty', Amnu.adminPages['loyalty']);</script>
+</body>
+</html>

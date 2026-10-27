@@ -4,10 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Checkout — Amnu Fashion</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23ff7a59'/%3E%3Cpath d='M32 14 18 50h7l3-8h8l3 8h7zm-2.6 22 2.6-8 2.6 8z' fill='white'/%3E%3C/svg%3E">
+  <meta name="description" content="Premium Panjabi from Amnu Fashion. Shop online or visit a showroom.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23111114'/%3E%3Cpath d='M32 14 18 50h7l3-8h8l3 8h7zm-2.6 22 2.6-8 2.6 8z' fill='white'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/css/glass.css">
   <link rel="stylesheet" href="assets/css/store.css">
   <script src="assets/js/core.js"></script>
@@ -16,42 +17,21 @@
   <div class="bg" aria-hidden="true"></div>
   <div id="site-header"></div>
 
-  <main id="main" class="container page">
-    <nav class="crumbs" aria-label="Breadcrumb"><a href="index.html">Home</a><i data-icon="chevron-right" data-size="14"></i><a href="cart.html">Cart</a><i data-icon="chevron-right" data-size="14"></i><span>Checkout</span></nav>
-    <div class="page-h"><div><h1>Checkout</h1><p class="muted">No account needed — just tell us where to deliver.</p></div></div>
-
-    <form class="checkout-layout" id="checkout-form" novalidate>
-      <div class="col gap-16">
-        <section class="glass pad">
-          <h2 class="card-title"><span class="step">1</span> Billing &amp; delivery details</h2>
-          <div class="form-grid">
-            <div class="field"><label for="c-name">Full name *</label><input id="c-name" name="name" type="text" autocomplete="name" placeholder="e.g. Tanvir Ahmed" required><span class="msg">Please enter your name.</span></div>
-            <div class="field"><label for="c-phone">Mobile number *</label><input id="c-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="01XXXXXXXXX" required><span class="msg">Enter a valid Bangladeshi mobile number (01XXXXXXXXX).</span></div>
-            <div class="field"><label for="c-email">Email <span class="muted">(optional)</span></label><input id="c-email" name="email" type="email" autocomplete="email" placeholder="you@example.com"><span class="msg">That email doesn't look right.</span></div>
-            <div class="field"><label for="c-district">District *</label><select id="c-district" name="district" required><option value="">Select district…</option></select><span class="msg">Please choose your district.</span></div>
-            <div class="field full"><label for="c-address">Full address *</label><textarea id="c-address" name="address" rows="3" autocomplete="street-address" placeholder="House, road, area, thana" required></textarea><span class="msg">Please enter your delivery address.</span></div>
-            <div class="field full"><label for="c-note">Order note <span class="muted">(optional)</span></label><textarea id="c-note" name="note" rows="2" placeholder="Anything we should know? e.g. preferred delivery time"></textarea></div>
-          </div>
-        </section>
-
-        <section class="glass pad">
-          <h2 class="card-title"><span class="step">2</span> Delivery method</h2>
-          <div class="options" id="ship-options" role="radiogroup" aria-label="Delivery method"></div>
-        </section>
-
-        <section class="glass pad">
-          <h2 class="card-title"><span class="step">3</span> Payment method</h2>
-          <div class="options" id="pay-options" role="radiogroup" aria-label="Payment method"></div>
-          <div class="pay-note glass-soft" id="pay-note" hidden></div>
-        </section>
+  <main id="main" class="">
+    <div class="container" id="co-wrap">
+      <h1 class="co-h"><a href="bag.html" aria-label="Back to bag"><i data-icon="chevron-left" data-size="22"></i></a> Checkout</h1>
+      <div class="co-layout">
+        <div id="co-steps" class="co-steps"></div>
+        <aside id="co-summary" class="co-side"></aside>
       </div>
-
-      <aside class="summary glass" id="co-summary"></aside>
-    </form>
+    </div>
   </main>
 
   <div id="site-footer"></div>
   <script src="assets/js/data.js"></script>
-  <script src="assets/js/store.js"></script>
+  <script src="assets/js/ops.js"></script>
+  <script src="assets/js/store-core.js"></script>
+  <script src="assets/js/store-pages.js"></script>
+  <script src="assets/js/store-pages2.js"></script>
 </body>
 </html>

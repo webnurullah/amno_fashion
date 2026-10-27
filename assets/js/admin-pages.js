@@ -81,6 +81,22 @@
       $('#side-stats').innerHTML = sideStats.map(([l, v, d, s], i) => `<article class="card mini-stat"><div><span class="kpi-label">${l}</span><div class="mini-val"><b class="num">${v}</b>${deltaHTML(d)}</div></div><div class="spark-host" data-spark="${i}"></div></article>`).join('') + `<p class="xs muted sim-note">${icon('info', 14)} Traffic metrics are simulated. Connect Google Analytics or Facebook Pixel in Plugins for live data.</p>`;
       sideStats.forEach(([, , , s], i) => A.charts.spark($(`[data-spark="${i}"]`), s));
 
+      /* online vs store split + live store status */
+      const days = cur.map((b) => b.t);
+      const onl = days.map(() => 0); const sto = days.map(() => 0);
+      orders.forEach((o) => { if (!isValid(o)) return; const i = days.indexOf(startOf(o.date)); if (i < 0) return; (S.channelOf(o) === 'store' ? sto : onl)[i] += o.total; });
+      const so = sum(onl, (x) => x); const ss = sum(sto, (x) => x);
+      const pct = (v) => (so + ss ? Math.round((v / (so + ss)) * 100) : 0);
+      $('#ch-split').textContent = `Online ${money(so)} (${pct(so)}%) · Store ${money(ss)} (${pct(ss)}%)`;
+      A.charts.stacked($('#channel-chart'), days.map((t, i) => ({ label: A.dateShort(t), tip: A.date(t), values: [onl[i], sto[i]] })), [{ name: 'Online', cls: 's-a' }, { name: 'Store', cls: 's-b' }], { height: 240 });
+      const todayKey = A.ymd(Date.now());
+      const rows = S.showrooms().map((l) => {
+        const sale = S.salesFor(l.id, todayKey); const closed = S.closeFor(l.id, todayKey);
+        return `<a class="store-row" href="${closed ? 'day-close.html' : 'pos.html'}"><span class="loc-ico">${icon('store', 18)}</span><div class="grow"><b class="small">${esc(l.name)}</b><div class="xs muted">${A.plural(sale.count, 'order')} · ${A.plural(sale.pieces, 'piece')}</div></div><div class="right"><b class="num small">${money(sale.total)}</b><div>${closed ? '<span class="badge b-err">Closed</span>' : '<span class="badge b-ok">Open</span>'}</div></div></a>`;
+      });
+      const onlineToday = sum(orders.filter((o) => isValid(o) && S.channelOf(o) === 'online' && startOf(o.date) === dayStart(0)), (o) => o.total);
+      $('#stores-today').innerHTML = rows.join('') + `<div class="store-row online"><span class="loc-ico">${icon('globe', 18)}</span><div class="grow"><b class="small">Online store</b><div class="xs muted">Orders placed today</div></div><div class="right"><b class="num small">${money(onlineToday)}</b></div></div>`;
+
       /* recent orders */
       const recent = orders.slice().sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
       $('#recent-orders').innerHTML = `<thead><tr><th>Order</th><th>Customer</th><th>Date</th><th class="right">Total</th><th>Status</th></tr></thead><tbody>${recent.map((o) => {
@@ -110,8 +126,11 @@
     /* glance, stock alerts, quick draft (don't depend on the range) */
     const products = S.products();
     const pub = products.filter((p) => p.status === 'publish');
-    $('#glance').innerHTML = [['package', pub.length + ' products', 'products.html'], ['bag', orders.length + ' orders', 'orders.html'], ['users', S.customers().length + ' customers', 'customers.html'], ['file', S.pages().length + ' pages & posts', 'pages.html']]
-      .map(([ic, l, h]) => `<a href="${h}">${icon(ic, 20)}<span>${l}</span></a>`).join('') + `<p class="xs muted glance-foot">Amnu CMS 1.0 running the <b>Glass</b> theme.</p>`;
+    const bal = S.balances();
+    const dues = S.dueList().reduce((n, d) => n + d.due, 0);
+    const snap = (l, v, cls = '') => `<div class="snap-row"><span>${l}</span><b class="num ${cls}">${v}</b></div>`;
+    $('#money-snap').innerHTML = S.accounts().map((a) => snap(esc(a.name), money(bal[a.id] || 0))).join('')
+      + snap('Customers owe you', money(dues)) + snap('You owe suppliers', money(S.payables()), S.payables() ? 'err' : '') + snap('Stock at cost', money(S.valuation().cost));
     const low = pub.filter((p) => p.stock <= settings.lowStock).sort((a, b) => a.stock - b.stock).slice(0, 5);
     $('#stock-alerts').innerHTML = low.map((p) => `<a class="top-row" href="product-edit.html?id=${p.id}">${Admin.thumb(p, 'sm')}<div class="grow"><b class="small">${esc(p.name)}</b><div class="xs muted">${esc(p.sku)}</div></div>${Admin.stockHTML(p)}</a>`).join('') || '<p class="muted small">All products are well stocked.</p>';
 
@@ -145,7 +164,7 @@
         <div class="field full"><label>Name</label><input name="name" value="${esc(p.name)}"></div>
         <div class="field"><label>Regular price (৳)</label><input name="price" type="number" min="0" value="${p.price}"></div>
         <div class="field"><label>Sale price (৳)</label><input name="sale" type="number" min="0" value="${p.sale || ''}" placeholder="—"></div>
-        <div class="field"><label>Stock</label><input name="stock" type="number" min="0" value="${p.stock}"></div>
+        <div class="field"><label>Stock</label><div class="small" style="padding-top:10px"><b>${S.stock(p.id)}</b> units · <a class="btn-link" href="inventory.html?q=${encodeURIComponent(p.sku)}">Manage in Inventory</a></div></div>
         <div class="field"><label>Status</label><select name="status"><option value="publish" ${p.status === 'publish' ? 'selected' : ''}>Published</option><option value="draft" ${p.status === 'draft' ? 'selected' : ''}>Draft</option></select></div></form>`,
       footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Update</button>'
     });
@@ -155,7 +174,7 @@
       const price = Number(f.price.value); const sale = Number(f.sale.value) || null;
       if (!f.name.value.trim() || !(price > 0)) { A.toast('Name and a price above 0 are required', 'err'); return; }
       if (sale && sale >= price) { A.toast('Sale price must be lower than the regular price', 'err'); return; }
-      S.upsertProduct(Object.assign({}, p, { name: f.name.value.trim(), price, sale, stock: Math.max(0, Number(f.stock.value) || 0), status: f.status.value }));
+      S.upsertProduct(Object.assign({}, p, { name: f.name.value.trim(), price, sale, status: f.status.value }));
       m.close(); api.refresh(); A.toast('Product updated');
     });
   }
@@ -191,7 +210,7 @@
       ],
       actions: {
         quick: (id, p, api) => quickEdit(p, api),
-        dup: (id, p, api) => { const c = Object.assign({}, p, { id: S.nextProductId(), name: 'Copy of ' + p.name, status: 'draft', created: new Date().toISOString() }); c.slug = A.slug(c.name); c.sku = 'AMN-' + (1000 + c.id); S.upsertProduct(c); api.refresh(); A.toast('Product duplicated as draft'); },
+        dup: (id, p, api) => { const c = Object.assign({}, p, { id: S.nextProductId(), name: 'Copy of ' + p.name, status: 'draft', created: new Date().toISOString() }); c.slug = A.slug(c.name); c.sku = 'AMN-' + (1000 + c.id); S.upsertProduct(c); S.initInventory(c.id, c.sizes, 0); api.refresh(); A.toast('Product duplicated as draft'); },
         trash: (id, p, api) => A.confirm(`Delete “${p.name}” permanently?`, 'Delete').then((ok) => { if (ok) { S.deleteProducts([p.id]); api.refresh(); A.toast('Product deleted'); } })
       }
     });
@@ -239,13 +258,23 @@
 
     /* fill */
     $('#p-title').value = draft.name; $('#p-long').innerHTML = draft.long; $('#p-short').value = draft.short;
-    $('#p-price').value = draft.price || ''; $('#p-sale').value = draft.sale || ''; $('#p-sku').value = draft.sku || ''; $('#p-stock').value = draft.stock; $('#p-weight').value = draft.weight;
+    $('#p-price').value = draft.price || ''; $('#p-sale').value = draft.sale || ''; $('#p-sku').value = draft.sku || ''; $('#p-cost').value = draft.cost || ''; $('#p-weight').value = draft.weight;
     $('#p-fabric').value = draft.fabric; $('#p-style').value = draft.style; $('#p-badge').value = draft.badge; $('#p-featured').checked = !!draft.featured;
     $('#p-status').value = draft.status; $('#p-tags').value = (draft.tags || []).join(', ');
     $('#pub-date').textContent = isNew ? 'immediately' : A.dateTime(draft.created);
 
     const permalink = () => { $('#p-permalink').innerHTML = draft.name ? `Permalink: <span class="mono">/product/${esc(A.slug(draft.name))}</span>` : ''; };
-    const stockState = () => { const n = Number($('#p-stock').value) || 0; $('#p-stockstate').innerHTML = n <= 0 ? '<span class="badge b-err">Out of stock</span>' : n <= settings.lowStock ? '<span class="badge b-warn">Low stock</span>' : '<span class="badge b-ok">In stock</span>'; };
+    const opening = {};
+    const stateBadge = (n) => (n <= 0 ? '<span class="badge b-err">Out of stock</span>' : n <= settings.lowStock ? '<span class="badge b-warn">Low stock</span>' : '<span class="badge b-ok">In stock</span>');
+    const renderInv = () => {
+      if (isNew) {
+        draft.sizes.forEach((z) => { if (opening[z] == null) opening[z] = 5; });
+        $('#p-inv').innerHTML = `<div class="small muted" style="margin-bottom:8px">Opening stock, received at ${esc(S.locName(S.onlineLoc()))}</div><div class="row wrap gap-8">${draft.sizes.map((z) => `<label class="os-cell"><span class="xs muted">${esc(S.sizeLabel(z))}</span><input type="number" min="0" data-os="${z}" value="${opening[z]}" aria-label="Opening stock for ${esc(z)}"></label>`).join('') || '<span class="muted small">Choose sizes under Attributes first.</span>'}</div>`;
+      } else {
+        const total = S.stock(draft.id);
+        $('#p-inv').innerHTML = `<table class="mini-table inv-mini"><tbody>${S.locations().map((l) => `<tr><td>${esc(l.name)}</td><td class="right num">${S.stock(draft.id, l.id)}</td></tr>`).join('')}<tr><td><b>Total</b></td><td class="right"><b class="num">${total}</b> ${stateBadge(total)}</td></tr></tbody></table>`;
+      }
+    };
 
     /* categories */
     const renderCats = () => { $('#p-cats').innerHTML = S.categories().map((c) => `<label class="check"><input type="checkbox" value="${c.slug}" ${draft.cats.includes(c.slug) ? 'checked' : ''}> ${esc(c.name)}</label>`).join(''); };
@@ -262,7 +291,7 @@
     /* sizes */
     const renderSizes = () => { $('#p-sizes').innerHTML = ALL_SIZES.map((s) => `<button type="button" class="size ${draft.sizes.includes(s) ? 'on' : ''}" data-size="${s}" aria-pressed="${draft.sizes.includes(s)}">${s}</button>`).join(''); };
     renderSizes();
-    $('#p-sizes').addEventListener('click', (e) => { const b = e.target.closest('[data-size]'); if (!b) return; const s = b.dataset.size; draft.sizes = draft.sizes.includes(s) ? draft.sizes.filter((x) => x !== s) : [...draft.sizes, s]; renderSizes(); });
+    $('#p-sizes').addEventListener('click', (e) => { const b = e.target.closest('[data-size]'); if (!b) return; const s = b.dataset.size; draft.sizes = draft.sizes.includes(s) ? draft.sizes.filter((x) => x !== s) : [...draft.sizes, s]; renderSizes(); renderInv(); });
 
     /* colours */
     const renderColors = () => {
@@ -317,10 +346,10 @@
     }
     f.addEventListener('input', (e) => {
       if (e.target.id === 'p-title') { draft.name = e.target.value; permalink(); }
-      if (e.target.id === 'p-stock') stockState();
+      if (e.target.dataset.os) opening[e.target.dataset.os] = Math.max(0, Math.round(Number(e.target.value) || 0));
       preview();
     });
-    permalink(); stockState(); preview();
+    permalink(); renderInv(); preview();
 
     /* save */
     const save = (status) => {
@@ -340,12 +369,13 @@
       let slug = A.slug(name); if (all.some((p) => p.slug === slug && p.id !== draft.id)) slug += '-' + draft.id;
       const sku = val('#p-sku').trim() || 'AMN-' + (1000 + draft.id);
       const product = Object.assign({}, draft, {
-        name, slug, price, sale, sku, status, cost: draft.cost || Math.round(price * 0.56),
-        stock: Math.max(0, Number(val('#p-stock')) || 0), weight: Number(val('#p-weight')) || 0, fabric: val('#p-fabric').trim() || 'cotton', style: val('#p-style'), badge: val('#p-badge'), featured: $('#p-featured').checked,
+        name, slug, price, sale, sku, status, cost: Number(val('#p-cost')) || Math.round(price * 0.56),
+        stock: isNew ? draft.sizes.reduce((n, z) => n + (opening[z] || 0), 0) : draft.stock, weight: Number(val('#p-weight')) || 0, fabric: val('#p-fabric').trim() || 'cotton', style: val('#p-style'), badge: val('#p-badge'), featured: $('#p-featured').checked,
         short: val('#p-short').trim(), long: $('#p-long').innerHTML, tags: val('#p-tags').split(',').map((t) => t.trim()).filter(Boolean), color: draft.colors[0].hex, colorName: draft.colors[0].name
       });
       if (!product.cats.length) product.cats = ['cotton'];
       if (!S.upsertProduct(product)) { A.toast('Browser storage is full. Try removing large images.', 'err'); return; }
+      if (isNew) S.initInventory(product.id, product.sizes, opening, S.onlineLoc());
       A.toast(status === 'publish' ? (isNew ? 'Product published' : 'Product updated') : 'Draft saved');
       if (isNew) setTimeout(() => { location.href = 'product-edit.html?id=' + product.id; }, 500);
     };
@@ -407,20 +437,23 @@
     const idx = Admin.listTable({
       id: 'orders', mount: $('#list'), perPage: 12, empty: 'No orders found', searchPlaceholder: 'Search orders, customers, phone',
       rows: () => S.orders().sort((a, b) => new Date(b.date) - new Date(a.date)), rowId: (o) => o.id,
-      initialView: A.qs.get('status') || undefined, initialQ: A.qs.get('q') || '',
+      initialView: A.qs.get('status') || undefined, initialQ: A.qs.get('q') || '', initialFilters: { channel: A.qs.get('channel') || '', loc: A.qs.get('loc') || '' },
       views: [{ id: 'all', label: 'All' }].concat(statuses.map(([k, l]) => ({ id: k, label: l, filter: (o) => o.status === k }))),
       filters: [
-        { id: 'pay', label: 'All payment methods', options: Object.entries(S.payLabel), test: (o, v) => o.payment === v },
+        { id: 'channel', label: 'All channels', options: [['online', 'Online'], ['store', 'In store (POS)']], test: (o, v) => S.channelOf(o) === v },
+        { id: 'loc', label: 'All locations', options: S.locations().map((l) => [l.id, l.name]), test: (o, v) => o.storeId === v },
+        { id: 'pay', label: 'All payment methods', options: Object.entries(S.payLabel), test: (o, v) => S.tenders(o).some((t) => t.method === v) },
         { id: 'district', label: 'All districts', options: [...new Set(S.orders().map((o) => o.customer.district))].sort().map((d) => [d, d]), test: (o, v) => o.customer.district === v }
       ],
       search: (o, q) => ('#' + o.id + ' ' + o.customer.name + ' ' + o.customer.phone + ' ' + o.customer.district + ' ' + o.items.map((i) => i.name).join(' ')).toLowerCase().includes(q),
       columns: [
         { id: 'order', label: 'Order', sort: (a, b) => a.id - b.id, render: (o) => `<a class="row-title" href="order-view.html?id=${o.id}">#${o.id} ${esc(o.customer.name)}</a><div class="xs muted">${esc(o.customer.phone)}</div>${Admin.actions([{ label: 'View', href: 'order-view.html?id=' + o.id }, { label: 'Mark completed', act: 'done', id: o.id }, { label: 'Delete', act: 'del', id: o.id, danger: true }])}` },
         { id: 'date', label: 'Date', sort: (a, b) => new Date(a.date) - new Date(b.date), render: (o) => `<span title="${A.dateTime(o.date)}">${A.date(o.date)}</span><div class="xs muted">${A.ago(o.date)}</div>` },
+        { id: 'channel', label: 'Channel', render: (o) => Admin.channelBadge(o) },
         { id: 'status', label: 'Status', sort: (a, b) => a.status.localeCompare(b.status), render: (o) => S.statusBadge(o.status) },
         { id: 'items', label: 'Items', render: (o) => `<div class="item-stack">${o.items.slice(0, 3).map((i) => { const p = S.product(i.pid); return p ? Admin.thumb(p, 'xs') : `<span class="thumb xs">${A.panjabi(i.hex || '#888', i.style || 'plain')}</span>`; }).join('')}<span class="xs muted">${A.plural(o.items.reduce((n, i) => n + i.qty, 0), 'pc')}</span></div>` },
-        { id: 'district', label: 'District', hidden: false, render: (o) => esc(o.customer.district) },
-        { id: 'payment', label: 'Payment', render: (o) => `<span class="small">${esc(S.payLabel[o.payment])}</span>${o.payRef ? `<div class="xs muted mono">${esc(o.payRef)}</div>` : ''}` },
+        { id: 'district', label: 'District', hidden: true, render: (o) => esc(o.customer.district || '—') },
+        { id: 'payment', label: 'Payment', render: (o) => `<span class="small">${S.tenders(o).map((t) => esc(S.payLabel[t.method] || t.method)).join(' + ')}</span>${o.due ? `<div class="xs err">Due ${money(o.due)}</div>` : ''}${o.payRef ? `<div class="xs muted mono">${esc(o.payRef)}</div>` : ''}` },
         { id: 'total', label: 'Total', cls: 'right', sort: (a, b) => a.total - b.total, render: (o) => `<b class="num">${money(o.total)}</b>` }
       ],
       bulk: statuses.filter(([k]) => k !== 'refunded').map(([k, l]) => ({ id: k, label: 'Change status to ' + l.toLowerCase(), run: (ids) => { ids.forEach((id) => S.patchOrder(id, { status: k })); A.toast(`${ids.length} order${ids.length === 1 ? '' : 's'} updated`); } }))
@@ -443,25 +476,27 @@
       if (!o) { root.innerHTML = `<div class="card empty-card">${icon('search', 34)}<h3>Order not found</h3><a class="btn btn-violet" href="orders.html">Back to orders</a></div>`; return; }
       document.title = `Order #${o.id} ‹ Amnu Fashion Admin`;
       const sub = o.items.reduce((s, i) => s + i.price * i.qty, 0);
-      const cust = S.customers().find((c) => c.phone === o.customer.phone);
+      const cust = o.customer.phone ? S.customers().find((c) => c.phone === o.customer.phone) : null;
+      const isStore = S.channelOf(o) === 'store';
+      const tenders = S.tenders(o);
       root.innerHTML = `
-      <div class="page-head"><div><div class="row gap-8 wrap"><h1>Order #${o.id}</h1>${S.statusBadge(o.status)}</div><p class="muted">Placed on ${A.dateTime(o.date)} via ${esc(S.payLabel[o.payment])}${o.payRef ? ` · TrxID <span class="mono">${esc(o.payRef)}</span>` : ''}</p></div>
-        <div class="row gap-8 wrap no-print"><a class="btn btn-glass" href="orders.html">${icon('chevron-left', 16)} All orders</a><button class="btn btn-glass" id="print">${icon('printer', 16)} Print invoice</button></div></div>
+      <div class="page-head"><div><div class="row gap-8 wrap"><h1>Order #${o.id}</h1>${S.statusBadge(o.status)}${Admin.channelBadge(o)}</div><p class="muted">${isStore ? `Sold at ${esc(S.locName(o.storeId))}${o.cashier ? ' by ' + esc(o.cashier) : ''}` : 'Placed online'} on ${A.dateTime(o.date)} · ${tenders.map((t) => esc(S.payLabel[t.method] || t.method)).join(' + ')}${o.payRef ? ` · TrxID <span class="mono">${esc(o.payRef)}</span>` : ''}</p></div>
+        <div class="row gap-8 wrap no-print"><a class="btn btn-glass" href="orders.html">${icon('chevron-left', 16)} All orders</a>${isStore ? `<button class="btn btn-glass" id="print-rc">${icon('receipt', 16)} Receipt</button>` : ''}<button class="btn btn-glass" id="print">${icon('printer', 16)} Print invoice</button></div></div>
       <div class="editor-layout">
         <div class="col gap-16">
           <section class="card"><div class="detail-cols">
-            <div><h3 class="sub-h">Billing</h3><p>${esc(o.customer.name)}<br>${esc(o.customer.address)}<br>${esc(o.customer.district)}, Bangladesh</p><p class="muted small">${icon('phone', 14)} <a href="tel:${esc(o.customer.phone)}">${esc(o.customer.phone)}</a>${o.customer.email ? `<br>${icon('mail', 14)} <a href="mailto:${esc(o.customer.email)}">${esc(o.customer.email)}</a>` : ''}</p></div>
-            <div><h3 class="sub-h">Shipping</h3><p>${esc(o.customer.name)}<br>${esc(o.customer.address)}<br>${esc(o.customer.district)}, Bangladesh</p><p class="muted small">Method: ${o.customer.district === 'Dhaka' ? 'Inside Dhaka' : 'Outside Dhaka'}</p></div>
-            <div><h3 class="sub-h">Payment</h3><p>${esc(S.payLabel[o.payment])}</p>${o.note ? `<h3 class="sub-h" style="margin-top:12px">Customer note</h3><p class="muted small">${esc(o.note)}</p>` : ''}</div></div></section>
+            <div><h3 class="sub-h">Billing</h3><p>${esc(o.customer.name)}${o.customer.address ? `<br>${esc(o.customer.address)}` : ''}${o.customer.district ? `<br>${esc(o.customer.district)}, Bangladesh` : ''}</p><p class="muted small">${o.customer.phone ? `${icon('phone', 14)} <a href="tel:${esc(o.customer.phone)}">${esc(o.customer.phone)}</a>` : 'No phone recorded'}${o.customer.email ? `<br>${icon('mail', 14)} <a href="mailto:${esc(o.customer.email)}">${esc(o.customer.email)}</a>` : ''}</p></div>
+            <div><h3 class="sub-h">${isStore ? 'Sold at' : 'Delivery'}</h3>${isStore ? `<p>${esc(S.locName(o.storeId))}<br><span class="muted small">Counter sale, taken away by the customer</span></p>` : `<p>${esc(o.customer.name)}<br>${esc(o.customer.address)}<br>${esc(o.customer.district)}, Bangladesh</p><p class="muted small">${o.pickup ? `Click &amp; collect at ${esc(o.pickup)}` : o.shippingMethod ? esc(o.shippingMethod) : o.customer.district === 'Dhaka' ? 'Inside Dhaka' : 'Outside Dhaka'}</p>`}</div>
+            <div><h3 class="sub-h">Payment</h3>${tenders.map((t) => `<div class="draft-row"><span>${esc(S.payLabel[t.method] || t.method)}</span><b class="num">${money(t.amount)}</b></div>`).join('')}${o.change ? `<p class="xs muted">Change given: ${money(o.change)}</p>` : ''}${o.due ? `<p class="small err"><b>Due: ${money(o.due)}</b></p>` : ''}${o.note ? `<h3 class="sub-h" style="margin-top:12px">Customer note</h3><p class="muted small">${esc(o.note)}</p>` : ''}</div></div></section>
           <section class="card"><div class="table-wrap"><table class="wp-table items-table"><thead><tr><th>Item</th><th class="right">Price</th><th class="right">Qty</th><th class="right">Total</th></tr></thead><tbody>
             ${o.items.map((i) => { const p = S.product(i.pid); return `<tr><td><div class="row gap-8">${p ? Admin.thumb(p, 'sm') : `<span class="thumb sm">${A.panjabi(i.hex || '#888', i.style || 'plain')}</span>`}<div><b>${p ? `<a class="row-title" href="product-edit.html?id=${p.id}">${esc(i.name)}</a>` : esc(i.name)}</b><div class="xs muted">Size ${esc(i.size)} · ${esc(i.color)}${p ? ` · SKU ${esc(p.sku)}` : ''}</div></div></div></td><td class="right num">${money(i.price)}</td><td class="right num">× ${i.qty}</td><td class="right num"><b>${money(i.price * i.qty)}</b></td></tr>`; }).join('')}</tbody></table></div>
-            <div class="totals"><div><span>Items subtotal</span><b class="num">${money(sub)}</b></div>${o.discount ? `<div><span>Coupon${o.coupon ? ` (${esc(o.coupon)})` : ''}</span><b class="num ok">− ${money(o.discount)}</b></div>` : ''}<div><span>Shipping</span><b class="num">${o.shipping ? money(o.shipping) : 'Free'}</b></div><div class="grand"><span>Order total</span><b class="num">${money(o.total)}</b></div></div></section>
+            <div class="totals"><div><span>Items subtotal</span><b class="num">${money(sub)}</b></div>${o.discount ? `<div><span>Discounts${o.coupon ? ` (${esc(o.coupon)})` : ''}${o.pointsUsed ? ` · ${o.pointsUsed} points` : ''}</span><b class="num ok">− ${money(o.discount)}</b></div>` : ''}${o.vat ? `<div><span>VAT</span><b class="num">${money(o.vat)}</b></div>` : ''}${isStore ? '' : `<div><span>Shipping</span><b class="num">${o.shipping ? money(o.shipping) : 'Free'}</b></div>`}<div class="grand"><span>Order total</span><b class="num">${money(o.total)}</b></div></div></section>
         </div>
         <aside class="col gap-16 no-print">
           <section class="metabox card"><div class="metabox-h"><h3>Order actions</h3></div><div class="metabox-b col">
             <div class="field"><label for="ov-status">Status</label><select id="ov-status">${S.statuses.map(([k, l]) => `<option value="${k}" ${o.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
             <div class="row between"><button class="btn-link danger small" id="ov-del" type="button">Move to trash</button><button class="btn btn-violet" id="ov-update" type="button">Update</button></div></div></section>
-          <section class="metabox card"><div class="metabox-h"><h3>Customer</h3></div><div class="metabox-b"><div class="row gap-8">${Admin.avatar(o.customer.name)}<div><b>${esc(o.customer.name)}</b><div class="xs muted">${cust ? `${cust.orders} orders · ${money(cust.spent)} spent` : 'New customer'}</div></div></div><a class="btn btn-glass btn-sm btn-block" style="margin-top:12px" href="customers.html?q=${encodeURIComponent(o.customer.name)}">View customer</a></div></section>
+          <section class="metabox card"><div class="metabox-h"><h3>Customer</h3></div><div class="metabox-b"><div class="row gap-8">${Admin.avatar(o.customer.name)}<div><b>${esc(o.customer.name)}</b><div class="xs muted">${cust ? `${cust.orders} orders · ${money(cust.spent)} spent` : 'New customer'}</div></div></div>${o.customer.phone ? `<a class="btn btn-glass btn-sm btn-block" style="margin-top:12px" href="customers.html?q=${encodeURIComponent(o.customer.name)}">View customer</a>` : ''}</div></section>
           <section class="metabox card"><div class="metabox-h"><h3>Order notes</h3></div><div class="metabox-b col">
             <div class="notes" id="ov-notes">${(o.notes || []).slice().reverse().map((n) => `<div class="note ${n.customer ? 'cust' : ''}"><p>${esc(n.text)}</p><span class="xs muted">${A.dateTime(n.date)} · ${esc(n.by || 'Admin')}${n.customer ? ' · note to customer' : ''}</span></div>`).join('') || '<p class="muted small">No notes yet.</p>'}</div>
             <div class="field"><textarea id="ov-note" rows="3" placeholder="Add a note…" aria-label="Add a note"></textarea></div>
@@ -469,6 +504,7 @@
         </aside>
       </div>`;
       $('#print').addEventListener('click', () => window.print());
+      if ($('#print-rc')) $('#print-rc').addEventListener('click', () => Admin.printModal(`Receipt #${o.id}`, Admin.receiptHTML(o)));
       $('#ov-update').addEventListener('click', () => {
         const status = $('#ov-status').value;
         if (status === o.status) { A.toast('Status unchanged'); return; }
@@ -491,19 +527,28 @@
      ====================================================================== */
   P.customers = () => {
     const segment = (c) => (c.spent >= 20000 ? ['VIP', 'b-violet'] : c.orders >= 3 ? ['Loyal', 'b-ok'] : c.orders === 1 ? ['New', 'b-info'] : ['Regular', '']);
-    const profile = (c) => {
+    const profile = (c, api) => {
       const orders = S.orders().filter((o) => o.customer.phone === c.phone).sort((a, b) => new Date(b.date) - new Date(a.date));
-      A.modal({
+      const pts = S.points(c.phone); const due = S.dueOf(c.phone);
+      const m = A.modal({
         title: 'Customer', wide: true,
-        body: `<div class="row gap-16 wrap" style="margin-bottom:16px">${Admin.avatar(c.name, 'lg')}<div class="grow"><h3>${esc(c.name)}</h3><p class="muted small">${esc(c.phone)}${c.email ? ' · ' + esc(c.email) : ''}<br>${esc(c.address)}, ${esc(c.district)}</p></div>
-          <div class="stat-pills"><div><span class="xs muted">Orders</span><b>${c.orders}</b></div><div><span class="xs muted">Total spent</span><b>${money(c.spent)}</b></div><div><span class="xs muted">Customer since</span><b>${A.date(c.first)}</b></div></div></div>
-          <div class="table-wrap"><table class="wp-table"><thead><tr><th>Order</th><th>Date</th><th>Status</th><th class="right">Total</th></tr></thead><tbody>${orders.slice(0, 8).map((o) => `<tr><td><a class="row-title" href="order-view.html?id=${o.id}">#${o.id}</a></td><td>${A.date(o.date)}</td><td>${S.statusBadge(o.status)}</td><td class="right num">${money(o.total)}</td></tr>`).join('')}</tbody></table></div>`
+        body: `<div class="row gap-16 wrap" style="margin-bottom:16px">${Admin.avatar(c.name, 'lg')}<div class="grow"><h3>${esc(c.name)}</h3><p class="muted small">${esc(c.phone)}${c.email ? ' · ' + esc(c.email) : ''}<br>${esc(c.address || '')}${c.address && c.district ? ', ' : ''}${esc(c.district || '')}</p></div>
+          <div class="stat-pills"><div><span class="xs muted">Orders</span><b>${c.orders}</b></div><div><span class="xs muted">Total spent</span><b>${money(c.spent)}</b></div><div><span class="xs muted">Online</span><b>${money(c.online)}</b></div><div><span class="xs muted">In store</span><b>${money(c.instore)}</b></div><div><span class="xs muted">Points</span><b>${pts.balance}</b></div><div><span class="xs muted">Customer since</span><b>${A.date(c.first)}</b></div></div></div>
+          ${due ? `<div class="due-box"><div class="grow"><b class="err">Owes ${money(due)}</b><div class="xs muted">Credit sales not yet collected</div></div><input id="dc-amt" type="number" min="1" max="${due}" value="${due}" aria-label="Amount collected"><select id="dc-acc" aria-label="Received in">${Admin.accountOptions('cash')}</select><button class="btn btn-violet btn-sm" data-collect>Collect</button></div>` : ''}
+          <div class="table-wrap"><table class="wp-table"><thead><tr><th>Order</th><th>Date</th><th>Channel</th><th>Status</th><th class="right">Total</th></tr></thead><tbody>${orders.slice(0, 8).map((o) => `<tr><td><a class="row-title" href="order-view.html?id=${o.id}">#${o.id}</a></td><td>${A.date(o.date)}</td><td>${Admin.channelBadge(o)}</td><td>${S.statusBadge(o.status)}</td><td class="right num">${money(o.total)}</td></tr>`).join('')}</tbody></table></div>`
+      });
+      m.el.addEventListener('click', (e) => {
+        if (!e.target.closest('[data-collect]')) return;
+        const amt = Math.round(Number($('#dc-amt', m.el).value));
+        if (!(amt > 0) || amt > due) { A.toast('Enter an amount up to the balance due', 'err'); return; }
+        S.collectDue(c.phone, c.name, amt, $('#dc-acc', m.el).value, 'Collected in admin');
+        m.close(); api.refresh(); A.toast(`${money(amt)} collected from ${c.name}`);
       });
     };
-    Admin.listTable({
+    const api = Admin.listTable({
       id: 'customers', mount: $('#list'), perPage: 12, empty: 'No customers found', searchPlaceholder: 'Search customers',
-      rows: () => S.customers(), rowId: (c) => c.phone, initialQ: A.qs.get('q') || '',
-      views: [{ id: 'all', label: 'All' }, { id: 'vip', label: 'VIP', filter: (c) => segment(c)[0] === 'VIP' }, { id: 'loyal', label: 'Loyal', filter: (c) => segment(c)[0] === 'Loyal' }, { id: 'new', label: 'New', filter: (c) => segment(c)[0] === 'New' }],
+      rows: () => S.customers().map((c) => Object.assign(c, { pts: S.points(c.phone).balance, due: S.dueOf(c.phone) })), rowId: (c) => c.phone, initialQ: A.qs.get('q') || '',
+      views: [{ id: 'all', label: 'All' }, { id: 'due', label: 'With dues', filter: (c) => c.due > 0 }, { id: 'vip', label: 'VIP', filter: (c) => segment(c)[0] === 'VIP' }, { id: 'loyal', label: 'Loyal', filter: (c) => segment(c)[0] === 'Loyal' }, { id: 'new', label: 'New', filter: (c) => segment(c)[0] === 'New' }],
       filters: [{ id: 'district', label: 'All districts', options: [...new Set(S.customers().map((c) => c.district))].sort().map((d) => [d, d]), test: (c, v) => c.district === v }],
       search: (c, q) => (c.name + c.phone + c.email + c.district).toLowerCase().includes(q),
       columns: [
@@ -512,10 +557,13 @@
         { id: 'district', label: 'District', sort: (a, b) => a.district.localeCompare(b.district), render: (c) => esc(c.district) },
         { id: 'orders', label: 'Orders', cls: 'right', sort: (a, b) => a.orders - b.orders, render: (c) => `<span class="num">${c.orders}</span>` },
         { id: 'spent', label: 'Total spent', cls: 'right', sort: (a, b) => a.spent - b.spent, render: (c) => `<b class="num">${money(c.spent)}</b>` },
+        { id: 'mix', label: 'Online / Store', hidden: true, render: (c) => `<span class="small">${money(c.online)} / ${money(c.instore)}</span>` },
+        { id: 'pts', label: 'Points', cls: 'right', sort: (a, b) => a.pts - b.pts, render: (c) => `<span class="num">${c.pts}</span>` },
+        { id: 'due', label: 'Due', cls: 'right', sort: (a, b) => a.due - b.due, render: (c) => (c.due ? `<b class="num err">${money(c.due)}</b>` : '<span class="muted">—</span>') },
         { id: 'last', label: 'Last order', sort: (a, b) => new Date(a.last) - new Date(b.last), render: (c) => `<span class="muted small">${A.date(c.last)}</span>` },
         { id: 'seg', label: 'Segment', render: (c) => { const [l, cls] = segment(c); return `<span class="badge ${cls}">${l}</span>`; } }
       ],
-      actions: { view: (id, c) => profile(c) }
+      actions: { view: (id, c, a) => profile(c, a) }
     });
     document.addEventListener('click', (e) => { const a = e.target.closest('a[data-act="view"]'); if (a) e.preventDefault(); });
   };
