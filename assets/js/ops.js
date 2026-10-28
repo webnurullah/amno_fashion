@@ -1,7 +1,7 @@
 /* ==========================================================================
    Amnu Fashion — store operations layer (extends Amnu.store)
    Showroom stock (per size) · accounts & ledger · expenses ·
-   suppliers & fabric purchases · day close · loyalty · P&L.
+   fabric purchases · day close · loyalty · P&L.
    Fabric warehouse, production and courier parcels live in prod.js.
    DEMO data: swap these methods for calls to your backend.
    ========================================================================== */
@@ -234,38 +234,28 @@
   S.collectDue = (phone, name, amount, account, note) => COLLECTIONS.add({ phone, name, amount, account, note });
 
   /* ======================================================================
-     Suppliers & purchases (payables)
+     Fabric purchases (paid when bought; no supplier accounts)
      ====================================================================== */
-  const SEED_SUPPLIERS = [
-    { id: 'sup1', name: 'Rahman Textiles', contact: 'Mr. Rahman', phone: '01700-000020', address: 'Narayanganj', category: 'Cotton and linen fabric' },
-    { id: 'sup2', name: 'Dhaka Embroidery House', contact: 'Ms. Sultana', phone: '01700-000021', address: 'Mirpur, Dhaka', category: 'Embroidery and finishing' },
-    { id: 'sup3', name: 'Jamdani Weavers Co-op', contact: 'Mr. Karim', phone: '01700-000022', address: 'Sonargaon', category: 'Jamdani and silk' },
-    { id: 'sup4', name: 'Button & Trim Traders', contact: 'Mr. Hasan', phone: '01700-000023', address: 'Islampur, Dhaka', category: 'Buttons, thread and trims' },
-    { id: 'sup5', name: 'Islampur Fabric House', contact: 'Mr. Jalal', phone: '01700-000024', address: 'Islampur, Dhaka', category: 'Velvet, raw silk and satin' }
-  ];
-  S.suppliers = () => DB.get('suppliers', null) || (DB.set('suppliers', SEED_SUPPLIERS), clone(SEED_SUPPLIERS));
-  S.saveSuppliers = (l) => DB.set('suppliers', l);
-  S.supplier = (id) => S.suppliers().find((s) => s.id === id);
 
   /* purchase orders buy fabric by the yard: items = [{ fabricId, yards, rate }] (rate = BDT per yard) */
   const ago = (n) => new Date(dayStart(n) + 11 * 36e5).toISOString();
   function seedPurchases() {
     const pay = (days, amount, account = 'bank', note = '') => ({ id: A.uid(), date: ago(days), account, amount, note });
-    const mk = (n, sup, days, status, lines, payments) => {
+    const mk = (n, days, status, lines) => {
       const items = lines.map(([fabricId, yards, rate]) => ({ fabricId, yards, rate }));
-      const po = { id: 'PO-' + pad(n, 4), n, date: ago(days), supplierId: sup, status, items, shipping: n % 2 ? 500 : 0, note: '' };
+      const po = { id: 'PO-' + pad(n, 4), n, date: ago(days), status, items, shipping: n % 2 ? 500 : 0, note: '' };
       if (status === 'received') po.receivedAt = ago(Math.max(0, days - 1));
-      po.payments = payments(S.poTotal(po));
+      po.payments = status === 'received' ? [pay(Math.max(0, days - 1), S.poTotal(po), 'bank', 'Paid when bought')] : [];
       return po;
     };
     return [
-      mk(1, 'sup1', 55, 'received', [['fab5', 300, 205], ['fab9', 200, 295]], (t) => [pay(54, t)]),
-      mk(2, 'sup3', 46, 'received', [['fab11', 60, 640], ['fab2', 120, 515]], (t) => [pay(45, Math.round(t / 2)), pay(30, t - Math.round(t / 2))]),
-      mk(3, 'sup5', 37, 'received', [['fab12', 50, 770], ['fab4', 80, 940]], (t) => [pay(36, Math.round(t * 0.6), 'bank', 'Advance'), pay(20, t - Math.round(t * 0.6))]),
-      mk(4, 'sup1', 26, 'received', [['fab10', 200, 335], ['fab6', 150, 255], ['fab8', 120, 228]], (t) => [pay(25, Math.round(t * 0.7), 'bank', 'Part payment')]),
-      mk(5, 'sup1', 15, 'received', [['fab1', 220, 415], ['fab7', 120, 238]], (t) => [pay(14, Math.round(t * 0.5), 'bank', 'Part payment')]),
-      mk(6, 'sup5', 6, 'received', [['fab3', 90, 380], ['fab12', 30, 780]], () => []),
-      mk(7, 'sup3', 2, 'ordered', [['fab11', 80, 650]], () => [])
+      mk(1, 55, 'received', [['fab5', 300, 205], ['fab9', 200, 295]]),
+      mk(2, 46, 'received', [['fab11', 60, 640], ['fab2', 120, 515]]),
+      mk(3, 37, 'received', [['fab12', 50, 770], ['fab4', 80, 940]]),
+      mk(4, 26, 'received', [['fab10', 200, 335], ['fab6', 150, 255], ['fab8', 120, 228]]),
+      mk(5, 15, 'received', [['fab1', 220, 415], ['fab7', 120, 238]]),
+      mk(6, 6, 'received', [['fab3', 90, 380], ['fab12', 30, 780]]),
+      mk(7, 2, 'ordered', [['fab11', 80, 650]])
     ];
   }
   S.purchases = () => DB.get('purchases', null) || (DB.set('purchases', seedPurchases()), DB.get('purchases', []));
@@ -273,7 +263,6 @@
   S.poTotal = (po) => sum(po.items, (i) => Math.round(i.yards * i.rate)) + (po.shipping || 0);
   S.poYards = (po) => sum(po.items, (i) => i.yards);
   S.poPaid = (po) => sum(po.payments || [], (p) => p.amount);
-  S.poDue = (po) => (po.status === 'received' ? Math.max(0, S.poTotal(po) - S.poPaid(po)) : 0);
   S.nextPoId = () => 'PO-' + pad(S.purchases().reduce((m, p) => Math.max(m, p.n || 0), 0) + 1, 4);
   /** receiving adds the yards to the warehouse and re-averages each fabric's cost per yard */
   S.receivePO = (id) => {
@@ -286,15 +275,6 @@
     S.savePurchases(list);
     return true;
   };
-  S.payPO = (id, account, amount, note) => {
-    const list = S.purchases();
-    const po = list.find((p) => p.id === id);
-    if (!po || !(amount > 0)) return false;
-    po.payments = (po.payments || []).concat([{ id: A.uid(), date: new Date().toISOString(), account, amount, note: note || '' }]);
-    S.savePurchases(list);
-    return true;
-  };
-  S.payables = () => sum(S.purchases(), S.poDue);
 
   /* ======================================================================
      Day close (cash register): sales by tender for a location + date
@@ -403,7 +383,7 @@
       });
     });
     S.expenses().forEach((e) => out.push({ date: e.date, account: e.account, dir: -1, amount: e.amount, kind: 'expense', ref: 'E-' + e.id, loc: e.loc, label: `${e.category}${e.vendor ? ' · ' + e.vendor : ''}` }));
-    S.purchases().forEach((po) => (po.payments || []).forEach((p) => out.push({ date: p.date, account: p.account, dir: -1, amount: p.amount, kind: 'supplier', ref: po.id, label: `Supplier payment · ${(S.supplier(po.supplierId) || {}).name || ''} · ${po.id}` })));
+    S.purchases().forEach((po) => (po.payments || []).forEach((p) => out.push({ date: p.date, account: p.account, dir: -1, amount: p.amount, kind: 'fabric', ref: po.id, label: `Fabric purchase · ${po.id} · ${po.items.map((i) => S.fabricName(i.fabricId)).join(', ')}` })));
     S.transfers().forEach((t) => { out.push({ date: t.date, account: t.from, dir: -1, amount: t.amount, kind: 'transfer', ref: 'TRF', label: `Transfer to ${S.accountName(t.to)}${t.note ? ' · ' + t.note : ''}` }); out.push({ date: t.date, account: t.to, dir: 1, amount: t.amount, kind: 'transfer', ref: 'TRF', label: `Transfer from ${S.accountName(t.from)}${t.note ? ' · ' + t.note : ''}` }); });
     S.closes().forEach((c) => { if (c.deposit > 0) { out.push({ date: c.submittedAt, account: 'cash', dir: -1, amount: c.deposit, kind: 'transfer', ref: c.id, label: `Cash deposited to bank · ${S.locName(c.loc)}` }); out.push({ date: c.submittedAt, account: 'bank', dir: 1, amount: c.deposit, kind: 'transfer', ref: c.id, label: `Cash deposit from ${S.locName(c.loc)}` }); } });
     S.otherIncome().forEach((i) => out.push({ date: i.date, account: i.account, dir: 1, amount: i.amount, kind: 'income', ref: 'INC', label: `${i.source || 'Other income'}${i.note ? ' · ' + i.note : ''}` }));

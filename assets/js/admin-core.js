@@ -73,7 +73,6 @@
       { id: 'fabrics', label: 'Fabric stock', icon: 'package', href: 'fabrics.html' },
       { id: 'production', label: 'Production', icon: 'scissors', href: 'production.html', badge: wip },
       { id: 'purchases', label: 'Fabric purchases', icon: 'swap', href: 'purchases.html' },
-      { id: 'suppliers', label: 'Suppliers', icon: 'building', href: 'suppliers.html' },
       { heading: 'Showroom & catalog' },
       { id: 'products', label: 'Designs & products', icon: 'tag', href: 'products.html', sub: [['All Products', 'products.html', 'products'], ['Add New', 'product-edit.html', 'product-edit'], ['Categories', 'categories.html', 'categories']] },
       { id: 'inventory', label: 'Showroom stock', icon: 'barcode', href: 'inventory.html' },
@@ -132,8 +131,7 @@
             <a href="orders.html?status=processing">${icon('bag', 18)}<span><b>${openOrders}</b> orders waiting to be processed</span></a>
             <a href="products.html?stock=low">${icon('alert', 18)}<span><b>${lowStock}</b> products low or out of stock</span></a>
             <a href="pages.html?view=draft">${icon('file', 18)}<span><b>${drafts}</b> drafts to review</span></a>
-            <a href="day-close.html">${icon('lock', 18)}<span><b>${unclosed}</b> showroom${unclosed === 1 ? '' : 's'} not closed for today</span></a>
-            <a href="finance.html">${icon('coins', 18)}<span><b>${money(S.payables())}</b> owed to suppliers</span></a></div></div>
+            <a href="day-close.html">${icon('lock', 18)}<span><b>${unclosed}</b> showroom${unclosed === 1 ? '' : 's'} not closed for today</span></a></div></div>
         <button class="icon-btn" data-theme-toggle aria-label="Toggle dark mode">${A.themeIcon()}</button>
         <a class="btn btn-glass btn-sm hide-sm" href="../index.html" target="_blank" rel="noopener">${icon('external', 16)} Visit site</a>
         <div class="dd"><button class="user-btn" data-dd aria-haspopup="true">${Admin.avatar('Amnu Admin', 'sm')}<span class="hide-sm">Howdy, <b>Admin</b></span>${icon('chevron-down', 16)}</button>

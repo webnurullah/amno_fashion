@@ -1,6 +1,6 @@
 /* ==========================================================================
    Amnu Fashion — admin controllers: store operations
-   pos · showroom stock · suppliers · day-close (fabric purchases: admin-prod.js)
+   pos · showroom stock · day-close (fabric purchases: admin-prod.js)
    ========================================================================== */
 (function () {
   'use strict';
@@ -66,7 +66,6 @@
      POS register
      ====================================================================== */
   P.pos = () => {
-    document.getElementById('admin').classList.add('collapsed');
     const rooms = S.showrooms();
     const cashiers = S.users().filter((u) => ['Cashier', 'Shop Manager', 'Administrator'].includes(u.role));
     const st = {
@@ -150,7 +149,7 @@
       $('#pos-cart').innerHTML = `
         <div class="pc-head"><h2>Current sale</h2><button class="btn-link danger small" data-clear ${st.cart.length ? '' : 'disabled'}>Clear</button></div>
         <div class="pc-cust">${cust ? `<div class="row gap-8">${Admin.avatar(cust.name, 'sm')}<div class="grow"><b class="small">${esc(cust.name)}</b><div class="xs muted">${esc(cust.phone || 'Walk-in')}${t.pts ? ` · <b>${t.pts.balance}</b> pts` : ''}${due ? ` · <span class="err">due ${money(due)}</span>` : ''}</div></div><button class="btn btn-ghost btn-icon btn-sm" data-cust-clear aria-label="Remove customer">${icon('x', 14)}</button></div>`
-          : `<form class="row gap-8" id="cust-form"><div class="input-group grow"><i data-icon="user"></i><input id="cust-q" type="tel" placeholder="Customer mobile (optional)" aria-label="Customer mobile"></div><button class="btn btn-glass btn-sm" type="submit">Find</button></form>`}</div>
+          : `<form class="row gap-8" id="cust-form"><div class="input-group grow"><i data-icon="user"></i><input id="cust-q" type="tel" placeholder="Customer mobile, for points &amp; record" aria-label="Customer mobile"></div><button class="btn btn-glass btn-sm" type="submit">Find</button></form>`}</div>
         <div class="pc-lines">${st.cart.map((l) => `<div class="pc-line" data-key="${esc(l.key)}"><div class="grow"><b class="small">${esc(l.name)}</b><div class="xs muted">${esc(S.sizeLabel(l.size))}${l.price !== (S.product(l.pid) ? S.price(S.product(l.pid)) : l.price) ? ' · price changed' : ''}</div></div>
           <div class="qty-mini"><button data-q="-1" aria-label="Decrease">${icon('minus', 13)}</button><span class="num">${l.qty}</span><button data-q="1" aria-label="Increase">${icon('plus', 13)}</button></div>
           <b class="num pc-price">${money(l.price * l.qty)}</b><button class="btn btn-ghost btn-icon btn-sm" data-rm aria-label="Remove">${icon('x', 14)}</button></div>`).join('') || `<div class="pc-empty">${icon('barcode', 34)}<p class="muted small">Scan a barcode or tap a product to start a sale.</p></div>`}</div>
@@ -266,8 +265,8 @@
       const d = (x) => String(x).replace(/\D/g, '').slice(-10);
       const known = S.customers().find((c) => d(c.phone) === d(raw));
       if (known) { st.customer = { name: known.name, phone: known.phone, email: known.email || '', district: known.district, address: known.address }; paintCart(); A.toast(`Found ${known.name}`); return; }
-      const m = A.modal({ title: 'New customer', body: `<div class="field"><label for="nc-name">Name</label><input id="nc-name" placeholder="Customer name"></div><p class="xs muted">${esc(raw)} is not in your customer list yet.</p>`, footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-ok>Add customer</button>' });
-      m.el.addEventListener('click', (ev) => { if (ev.target.closest('[data-ok]')) { const n = $('#nc-name', m.el).value.trim() || 'Customer'; st.customer = { name: n, phone: raw.replace(/\s/g, ''), email: '', district: '', address: '' }; m.close(); paintCart(); } });
+      const m = A.modal({ title: 'New customer', body: `<p class="xs muted" style="margin-bottom:10px">${esc(raw)} is not in your customer list yet. Save the details so you can find them next time and give loyalty points.</p><div class="form-grid2"><div class="field"><label for="nc-name">Name *</label><input id="nc-name" placeholder="Customer name"><span class="msg">Enter a name.</span></div><div class="field"><label for="nc-district">District</label><select id="nc-district">${S.districts.map((d) => `<option ${d === 'Dhaka' ? 'selected' : ''}>${d}</option>`).join('')}</select></div><div class="field full"><label for="nc-addr">Address (optional)</label><input id="nc-addr" placeholder="House, road, area"></div></div>`, footer: '<button class="btn btn-ghost" data-close>Skip (walk-in)</button><button class="btn btn-violet" data-ok>Save customer</button>' });
+      m.el.addEventListener('click', (ev) => { if (!ev.target.closest('[data-ok]')) return; const n = $('#nc-name', m.el).value.trim(); $('#nc-name', m.el).closest('.field').classList.toggle('err', !n); if (!n) return; st.customer = { name: n, phone: raw.replace(/[\s-]/g, ''), email: '', district: $('#nc-district', m.el).value, address: $('#nc-addr', m.el).value.trim() }; m.close(); paintCart(); A.toast(`${n} saved with this sale`); });
     });
     $('#pos-holds').addEventListener('click', () => {
       const holds = S.holds().filter((h) => h.loc === st.loc);
@@ -359,45 +358,6 @@
     });
     $('#list').hidden = false; $('#moves').hidden = true;
     void api;
-  };
-
-  /* ======================================================================
-     Suppliers
-     ====================================================================== */
-  P.suppliers = () => {
-    const edit = (id, api) => {
-      const list = S.suppliers(); const s = id ? list.find((x) => x.id === id) : null;
-      const m = A.modal({
-        title: s ? 'Edit supplier' : 'Add supplier',
-        body: `<form id="sf" class="form-grid2" novalidate><div class="field full"><label>Supplier name *</label><input name="name" value="${esc(s ? s.name : '')}"><span class="msg">Enter a name.</span></div><div class="field"><label>Contact person</label><input name="contact" value="${esc(s ? s.contact : '')}"></div><div class="field"><label>Phone</label><input name="phone" value="${esc(s ? s.phone : '')}"></div><div class="field"><label>Address</label><input name="address" value="${esc(s ? s.address : '')}"></div><div class="field"><label>Supplies</label><input name="category" value="${esc(s ? s.category : '')}" placeholder="e.g. Cotton fabric"></div></form>`,
-        footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Save supplier</button>'
-      });
-      const f = $('#sf', m.el).elements;
-      m.el.addEventListener('click', (e) => {
-        if (!e.target.closest('[data-save]')) return;
-        if (!f.name.value.trim()) { f.name.closest('.field').classList.add('err'); return; }
-        const rec = { id: s ? s.id : 'sup' + A.uid().slice(0, 4), name: f.name.value.trim(), contact: f.contact.value.trim(), phone: f.phone.value.trim(), address: f.address.value.trim(), category: f.category.value.trim() };
-        if (s) list[list.indexOf(s)] = rec; else list.push(rec);
-        S.saveSuppliers(list); m.close(); api.refresh(); A.toast(s ? 'Supplier updated' : 'Supplier added');
-      });
-    };
-    const stats = (id) => { const pos = S.purchases().filter((p) => p.supplierId === id); return { n: pos.length, total: sum(pos.filter((p) => p.status === 'received'), S.poTotal), due: sum(pos, S.poDue) }; };
-    const api = Admin.listTable({
-      id: 'suppliers', mount: $('#list'), perPage: 10, empty: 'No suppliers', searchPlaceholder: 'Search suppliers',
-      rows: () => S.suppliers(), rowId: (s) => s.id, search: (s, q) => (s.name + s.contact + s.phone + s.category).toLowerCase().includes(q),
-      views: [{ id: 'all', label: 'All' }, { id: 'due', label: 'With dues', filter: (s) => stats(s.id).due > 0 }],
-      columns: [
-        { id: 'name', label: 'Supplier', sort: (a, b) => a.name.localeCompare(b.name), render: (s) => `<div class="row gap-8">${Admin.avatar(s.name)}<div><b class="row-title">${esc(s.name)}</b><div class="xs muted">${esc(s.category || '')}</div></div></div>${Admin.actions([{ label: 'Edit', act: 'edit', id: s.id }, { label: 'New purchase order', href: 'purchases.html?new=1&sup=' + s.id }, { label: 'Delete', act: 'del', id: s.id, danger: true }])}` },
-        { id: 'contact', label: 'Contact', render: (s) => `${esc(s.contact || '—')}<div class="xs muted mono">${esc(s.phone || '')}</div>` },
-        { id: 'address', label: 'Address', render: (s) => esc(s.address || '—') },
-        { id: 'pos', label: 'Orders', cls: 'right', render: (s) => `<span class="num">${stats(s.id).n}</span>` },
-        { id: 'total', label: 'Purchased', cls: 'right', render: (s) => `<span class="num">${money(stats(s.id).total)}</span>` },
-        { id: 'due', label: 'We owe', cls: 'right', sort: (a, b) => stats(a.id).due - stats(b.id).due, render: (s) => { const d = stats(s.id).due; return d ? `<b class="num err">${money(d)}</b>` : '<span class="muted">—</span>'; } }
-      ],
-      actions: { edit: (id, s, a) => edit(id, a), del: (id, s, a) => { if (S.purchases().some((p) => p.supplierId === id)) { A.toast('This supplier has purchase orders and cannot be deleted', 'err'); return; } A.confirm(`Delete ${s.name}?`, 'Delete').then((ok) => { if (ok) { S.saveSuppliers(S.suppliers().filter((x) => x.id !== id)); a.refresh(); A.toast('Supplier deleted'); } }); } }
-    });
-    $('#add-supplier').addEventListener('click', () => edit(null, api));
-    if (A.qs.get('new')) edit(null, api);
   };
 
   /* ======================================================================

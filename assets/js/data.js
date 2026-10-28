@@ -68,18 +68,18 @@
 
   /* ---------- fabrics: cloth bought by the yard (stock in yards, 1 yd = 36 in) ---------- */
   const SEED_FABRICS = [
-    { id: 'fab1', name: 'Jacquard Cotton', type: 'Jacquard', colors: 'Navy, Sand', hex: '#1f2a5c', width: 44, rate: 420, reorder: 60, stock: 186.5, supplierId: 'sup1' },
-    { id: 'fab2', name: 'Cotton-Silk Blend', type: 'Blend', colors: 'Ivory, Teal, Plum', hex: '#efe5cf', width: 44, rate: 520, reorder: 50, stock: 142.25, supplierId: 'sup3' },
-    { id: 'fab3', name: 'Silk-Touch Satin', type: 'Satin', colors: 'Emerald, Ink Blue', hex: '#0f6b4f', width: 44, rate: 380, reorder: 40, stock: 96, supplierId: 'sup5' },
-    { id: 'fab4', name: 'Raw Silk (Zari)', type: 'Silk', colors: 'Maroon, Midnight', hex: '#7a1f33', width: 42, rate: 950, reorder: 40, stock: 38.5, supplierId: 'sup5' },
-    { id: 'fab5', name: 'Combed Cotton', type: 'Cotton', colors: 'Sky, Olive, Royal Blue, Pink', hex: '#7fb2e5', width: 58, rate: 210, reorder: 100, stock: 412, supplierId: 'sup1' },
-    { id: 'fab6', name: 'Cotton Twill', type: 'Cotton', colors: 'Charcoal, Navy, Olive', hex: '#3a3d4a', width: 58, rate: 260, reorder: 50, stock: 128, supplierId: 'sup1' },
-    { id: 'fab7', name: 'Cotton Voile', type: 'Cotton', colors: 'Mint, Cream, Lilac', hex: '#a8dcc8', width: 44, rate: 240, reorder: 60, stock: 74.5, supplierId: 'sup1' },
-    { id: 'fab8', name: 'Cotton Slub', type: 'Cotton', colors: 'Mustard, Terracotta, Teal', hex: '#e0a82e', width: 58, rate: 230, reorder: 50, stock: 61, supplierId: 'sup1' },
-    { id: 'fab9', name: 'Premium Cotton', type: 'Cotton', colors: 'Black, Navy, Brown', hex: '#17171c', width: 58, rate: 300, reorder: 80, stock: 236.75, supplierId: 'sup1' },
-    { id: 'fab10', name: 'Linen Blend', type: 'Linen', colors: 'Beige, Rust, Pearl, Sand', hex: '#cdb89a', width: 56, rate: 340, reorder: 60, stock: 158, supplierId: 'sup1' },
-    { id: 'fab11', name: 'Jamdani Cotton', type: 'Jamdani', colors: 'Peach, Rose', hex: '#f2a98c', width: 42, rate: 650, reorder: 30, stock: 22.5, supplierId: 'sup3' },
-    { id: 'fab12', name: 'Velvet', type: 'Velvet', colors: 'Wine, Black', hex: '#5a1730', width: 44, rate: 780, reorder: 25, stock: 18, supplierId: 'sup5' }
+    { id: 'fab1', name: 'Jacquard Cotton', type: 'Jacquard', colors: 'Navy, Sand', hex: '#1f2a5c', width: 44, rate: 420, reorder: 60, stock: 186.5 },
+    { id: 'fab2', name: 'Cotton-Silk Blend', type: 'Blend', colors: 'Ivory, Teal, Plum', hex: '#efe5cf', width: 44, rate: 520, reorder: 50, stock: 142.25 },
+    { id: 'fab3', name: 'Silk-Touch Satin', type: 'Satin', colors: 'Emerald, Ink Blue', hex: '#0f6b4f', width: 44, rate: 380, reorder: 40, stock: 96 },
+    { id: 'fab4', name: 'Raw Silk (Zari)', type: 'Silk', colors: 'Maroon, Midnight', hex: '#7a1f33', width: 42, rate: 950, reorder: 40, stock: 38.5 },
+    { id: 'fab5', name: 'Combed Cotton', type: 'Cotton', colors: 'Sky, Olive, Royal Blue, Pink', hex: '#7fb2e5', width: 58, rate: 210, reorder: 100, stock: 412 },
+    { id: 'fab6', name: 'Cotton Twill', type: 'Cotton', colors: 'Charcoal, Navy, Olive', hex: '#3a3d4a', width: 58, rate: 260, reorder: 50, stock: 128 },
+    { id: 'fab7', name: 'Cotton Voile', type: 'Cotton', colors: 'Mint, Cream, Lilac', hex: '#a8dcc8', width: 44, rate: 240, reorder: 60, stock: 74.5 },
+    { id: 'fab8', name: 'Cotton Slub', type: 'Cotton', colors: 'Mustard, Terracotta, Teal', hex: '#e0a82e', width: 58, rate: 230, reorder: 50, stock: 61 },
+    { id: 'fab9', name: 'Premium Cotton', type: 'Cotton', colors: 'Black, Navy, Brown', hex: '#17171c', width: 58, rate: 300, reorder: 80, stock: 236.75 },
+    { id: 'fab10', name: 'Linen Blend', type: 'Linen', colors: 'Beige, Rust, Pearl, Sand', hex: '#cdb89a', width: 56, rate: 340, reorder: 60, stock: 158 },
+    { id: 'fab11', name: 'Jamdani Cotton', type: 'Jamdani', colors: 'Peach, Rose', hex: '#f2a98c', width: 42, rate: 650, reorder: 30, stock: 22.5 },
+    { id: 'fab12', name: 'Velvet', type: 'Velvet', colors: 'Wine, Black', hex: '#5a1730', width: 44, rate: 780, reorder: 25, stock: 18 }
   ];
   /* recipe per design: [fabric, yards per piece, making (tailoring) per piece, extras per piece (embroidery, buttons, packing)] */
   const RECIPES = {

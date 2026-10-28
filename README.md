@@ -36,13 +36,13 @@ python3 -m http.server 8000      # then open http://localhost:8000
 ```
 Fabric (yards / inches)  →  Production  →  Showroom stock  →  Sales  →  Courier  →  Merchant balance  →  Bank
  warehouse, by cloth name    cut + stitch    finished panjabi   showroom,   Pathao /     cash on delivery      withdraw
- bought from suppliers       per design      by size            website,    Steadfast    minus their charges
+ bought by you                per design      by size            website,    Steadfast    minus their charges
                                                                 Facebook /
                                                                 WhatsApp
 ```
 
-1. **Buy fabric** (*Fabric purchases*): enter the quantity in **yards or inches** (1 yd = 36 in). Receiving it adds
-   to *Fabric stock* and re-averages the cost per yard. Unpaid amounts show as supplier dues.
+1. **Buy fabric** (*Fabric purchases*, no supplier needed): enter the quantity in **yards or inches** (1 yd = 36 in). Receiving it adds
+   to *Fabric stock* and re-averages the cost per yard. There are no supplier accounts: a purchase is paid when you buy it.
 2. **Know what you have** (*Fabric stock*): each cloth by name with yards **and** inches, cost, value, a reorder
    level, how many days it lasts at your recent pace, and which designs can be cut from it (and how many).
 3. **One cloth, many designs.** Every design has a **recipe** in the product editor: fabric, yards per piece,
@@ -51,7 +51,8 @@ Fabric (yards / inches)  →  Production  →  Showroom stock  →  Sales  →  
    warehouse. When the tailor finishes, mark it ready: the pieces land in **showroom stock**, the design's cost
    is re-averaged, and the making cost is paid from cash or bank. Cancelling a batch returns the fabric.
 5. **Sell** three ways, all from the same showroom stock:
-   * **Showroom** (*POS*): customer pays at the counter.
+   * **Showroom** (*POS*): customer pays at the counter. Type the customer's mobile number in the sale panel: a
+     known customer is found, a new one is saved with name, district and address, and earns loyalty points.
    * **Website**: normal checkout.
    * **Facebook / WhatsApp / Instagram / phone** (*Social media order*): take the order by chat, choose
      **customer pays delivery or free delivery**, optionally record a bKash advance, pick the courier.
@@ -88,14 +89,14 @@ in the browser's `localStorage` (`amnu.*` keys), so every screen is functional w
 * Place an order on the storefront → it appears in **Admin → Orders**, reduces stock and moves money.
 * Ring up a sale on the **POS** → it shows in Orders (channel *Store*), the customer's account,
   Day close, the ledger and the dashboard.
-* Receive a **purchase order** → stock rises and the supplier balance updates.
+* Record a **fabric purchase** → fabric stock rises and the payment leaves your cash or bank.
 * **Settings → Advanced** exports the data as JSON or resets everything to the sample content.
 
 Sample data (about 60 days: online orders, store sales, expenses, purchases, day closes) is generated
 deterministically relative to today, so dashboards and reports always have recent numbers. Traffic,
 sessions and funnel stages are **simulated**; revenue and profit come from the orders.
 
-Sample setup: **one store** (it also fulfils online orders), twelve fabrics, five suppliers, Pathao and Steadfast merchant accounts, six accounts in total, and staff users
+Sample setup: **one store** (it also fulfils online orders), twelve fabrics, Pathao and Steadfast merchant accounts, six accounts in total, and staff users
 including a cashier and an accountant. There is deliberately no multi-branch feature.
 
 **Brand:** your logo and the tagline *The Style You Love!* are in `assets/img/` and appear in the storefront
@@ -133,7 +134,7 @@ assets/css/  glass.css  store.css  admin.css
 assets/js/   core.js          icons, storage, formatting, Panjabi SVG, modal/toast, theme
              data.js          sample data + the Amnu.store API  ← swap for your backend
              ops.js           store operations layer: store, per-size inventory, accounts +
-                              ledger, expenses, suppliers / purchases, day close, loyalty, P&L
+                              ledger, expenses, fabric purchases, day close, loyalty, P&L
              store-core.js    storefront shell: header, footer, bag, search, auth
              store-pages.js   home · category · shop · product · bag · checkout · thank-you
              store-pages2.js  login · account · stores · policy · about · contact · track
@@ -141,7 +142,7 @@ assets/js/   core.js          icons, storage, formatting, Panjabi SVG, modal/toa
              admin-core.js    admin shell, command palette, WP-style list table
              admin-pages.js   dashboard · products · editor · categories · orders · customers
              admin-pages2.js  coupons · media · pages · customize · analytics · users · plugins · settings
-             admin-ops.js     POS · inventory · suppliers · purchases · day close · receipts
+             admin-ops.js     POS · showroom stock · day close · receipts
              admin-fin.js     finance overview · expenses · accounts · reports · loyalty
 ```
 
@@ -152,7 +153,7 @@ the page scripts.
 ## Making it real
 
 1. **Content.** Replace the arrays in `assets/js/data.js` (categories, products, copy), the
-   store details / suppliers / accounts in `assets/js/ops.js`, the contact details in
+   store details / accounts in `assets/js/ops.js`, the contact details in
    *Admin → Settings → General*, and the placeholder about-us text in `about.html`. Facebook content
    wasn't available when this was built, so no real photos, prices or descriptions were imported.
 2. **Backend.** `Amnu.store` (in `data.js` and `ops.js`) is the only data layer: every screen calls it.
