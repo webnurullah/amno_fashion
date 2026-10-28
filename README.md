@@ -1,4 +1,4 @@
-# Amnu Fashion — Panjabi store: online shop + store counter + finance, one HTML template
+# AMNO Fashion — Panjabi store: online shop + store counter + finance, one HTML template
 
 A complete, dependency-free HTML/CSS/JS template for a Panjabi brand that sells **online and in its
 own store** and wants both managed from one place:
@@ -52,7 +52,7 @@ Fabric (yards / inches)  →  Production  →  Showroom stock  →  Sales  →  
    is re-averaged, and the making cost is paid from cash or bank. Cancelling a batch returns the fabric.
 5. **Sell** three ways, all from the same showroom stock:
    * **Showroom** (*POS*): customer pays at the counter. Type the customer's mobile number in the sale panel: a
-     known customer is found, a new one is saved with name, district and address, and earns loyalty points.
+     known customer is found, a new one is saved with name, district and address.
    * **Website**: normal checkout.
    * **Facebook / WhatsApp / Instagram / phone** (*Social media order*): take the order by chat, choose
      **customer pays delivery or free delivery**, optionally record a bKash advance, pick the courier.
@@ -79,7 +79,7 @@ and **one showroom stock** (per size):
 | Cash arrives in | cash drawer / bank / wallets | wallets, or courier balance (COD) | wallets, or courier balance (COD) |
 
 Cancelling or returning an order puts the pieces back on the shelf. The storefront also has **Find in store**,
-**click & collect**, loyalty points and order tracking that shows the courier and tracking number.
+**click & collect** and order tracking that shows the courier and tracking number.
 
 ## How the demo works
 
@@ -99,9 +99,9 @@ sessions and funnel stages are **simulated**; revenue and profit come from the o
 Sample setup: **one store** (it also fulfils online orders), twelve fabrics, Pathao and Steadfast merchant accounts, six accounts in total, and staff users
 including a cashier and an accountant. There is deliberately no multi-branch feature.
 
-**Brand:** your logo and the tagline *The Style You Love!* are in `assets/img/` and appear in the storefront
-header and footer, the admin sidebar and login, the favicon and printed receipts. The admin uses a black +
-gold palette taken from the logo.
+**Brand:** the site shows the text name **AMNO Fashion** as its logo for now. When your logo file is ready, replace
+the `.logo-name` text in `assets/js/store-core.js` (storefront header and footer) and `admin-core.js` (admin
+sidebar) with an `<img>`.
 
 ## Design system
 
@@ -109,8 +109,8 @@ gold palette taken from the logo.
 
 ```css
 :root {
-  --accent: #121216;        /* storefront accent: black (Appearance → Customize edits this) */
-  --primary: #946a14;       /* admin gold (from the logo) */
+  --accent: #2563eb;        /* storefront accent: blue (Appearance → Customize edits this) */
+  --primary: #2563eb;       /* admin and storefront blue */
   --glass-a: .4;            /* panel opacity */
   --blur: 22px;             /* backdrop blur */
   --r-lg: 24px;             /* corner radius */
@@ -134,7 +134,7 @@ assets/css/  glass.css  store.css  admin.css
 assets/js/   core.js          icons, storage, formatting, Panjabi SVG, modal/toast, theme
              data.js          sample data + the Amnu.store API  ← swap for your backend
              ops.js           store operations layer: store, per-size inventory, accounts +
-                              ledger, expenses, fabric purchases, day close, loyalty, P&L
+                              ledger, expenses, fabric purchases, day close, P&L
              store-core.js    storefront shell: header, footer, bag, search, auth
              store-pages.js   home · category · shop · product · bag · checkout · thank-you
              store-pages2.js  login · account · stores · policy · about · contact · track
@@ -143,7 +143,7 @@ assets/js/   core.js          icons, storage, formatting, Panjabi SVG, modal/toa
              admin-pages.js   dashboard · products · editor · categories · orders · customers
              admin-pages2.js  coupons · media · pages · customize · analytics · users · plugins · settings
              admin-ops.js     POS · showroom stock · day close · receipts
-             admin-fin.js     finance overview · expenses · accounts · reports · loyalty
+             admin-fin.js     finance overview · expenses · accounts · reports
 ```
 
 Header, footer and the admin shell are injected from JavaScript so they are written once. Page

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Amnu Fashion — admin page controllers (part 2)
+   AMNO Fashion — admin page controllers (part 2)
    coupons · media · pages · appearance · analytics · users · plugins · settings
    ========================================================================== */
 (function () {
@@ -372,7 +372,7 @@
       });
       if (bad) { A.toast('Please fix the highlighted fields', 'err'); bad.focus(); return; }
       const cur = DB.get('settings', {});
-      S.saveSettings({ ...patch, shipping: { ...(cur.shipping || {}), ...patch.shipping }, payments: { ...(cur.payments || {}), ...patch.payments }, loyalty: { ...(cur.loyalty || {}), ...patch.loyalty } });
+      S.saveSettings({ ...patch, shipping: { ...(cur.shipping || {}), ...patch.shipping }, payments: { ...(cur.payments || {}), ...patch.payments } });
       A.toast('Settings saved');
     });
 

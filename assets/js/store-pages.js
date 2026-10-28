@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Amnu Fashion — storefront pages (1/2)
+   AMNO Fashion — storefront pages (1/2)
    home · category · shop (listing) · product · bag · checkout · thanks
    ========================================================================== */
 (function () {
@@ -321,7 +321,7 @@
     const def = addrs.find((a) => a.default) || addrs[0] || null;
     const st = {
       step: 1, addr: def, editing: !def, addrId: def ? def.id : null, method: '', loc: def ? (def.district === 'Dhaka' ? 'inside' : 'outside') : '',
-      pickup: '', cDistrict: '', cBranch: '', pay: 'cod', via: 'bkash', trx: '', points: false, terms: false, errs: {}
+      pickup: '', cDistrict: '', cBranch: '', pay: 'cod', via: 'bkash', trx: '', terms: false, errs: {}
     };
     const cfg = S.settings();
     const fulfil = () => (st.method === 'store' && st.pickup ? st.pickup : S.onlineLoc());
@@ -333,7 +333,7 @@
       if (st.method === 'home') return base >= cfg.shipping.freeOver ? 0 : (st.loc === 'inside' ? cfg.shipping.dhaka : cfg.shipping.outside);
       return null;
     };
-    const totals = () => Cart.totals({ shipping: shipCost(), digital: st.pay === 'digital', usePoints: st.points });
+    const totals = () => Cart.totals({ shipping: shipCost(), digital: st.pay === 'digital' });
     const methodLabel = () => ({ home: st.loc === 'inside' ? 'Inside Dhaka · Home delivery' : 'Outside Dhaka · Home delivery', courier: `Courier branch pickup (${st.cDistrict} · ${st.cBranch})`, store: `Showroom pickup (${S.locName(st.pickup)})` }[st.method] || '');
 
     const head = (n, title, done) => `<div class="step-h ${st.step === n ? 'on' : ''} ${st.step < n ? 'todo' : ''}"><span class="step-n">${done ? icon('check', 16) : n}</span><h2>${title}</h2>${done && st.step !== n ? `<button class="btn-link" data-edit="${n}" type="button">Edit</button>` : ''}</div>`;
@@ -382,13 +382,11 @@
       if (st.step === 3) {
         const t = totals();
         const pct = cfg.digitalDiscountPct;
-        const user2 = Auth.user(); const pts = user2 ? S.points(user2.phone) : null;
         body = `<div class="options two">
             <label class="option ${st.pay === 'cod' ? 'on' : ''}"><input type="radio" name="pay" value="cod" ${st.pay === 'cod' ? 'checked' : ''}><span><b>${st.method === 'store' ? 'Pay at the showroom' : 'Cash on Delivery'}</b><span class="xs muted" style="display:block">Pay for your product when you get it in hand</span></span></label>
             <label class="option ${st.pay === 'digital' ? 'on' : ''}"><input type="radio" name="pay" value="digital" ${st.pay === 'digital' ? 'checked' : ''}><span><b>Digital Payment</b><span class="xs muted" style="display:block">${pct ? `Save ${pct}% on entire order with digital payment. ` : ''}Pay through bKash, Nagad or card.</span></span></label></div>
           ${st.pay === 'digital' ? `<div class="via">${['bkash', 'nagad', 'card'].map((k) => `<label class="chip ${st.via === k ? 'active' : ''}"><input type="radio" name="via" value="${k}" hidden ${st.via === k ? 'checked' : ''}>${S.payLabel[k]}</label>`).join('')}</div>
             ${st.via === 'card' ? '<p class="xs muted">You will be redirected to a secure payment page after confirming. (Demo: connect a gateway such as SSLCommerz.)</p>' : `<div class="pay-note glass-soft"><p class="small">Send <b>${money(t.total)}</b> to <b>${esc(st.via === 'bkash' ? cfg.bkashNumber : cfg.nagadNumber)}</b> (Send Money), then enter the Transaction ID.</p><div class="field ${st.errs.trx ? 'err' : ''}" style="margin-top:10px"><label for="trx">Transaction ID *</label><input id="trx" value="${esc(st.trx)}" placeholder="e.g. 9H7K2LMN4P" autocomplete="off"><span class="msg">${esc(st.errs.trx || '')}</span></div></div>`}` : ''}
-          ${pts && pts.balance >= cfg.loyalty.minRedeem ? `<label class="check points"><input type="checkbox" id="use-points" ${st.points ? 'checked' : ''}> Use my loyalty points <span class="muted small">(${pts.balance} pts = ${money(pts.value)})</span></label>` : ''}
           <label class="check terms"><input type="checkbox" id="terms" ${st.terms ? 'checked' : ''}> <span>I read and accept <a class="u" href="policy.html?p=privacy" target="_blank">Privacy Policy</a>, <a class="u" href="policy.html?p=exchange" target="_blank">Exchange &amp; Return</a> and <a class="u" href="policy.html?p=terms" target="_blank">Terms &amp; Conditions</a></span></label>
           <button class="btn btn-primary btn-lg btn-block" data-confirm type="button" ${st.terms ? '' : 'disabled'}>Confirm Order</button>`;
       }
@@ -401,7 +399,6 @@
           <div class="sum-row"><span>Sub total</span><span class="num">${money(t.subtotal)}</span></div>
           ${t.couponDiscount ? `<div class="sum-row"><span>Promo ${esc(Cart.couponCode().toUpperCase())}</span><span class="num ok">− ${money(t.couponDiscount)}</span></div>` : ''}
           ${t.digitalDiscount ? `<div class="sum-row"><span>Digital payment (${cfg.digitalDiscountPct}%)</span><span class="num ok">− ${money(t.digitalDiscount)}</span></div>` : ''}
-          ${t.pointsDiscount ? `<div class="sum-row"><span>Loyalty points (${t.pointsUsed})</span><span class="num ok">− ${money(t.pointsDiscount)}</span></div>` : ''}
           ${t.vat ? `<div class="sum-row"><span>VAT (${cfg.vatRate}%)</span><span class="num">${money(t.vat)}</span></div>` : ''}
           ${st.method ? `<div class="sum-row"><span>${esc(methodLabel() || 'Delivery')}</span><span class="num">${t.shipping ? money(t.shipping) : 'Free'}</span></div>` : ''}
           <hr><div class="sum-row total"><span>Total</span><b class="num">${money(t.total)}</b></div></div>
@@ -448,7 +445,6 @@
       if (t.id === 'c-branch') { st.cBranch = t.value; paint(); return; }
       if (t.name === 'pay') { st.pay = t.value; paint(); return; }
       if (t.name === 'via') { st.via = t.value; paint(); return; }
-      if (t.id === 'use-points') { st.points = t.checked; paint(); return; }
       if (t.id === 'terms') { st.terms = t.checked; $('[data-confirm]', root).disabled = !st.terms; }
     });
     root.addEventListener('input', (e) => { if (e.target.id === 'trx') st.trx = e.target.value; });
@@ -468,7 +464,7 @@
         channel: 'online', storeId: loc, customer: { name: a.name, phone: a.phone, email: a.email || '', district: a.district, address: a.address },
         items: t.lines.map((l) => ({ pid: l.p.id, name: l.p.name, price: S.price(l.p), cost: l.p.cost, qty: l.qty, size: l.size, color: (l.p.colors.find((c) => c.hex === l.color) || {}).name || '', hex: l.color, style: l.p.style })),
         subtotal: t.subtotal, shipping: t.shipping || 0, discount: t.discount, coupon: t.couponDiscount || t.freeShip ? Cart.couponCode().toUpperCase() : '', vat: t.vat, total: t.total,
-        payment: pay, payments, payRef: st.trx.trim(), shippingMethod: methodLabel(), pickup: st.method === 'store' ? st.pickup : '', pointsUsed: t.pointsUsed,
+        payment: pay, payments, payRef: st.trx.trim(), shippingMethod: methodLabel(), pickup: st.method === 'store' ? st.pickup : '',
         status: t.total <= 0 ? 'processing' : st.pay === 'cod' ? 'processing' : pay === 'card' ? 'pending' : 'on-hold',
         notes: [{ text: 'Order placed by customer from the storefront.', date: new Date().toISOString(), by: 'System' }]
       });

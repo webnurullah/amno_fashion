@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Amnu Fashion — admin page controllers (part 1)
+   AMNO Fashion — admin page controllers (part 1)
    dashboard · products · product-edit · categories · orders · order-view · customers
    ========================================================================== */
 (function () {
@@ -513,7 +513,7 @@
             <div><h3 class="sub-h">Payment</h3>${tenders.map((t) => `<div class="draft-row"><span>${esc(S.payLabel[t.method] || t.method)}</span><b class="num">${money(t.amount)}</b></div>`).join('')}${o.change ? `<p class="xs muted">Change given: ${money(o.change)}</p>` : ''}${o.due ? `<p class="small err"><b>Due: ${money(o.due)}</b></p>` : ''}${o.note ? `<h3 class="sub-h" style="margin-top:12px">Customer note</h3><p class="muted small">${esc(o.note)}</p>` : ''}</div></div></section>
           <section class="card"><div class="table-wrap"><table class="wp-table items-table"><thead><tr><th>Item</th><th class="right">Price</th><th class="right">Qty</th><th class="right">Total</th></tr></thead><tbody>
             ${o.items.map((i) => { const p = S.product(i.pid); return `<tr><td><div class="row gap-8">${p ? Admin.thumb(p, 'sm') : `<span class="thumb sm">${A.panjabi(i.hex || '#888', i.style || 'plain')}</span>`}<div><b>${p ? `<a class="row-title" href="product-edit.html?id=${p.id}">${esc(i.name)}</a>` : esc(i.name)}</b><div class="xs muted">Size ${esc(i.size)} · ${esc(i.color)}${p ? ` · SKU ${esc(p.sku)}` : ''}</div></div></div></td><td class="right num">${money(i.price)}</td><td class="right num">× ${i.qty}</td><td class="right num"><b>${money(i.price * i.qty)}</b></td></tr>`; }).join('')}</tbody></table></div>
-            <div class="totals"><div><span>Items subtotal</span><b class="num">${money(sub)}</b></div>${o.discount ? `<div><span>Discounts${o.coupon ? ` (${esc(o.coupon)})` : ''}${o.pointsUsed ? ` · ${o.pointsUsed} points` : ''}</span><b class="num ok">− ${money(o.discount)}</b></div>` : ''}${o.vat ? `<div><span>VAT</span><b class="num">${money(o.vat)}</b></div>` : ''}${isStore ? '' : `<div><span>Shipping</span><b class="num">${o.shipping ? money(o.shipping) : 'Free'}</b></div>`}<div class="grand"><span>Order total</span><b class="num">${money(o.total)}</b></div></div></section>
+            <div class="totals"><div><span>Items subtotal</span><b class="num">${money(sub)}</b></div>${o.discount ? `<div><span>Discounts${o.coupon ? ` (${esc(o.coupon)})` : ''}</span><b class="num ok">− ${money(o.discount)}</b></div>` : ''}${o.vat ? `<div><span>VAT</span><b class="num">${money(o.vat)}</b></div>` : ''}${isStore ? '' : `<div><span>Shipping</span><b class="num">${o.shipping ? money(o.shipping) : 'Free'}</b></div>`}<div class="grand"><span>Order total</span><b class="num">${money(o.total)}</b></div></div></section>
         </div>
         <aside class="col gap-16 no-print">
           ${o.ship ? `<section class="metabox card"><div class="metabox-h"><h3>Delivery</h3></div><div class="metabox-b col">
@@ -565,11 +565,11 @@
     const segment = (c) => (c.spent >= 20000 ? ['VIP', 'b-violet'] : c.orders >= 3 ? ['Loyal', 'b-ok'] : c.orders === 1 ? ['New', 'b-info'] : ['Regular', '']);
     const profile = (c, api) => {
       const orders = S.orders().filter((o) => o.customer.phone === c.phone).sort((a, b) => new Date(b.date) - new Date(a.date));
-      const pts = S.points(c.phone); const due = S.dueOf(c.phone);
+      const due = S.dueOf(c.phone);
       const m = A.modal({
         title: 'Customer', wide: true,
         body: `<div class="row gap-16 wrap" style="margin-bottom:16px">${Admin.avatar(c.name, 'lg')}<div class="grow"><h3>${esc(c.name)}</h3><p class="muted small">${esc(c.phone)}${c.email ? ' · ' + esc(c.email) : ''}<br>${esc(c.address || '')}${c.address && c.district ? ', ' : ''}${esc(c.district || '')}</p></div>
-          <div class="stat-pills"><div><span class="xs muted">Orders</span><b>${c.orders}</b></div><div><span class="xs muted">Total spent</span><b>${money(c.spent)}</b></div><div><span class="xs muted">Online</span><b>${money(c.online)}</b></div><div><span class="xs muted">In store</span><b>${money(c.instore)}</b></div><div><span class="xs muted">Points</span><b>${pts.balance}</b></div><div><span class="xs muted">Customer since</span><b>${A.date(c.first)}</b></div></div></div>
+          <div class="stat-pills"><div><span class="xs muted">Orders</span><b>${c.orders}</b></div><div><span class="xs muted">Total spent</span><b>${money(c.spent)}</b></div><div><span class="xs muted">Online</span><b>${money(c.online)}</b></div><div><span class="xs muted">In store</span><b>${money(c.instore)}</b></div><div><span class="xs muted">Customer since</span><b>${A.date(c.first)}</b></div></div></div>
           ${due ? `<div class="due-box"><div class="grow"><b class="err">Owes ${money(due)}</b><div class="xs muted">Credit sales not yet collected</div></div><input id="dc-amt" type="number" min="1" max="${due}" value="${due}" aria-label="Amount collected"><select id="dc-acc" aria-label="Received in">${Admin.accountOptions('cash')}</select><button class="btn btn-violet btn-sm" data-collect>Collect</button></div>` : ''}
           <div class="table-wrap"><table class="wp-table"><thead><tr><th>Order</th><th>Date</th><th>Channel</th><th>Status</th><th class="right">Total</th></tr></thead><tbody>${orders.slice(0, 8).map((o) => `<tr><td><a class="row-title" href="order-view.html?id=${o.id}">#${o.id}</a></td><td>${A.date(o.date)}</td><td>${Admin.channelBadge(o)}</td><td>${S.statusBadge(o.status)}</td><td class="right num">${money(o.total)}</td></tr>`).join('')}</tbody></table></div>`
       });
@@ -583,7 +583,7 @@
     };
     const api = Admin.listTable({
       id: 'customers', mount: $('#list'), perPage: 12, empty: 'No customers found', searchPlaceholder: 'Search customers',
-      rows: () => S.customers().map((c) => Object.assign(c, { pts: S.points(c.phone).balance, due: S.dueOf(c.phone) })), rowId: (c) => c.phone, initialQ: A.qs.get('q') || '',
+      rows: () => S.customers().map((c) => Object.assign(c, { due: S.dueOf(c.phone) })), rowId: (c) => c.phone, initialQ: A.qs.get('q') || '',
       views: [{ id: 'all', label: 'All' }, { id: 'due', label: 'With dues', filter: (c) => c.due > 0 }, { id: 'vip', label: 'VIP', filter: (c) => segment(c)[0] === 'VIP' }, { id: 'loyal', label: 'Loyal', filter: (c) => segment(c)[0] === 'Loyal' }, { id: 'new', label: 'New', filter: (c) => segment(c)[0] === 'New' }],
       filters: [{ id: 'district', label: 'All districts', options: [...new Set(S.customers().map((c) => c.district))].sort().map((d) => [d, d]), test: (c, v) => c.district === v }],
       search: (c, q) => (c.name + c.phone + c.email + c.district).toLowerCase().includes(q),
@@ -594,7 +594,6 @@
         { id: 'orders', label: 'Orders', cls: 'right', sort: (a, b) => a.orders - b.orders, render: (c) => `<span class="num">${c.orders}</span>` },
         { id: 'spent', label: 'Total spent', cls: 'right', sort: (a, b) => a.spent - b.spent, render: (c) => `<b class="num">${money(c.spent)}</b>` },
         { id: 'mix', label: 'Online / Store', hidden: true, render: (c) => `<span class="small">${money(c.online)} / ${money(c.instore)}</span>` },
-        { id: 'pts', label: 'Points', cls: 'right', sort: (a, b) => a.pts - b.pts, render: (c) => `<span class="num">${c.pts}</span>` },
         { id: 'due', label: 'Due', cls: 'right', sort: (a, b) => a.due - b.due, render: (c) => (c.due ? `<b class="num err">${money(c.due)}</b>` : '<span class="muted">—</span>') },
         { id: 'last', label: 'Last order', sort: (a, b) => new Date(a.last) - new Date(b.last), render: (c) => `<span class="muted small">${A.date(c.last)}</span>` },
         { id: 'seg', label: 'Segment', render: (c) => { const [l, cls] = segment(c); return `<span class="badge ${cls}">${l}</span>`; } }

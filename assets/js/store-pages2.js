@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Amnu Fashion — storefront pages (2/2)
+   AMNO Fashion — storefront pages (2/2)
    login · account · stores · policy · about · contact · track
    ========================================================================== */
 (function () {
@@ -92,7 +92,7 @@
      ====================================================================== */
   P.account = () => {
     if (!Auth.user()) { location.replace('login.html?next=account.html'); return; }
-    const TABS = [['profile', 'Profile'], ['orders', 'Order History'], ['addresses', 'Addresses'], ['loyalty', 'Loyalty Points']];
+    const TABS = [['profile', 'Profile'], ['orders', 'Order History'], ['addresses', 'Addresses']];
     let tab = TABS.some((t) => t[0] === location.hash.slice(1)) ? location.hash.slice(1) : 'profile';
     let sub = 'online';
     const body = $('#acc-body');
@@ -116,18 +116,13 @@
         return `<section class="card-p glass tabbed"><div class="subtabs"><button class="${sub === 'online' ? 'on' : ''}" data-sub="online" type="button">Online Purchases <span class="xs muted">(${nOnline})</span></button><button class="${sub === 'store' ? 'on' : ''}" data-sub="store" type="button">Store Purchases <span class="xs muted">(${mine.length - nOnline})</span></button></div>
           ${list.length ? `<div class="table-wrap"><table class="otable"><thead><tr><th>Order ID</th><th>Order Date</th><th>Amount</th><th>Status</th><th>Invoice</th></tr></thead><tbody>${list.slice(0, 30).map((o) => `<tr><td>${S.channelOf(o) === 'store' ? 'ST' : 'SO'}${o.id}</td><td>${A.date(o.date)}</td><td class="num">${money(o.total)}</td><td>${statusText(o.status)}</td><td><button class="u" data-invoice="${o.id}" type="button">View</button></td></tr>`).join('')}</tbody></table></div>`
             : `<div class="empty-in">${icon('receipt', 34)}<p class="muted">${u.phone ? 'No ' + (sub === 'store' ? 'store' : 'online') + ' purchases yet.' : 'Add your mobile number to see your orders.'}</p></div>`}
-          <p class="xs muted" style="padding:0 20px 16px">Buy in a showroom? Give the cashier your mobile number and the purchase appears here, with loyalty points.</p></section>`;
+          <p class="xs muted" style="padding:0 20px 16px">Buy in a showroom? Give the cashier your mobile number and the purchase appears here.</p></section>`;
       },
       addresses() {
         const list = user().addresses || [];
         return `<div class="row between" style="margin-bottom:14px"><h2 class="h2s">Saved Addresses</h2><button class="u" data-addr-new type="button">Add New Address</button></div>
           ${list.length ? `<div class="addr-grid">${list.map((a) => `<article class="addr-card static glass"><div class="row between"><b>${esc(a.label || a.district)}</b>${a.default ? '<span class="tag-default">Default Address</span>' : ''}</div><p>${esc(a.name)}</p><p class="muted small">${esc(a.address)}, ${esc(a.district)}</p><p class="muted small">Phone: ${esc(a.phone)}</p><p class="small"><button class="u" data-addr-edit="${a.id}" type="button">Edit</button> <span class="sep">|</span> <button class="u" data-addr-del="${a.id}" type="button">Delete</button></p></article>`).join('')}</div>` : '<div class="empty-in glass card-p">No saved addresses yet.</div>'}`;
       },
-      loyalty() {
-        const u = user(); const pt = S.points(u.phone); const cfg = settings.loyalty;
-        return `<section class="card-p glass"><div class="loy"><div><span class="xs muted">Available points</span><b class="bigp">${pt.balance}</b><span class="muted small">worth ${money(pt.value)}</span></div><div class="muted small" style="max-width:36ch">Earn 1 point for every ${money(cfg.earnPer)} you spend, online or in store. 1 point = ${money(cfg.pointValue)}. Redeem from ${cfg.minRedeem} points at checkout or at the counter.</div></div></section>
-          <section class="card-p glass tabbed" style="margin-top:16px"><h3 class="sub">Points history</h3>${pt.history.length ? `<div class="table-wrap"><table class="otable"><tbody>${pt.history.slice(0, 20).map((h) => `<tr><td>${A.date(h.date)}</td><td>${esc(h.label)}</td><td class="num ${h.points > 0 ? 'ok' : 'err'}">${h.points > 0 ? '+' : ''}${h.points}</td></tr>`).join('')}</tbody></table></div>` : '<div class="empty-in"><p class="muted">No points yet. Your first order earns some.</p></div>'}</section>`;
-      }
     };
     const addrModal = (id) => {
       const list = user().addresses || []; const a = id ? list.find((x) => x.id === id) : null;
@@ -203,11 +198,10 @@
   const POLICIES = {
     shipping: ['Shipping Policy', ['Delivery inside Dhaka takes 1–2 working days and 3–5 working days elsewhere in Bangladesh.', 'Delivery charges are shown at checkout and depend on your location and order value. Orders above the free-delivery threshold ship free.', 'You can also pick your order up from any showroom at no charge.']],
     terms: ['Terms and Conditions', ['By placing an order you agree to provide accurate delivery information and to pay for the items you receive.', 'Prices and stock can change without notice. If an item sells out after you order, we will contact you for an alternative or a refund.', 'We may cancel orders that appear fraudulent or that we cannot fulfil.']],
-    privacy: ['Privacy Policy', ['We collect the details you give us (name, phone, address, email) to process orders, provide support and run our loyalty programme.', 'We do not sell your personal information. Payment details for cards are handled by our payment partner.', 'You can ask us to correct or delete your information at any time.']],
+    privacy: ['Privacy Policy', ['We collect the details you give us (name, phone, address, email) to process orders and provide support.', 'We do not sell your personal information. Payment details for cards are handled by our payment partner.', 'You can ask us to correct or delete your information at any time.']],
     payment: ['Payment Policy', ['We accept Cash on Delivery, bKash, Nagad and cards. Digital payments may qualify for a discount shown at checkout.', 'For bKash and Nagad, send money to the number shown at checkout and enter the transaction ID. Orders are confirmed after verification.', 'Loyalty points can be combined with any other payment method.']],
     exchange: ['Exchange & Refund', ['Wrong size? Exchange within 7 days of delivery. Items must be unworn, unwashed and have their tags.', 'Exchange online by contacting us, or visit any showroom with your invoice.', 'Refunds are issued to the original payment method after the returned item passes inspection.']],
     size: ['Size Guide', ['Measure a panjabi that fits you well, lay it flat and compare it with the chart below. Between sizes? Choose the larger one for a relaxed fit.', 'TABLE']],
-    loyalty: ['Loyalty Program', ['Earn 1 point for every ৳100 you spend online or in a showroom (give the cashier your mobile number).', 'Each point is worth ৳1 and can be redeemed from 100 points at checkout or at the counter.', 'Points from cancelled or refunded orders are removed.']]
   };
   P.policy = () => {
     const key = POLICIES[A.qs.get('p')] ? A.qs.get('p') : 'shipping';
