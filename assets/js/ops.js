@@ -1,7 +1,7 @@
 /* ==========================================================================
-   Amnu Fashion — store operations layer (extends Amnu.store)
+   AMNO Fashion — store operations layer (extends Amnu.store)
    Showroom stock (per size) · accounts & ledger · expenses ·
-   fabric purchases · day close · loyalty · P&L.
+   fabric purchases · day close · P&L.
    Fabric warehouse, production and courier parcels live in prod.js.
    DEMO data: swap these methods for calls to your backend.
    ========================================================================== */
@@ -31,7 +31,7 @@
      One store location: it holds the stock and fulfils online orders.
      ====================================================================== */
   const SEED_LOCATIONS = [
-    { id: 's1', name: 'Amnu Store', type: 'showroom', address: 'House 00, Road 00, Dhanmondi, Dhaka', district: 'Dhaka', phone: '+880 1700-000011', hours: 'Sat – Thu · 10:00 am – 9:00 pm', manager: 'Rafi Hossain', active: true }
+    { id: 's1', name: 'AMNO Store', type: 'showroom', address: 'House 00, Road 00, Dhanmondi, Dhaka', district: 'Dhaka', phone: '+880 1700-000011', hours: 'Sat – Thu · 10:00 am – 9:00 pm', manager: 'Rafi Hossain', active: true }
   ];
   S.locations = () => DB.get('locations', null) || (DB.set('locations', SEED_LOCATIONS), clone(SEED_LOCATIONS));
   S.saveLocations = (l) => DB.set('locations', l);
@@ -327,29 +327,6 @@
     return prev ? prev.counted - prev.deposit : 5000;
   };
   S.addClose = (c) => { const l = DB.get('closes.new', []); const rec = Object.assign({ id: `DC-${c.loc}-${c.date}-${l.length + 1}`, submittedAt: new Date().toISOString() }, c); l.push(rec); DB.set('closes.new', l); return rec; };
-
-  /* ======================================================================
-     Loyalty points
-     ====================================================================== */
-  S.points = (phone) => {
-    const cfg = S.settings().loyalty;
-    const empty = { earned: 0, used: 0, adj: 0, balance: 0, value: 0, history: [] };
-    if (!phone) return empty;
-    let earned = 0; let used = 0;
-    const history = [];
-    S.orders().filter((o) => o.customer.phone === phone && isValid(o)).forEach((o) => {
-      const e = Math.floor(Math.max(0, o.subtotal - (o.discount || 0)) / cfg.earnPer);
-      earned += e;
-      if (e) history.push({ date: o.date, label: `Earned on order #${o.id}${S.channelOf(o) === 'store' ? ' (store)' : ''}`, points: e });
-      if (o.pointsUsed) { used += o.pointsUsed; history.push({ date: o.date, label: `Redeemed on order #${o.id}`, points: -o.pointsUsed }); }
-    });
-    const adj = (DB.get('loyalty.adj', {}))[phone] || 0;
-    if (adj) history.push({ date: new Date().toISOString(), label: 'Manual adjustment', points: adj });
-    history.sort((a, b) => new Date(b.date) - new Date(a.date));
-    const balance = Math.max(0, earned - used + adj);
-    return { earned, used, adj, balance, value: balance * cfg.pointValue, history };
-  };
-  S.adjustPoints = (phone, delta) => { const m = DB.get('loyalty.adj', {}); m[phone] = (m[phone] || 0) + delta; DB.set('loyalty.adj', m); };
 
   /* ======================================================================
      Ledger: every rupee in / out of every account, from one place

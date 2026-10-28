@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Amnu Fashion — tiny dependency-free SVG/HTML charts for the admin
+   AMNO Fashion — tiny dependency-free SVG/HTML charts for the admin
    area(): single-series area/line with crosshair tooltip + keyboard + table
    spark(): inline sparkline        columns(): thin rounded columns
    hbars(): ranked horizontal bars   (colours come from --viz-* CSS variables)

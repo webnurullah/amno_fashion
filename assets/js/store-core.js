@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Amnu Fashion — storefront core
+   AMNO Fashion — storefront core
    Header / footer / account menu / search / quick-add drawer, the bag and its
    totals, demo sign-in, "Find in store" and shared product-card markup.
    Page renderers live in store-pages.js and store-pages2.js.
@@ -70,7 +70,7 @@
     couponCode: () => DB.get('cart.coupon', ''),
     /**
      * Every figure that appears in the summary and on the order.
-     * opts: { shipping, digital, usePoints }
+     * opts: { shipping, digital }
      */
     totals(opts = {}) {
       const cfg = S.settings();
@@ -86,17 +86,12 @@
       let base = subtotal - couponDiscount;
       const digitalDiscount = opts.digital && cfg.digitalDiscountPct > 0 ? Math.round(base * cfg.digitalDiscountPct / 100) : 0;
       base -= digitalDiscount;
-      const user = Auth.user();
-      const pts = user && opts.usePoints ? S.points(user.phone) : null;
-      const pointsUsed = pts && pts.balance >= cfg.loyalty.minRedeem ? Math.min(pts.balance, Math.floor(base / cfg.loyalty.pointValue)) : 0;
-      const pointsDiscount = pointsUsed * cfg.loyalty.pointValue;
-      base -= pointsDiscount;
       const vat = cfg.vatRate > 0 ? Math.round(base * cfg.vatRate / 100) : 0;
       const shipping = freeShip ? 0 : opts.shipping == null ? null : opts.shipping;
       const total = base + vat + (shipping || 0);
       return {
-        lines, subtotal, savings: Math.max(0, list - subtotal), couponDiscount, digitalDiscount, pointsUsed, pointsDiscount,
-        discount: couponDiscount + digitalDiscount + pointsDiscount, vat, shipping, freeShip, couponError, total
+        lines, subtotal, savings: Math.max(0, list - subtotal), couponDiscount, digitalDiscount,
+        discount: couponDiscount + digitalDiscount, vat, shipping, freeShip, couponError, total
       };
     }
   });
@@ -206,7 +201,7 @@
       <div class="util-r"><span class="deliver">${icon('truck', 16)} Deliver to: <i class="flag-bd"></i> <b>Bangladesh</b></span><a href="stores.html">Store Locations</a><a href="track-order.html">Track Order</a></div>
     </div></div>
     <header class="site-header"><div class="container nav-in">
-      <a class="logo" href="index.html" aria-label="${esc(s.storeName)} home"><span class="logo-plate"><img src="assets/img/logo-wordmark.png" alt="${esc(s.storeName)}" width="96" height="51"></span><span class="logo-tag">${esc(s.tagline)}</span></a>
+      <a class="logo" href="index.html" aria-label="${esc(s.storeName)} home"><span class="logo-name">AMNO <b>Fashion</b></span></a>
       <nav class="menu" id="menu" aria-label="Main">${NAV.map(([l, h, on]) => `<a href="${h}" class="${on(cat, page, sort) ? 'active' : ''}">${l}</a>`).join('')}<a class="menu-extra" href="stores.html">Store Locations</a><a class="menu-extra" href="track-order.html">Track Order</a></nav>
       <div class="nav-actions">
         <button class="icon-btn" data-search aria-label="Search">${icon('search', 21)}</button>
@@ -219,7 +214,7 @@
   }
   function accountMenu(user) {
     return user
-      ? `<div class="dd-h2">${esc(user.name)}!</div><a href="account.html#profile">${icon('user', 18)} My Account</a><a href="account.html#orders">${icon('history', 18)} Order History</a><a href="account.html#addresses">${icon('pin', 18)} Shipping Address</a><a href="account.html#loyalty">${icon('star', 18)} Loyalty</a><button type="button" data-signout>${icon('logout', 18)} Sign Out</button>`
+      ? `<div class="dd-h2">${esc(user.name)}!</div><a href="account.html#profile">${icon('user', 18)} My Account</a><a href="account.html#orders">${icon('history', 18)} Order History</a><a href="account.html#addresses">${icon('pin', 18)} Shipping Address</a><button type="button" data-signout>${icon('logout', 18)} Sign Out</button>`
       : `<div class="dd-h2">Welcome!</div><a href="login.html">${icon('user', 18)} Sign in</a><a href="login.html#register">${icon('plus', 18)} Create an account</a><a href="track-order.html">${icon('truck', 18)} Track an order</a><a href="stores.html">${icon('pin', 18)} Store Locations</a>`;
   }
 
@@ -228,16 +223,16 @@
     const L = (href, label) => `<li><a href="${href}">${label}</a></li>`;
     const cats = S.categories();
     return `<footer class="site-footer"><div class="container">
-      <div class="footer-brand"><img src="assets/img/logo-lockup.jpg" alt="${esc(s.storeName)}: ${esc(s.tagline)}" width="146" height="120"><p>${esc(s.tagline)}<span>Panjabi for Eid, weddings and every day.</span></p></div>
+      <div class="footer-brand"><span class="logo-name">AMNO <b>Fashion</b></span><p>${esc(s.tagline)}<span>Panjabi for Eid, weddings and every day.</span></p></div>
       <div class="footer-top glass">
         <div><h4>Legal</h4><ul>${L('policy.html?p=shipping', 'Shipping Policy')}${L('policy.html?p=terms', 'Terms and Conditions')}${L('policy.html?p=privacy', 'Privacy Policy')}${L('policy.html?p=payment', 'Payment Policy')}</ul></div>
-        <div><h4>Information</h4><ul>${L('policy.html?p=exchange', 'Exchange &amp; Refund')}${L('policy.html?p=size', 'Size Guide')}${L('policy.html?p=loyalty', 'Loyalty Program')}${L('stores.html', 'Store Locations')}${L('track-order.html', 'Track Your Order')}</ul></div>
+        <div><h4>Information</h4><ul>${L('policy.html?p=exchange', 'Exchange &amp; Refund')}${L('policy.html?p=size', 'Size Guide')}${L('stores.html', 'Store Locations')}${L('track-order.html', 'Track Your Order')}</ul></div>
         <div><h4>Company</h4><ul>${L('about.html', 'About Us')}${L('contact.html', 'Contact Us')}${L('about.html#craft', 'Our Craft')}${L('about.html', 'Inside Story')}${L('login.html', 'Sign in')}</ul></div>
         <div><h4>Service Center</h4><ul class="contact"><li>${esc(s.phone)}</li><li>${esc(s.email)}</li><li><a href="${esc(s.facebook)}" target="_blank" rel="noopener">${icon('facebook', 16)} Facebook</a></li><li><a href="${esc(s.messenger)}" target="_blank" rel="noopener">${icon('message', 16)} Messenger</a></li></ul></div>
         <div><h4>You Can Pay By</h4><div class="paylogos"><span class="pl pl-visa">VISA</span><span class="pl pl-nagad">Nagad</span><span class="pl pl-bkash">bKash</span><span class="pl pl-mc"><i></i><i></i></span><span class="pl">COD</span></div></div>
       </div>
       <p class="copy">© ${new Date().getFullYear()} ${esc(s.storeName)}. All rights reserved. <a href="admin/login.html" class="admin-link">Admin dashboard</a></p>
-      <div class="mega"><h3>Shop Amnu</h3><div class="mega-grid">
+      <div class="mega"><h3>Shop AMNO</h3><div class="mega-grid">
         <ul><li class="mh">Panjabi</li>${cats.filter((c) => !['kids', 'sets'].includes(c.slug)).map((c) => `<li><a href="shop.html?cat=${c.slug}">${esc(c.name)}</a></li>`).join('')}</ul>
         <ul><li class="mh">Kids &amp; Sets</li><li><a href="shop.html?cat=kids">Kids Panjabi</a></li><li><a href="shop.html?cat=sets">Panjabi Sets</a></li></ul>
         <ul><li class="mh">Offers</li><li><a href="shop.html?sale=1">Promo items</a></li><li><a href="shop.html?sort=new">New Arrivals</a></li></ul>

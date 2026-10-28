@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Amnu Fashion — sample data + store API
+   AMNO Fashion — sample data + store API
    Everything here is DEMO content.  Replace the seed arrays, or swap the
    Amnu.store methods for fetch() calls to your backend / WordPress REST API.
    ========================================================================== */
@@ -21,7 +21,7 @@
 
   /* ---------- settings ---------- */
   const DEFAULT_SETTINGS = {
-    storeName: 'Amnu Fashion',
+    storeName: 'AMNO Fashion',
     tagline: 'The Style You Love!',
     email: 'hello@example.com',
     phone: '+880 1700-000000',
@@ -43,7 +43,6 @@
     vatRate: 0,                    /* % added on top of the subtotal (0 = no VAT line) */
     bin: '',                       /* business identification number printed on receipts */
     digitalDiscountPct: 5,         /* % off when paying with bKash / Nagad / card online (0 = off) */
-    loyalty: { earnPer: 100, pointValue: 1, minRedeem: 100 },   /* 1 point per ৳100; 1 point = ৳1 */
     receiptFooter: 'Thank you for shopping with us. Exchange within 7 days with this receipt.',
     heroTitle: 'Choose Your Best Panjabi',
     heroSub: "They're all so nice",
@@ -177,7 +176,7 @@
   }));
 
   const PAY_KEYS = ['cod', 'cod', 'cod', 'bkash', 'bkash', 'nagad', 'card'];
-  const PAY_LABEL = { cod: 'Cash on Delivery', bkash: 'bKash', nagad: 'Nagad', card: 'Card', cash: 'Cash', due: 'On credit (due)', points: 'Loyalty points' };
+  const PAY_LABEL = { cod: 'Cash on Delivery', bkash: 'bKash', nagad: 'Nagad', card: 'Card', cash: 'Cash', due: 'On credit (due)' };
   const WALK_IN = { name: 'Walk-in customer', phone: '', email: '', district: '', address: '' };
   const CASHIERS = { s1: 'Rafi Hossain' };
 
@@ -360,7 +359,7 @@
   store.settings = () => {
     const saved = DB.get('settings', {}) || {};
     const out = Object.assign({}, DEFAULT_SETTINGS, saved);
-    ['shipping', 'payments', 'loyalty', 'couriers'].forEach((k) => { out[k] = Object.assign({}, DEFAULT_SETTINGS[k], saved[k]); });
+    ['shipping', 'payments', 'couriers'].forEach((k) => { out[k] = Object.assign({}, DEFAULT_SETTINGS[k], saved[k]); });
     return out;
   };
   store.saveSettings = (patch) => DB.set('settings', Object.assign({}, DB.get('settings', {}), patch));

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Amnu Fashion — admin core
+   AMNO Fashion — admin core
    Shell (sidebar / top bar / footer), dropdowns, command palette and the
    WordPress-style list table used by Products, Orders, Customers, etc.
    ========================================================================== */
@@ -66,7 +66,6 @@
       { id: 'pos', label: 'Showroom POS', icon: 'receipt', href: 'pos.html' },
       { id: 'customers', label: 'Customers', icon: 'users', href: 'customers.html' },
       { id: 'coupons', label: 'Coupons', icon: 'tag', href: 'coupons.html' },
-      { id: 'loyalty', label: 'Loyalty points', icon: 'sparkle', href: 'loyalty.html' },
       { heading: 'Delivery' },
       { id: 'couriers', label: 'Couriers & COD', icon: 'truck', href: 'couriers.html', badge: toBook },
       { heading: 'Warehouse' },

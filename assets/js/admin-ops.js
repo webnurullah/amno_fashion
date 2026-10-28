@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Amnu Fashion — admin controllers: store operations
+   AMNO Fashion — admin controllers: store operations
    pos · showroom stock · day-close (fabric purchases: admin-prod.js)
    ========================================================================== */
 (function () {
@@ -19,8 +19,6 @@
   Admin.receiptHTML = (o) => {
     const loc = S.location(o.storeId) || {};
     const cfg = S.settings();
-    const pts = o.customer.phone ? S.points(o.customer.phone) : null;
-    const earned = o.customer.phone ? Math.floor(Math.max(0, o.subtotal - (o.discount || 0)) / cfg.loyalty.earnPer) : 0;
     const tenders = S.tenders(o);
     return `<div class="receipt">
       <div class="rc-c"><b class="rc-big">${esc(cfg.storeName)}</b><div><i>${esc(cfg.tagline)}</i></div><div>${esc(loc.name || '')}</div><div>${esc(loc.address || '')}</div><div>${esc(loc.phone || '')}</div>${cfg.bin ? `<div>BIN: ${esc(cfg.bin)}</div>` : ''}</div>
@@ -38,7 +36,6 @@
       ${tenders.map((t) => `<div class="rc-row"><span>${esc(S.payLabel[t.method] || t.method)}</span><span>${money(t.amount)}</span></div>`).join('')}
       ${o.change ? `<div class="rc-row"><span>Change</span><span>${money(o.change)}</span></div>` : ''}
       ${o.due ? `<div class="rc-row"><b>Amount due</b><b>${money(o.due)}</b></div>` : ''}
-      ${pts ? `<div class="rc-dash"></div><div class="rc-row"><span>Points earned</span><span>+${earned}</span></div><div class="rc-row"><span>Points balance</span><span>${pts.balance}</span></div>` : ''}
       <div class="rc-dash"></div><div class="rc-c">${esc(cfg.receiptFooter)}</div></div>`;
   };
   Admin.zReportHTML = (c) => {
@@ -70,7 +67,7 @@
     const cashiers = S.users().filter((u) => ['Cashier', 'Shop Manager', 'Administrator'].includes(u.role));
     const st = {
       loc: DB.get('pos.loc', null) && rooms.some((r) => r.id === DB.get('pos.loc')) ? DB.get('pos.loc') : (rooms[0] || {}).id,
-      cashier: '', q: '', cat: '', cart: [], customer: null, discount: 0, discType: 'amount', usePoints: false, holdId: null
+      cashier: '', q: '', cat: '', cart: [], customer: null, discount: 0, discType: 'amount', holdId: null
     };
     const pickCashier = () => { const u = cashiers.find((x) => x.loc === st.loc) || cashiers[0]; st.cashier = u ? u.name : 'Cashier'; };
     pickCashier();
@@ -105,13 +102,9 @@
       const subtotal = sum(st.cart, (l) => l.price * l.qty);
       let disc = st.discType === 'percent' ? Math.round(subtotal * Math.min(100, st.discount) / 100) : Math.min(st.discount, subtotal);
       const cfg = S.settings();
-      const pts = st.customer && st.customer.phone ? S.points(st.customer.phone) : null;
-      let pointsUsed = 0;
-      if (st.usePoints && pts && pts.balance >= cfg.loyalty.minRedeem) pointsUsed = Math.min(pts.balance, Math.floor((subtotal - disc) / cfg.loyalty.pointValue));
-      const pointsDiscount = pointsUsed * cfg.loyalty.pointValue;
-      const base = subtotal - disc - pointsDiscount;
+      const base = subtotal - disc;
       const vat = cfg.vatRate > 0 ? Math.round(base * cfg.vatRate / 100) : 0;
-      return { subtotal, disc, pointsUsed, pointsDiscount, vat, total: base + vat, pts };
+      return { subtotal, disc, vat, total: base + vat };
     };
 
     const addLine = (p, size, color, qty = 1) => {
@@ -148,15 +141,14 @@
       const due = cust && cust.phone ? S.dueOf(cust.phone) : 0;
       $('#pos-cart').innerHTML = `
         <div class="pc-head"><h2>Current sale</h2><button class="btn-link danger small" data-clear ${st.cart.length ? '' : 'disabled'}>Clear</button></div>
-        <div class="pc-cust">${cust ? `<div class="row gap-8">${Admin.avatar(cust.name, 'sm')}<div class="grow"><b class="small">${esc(cust.name)}</b><div class="xs muted">${esc(cust.phone || 'Walk-in')}${t.pts ? ` · <b>${t.pts.balance}</b> pts` : ''}${due ? ` · <span class="err">due ${money(due)}</span>` : ''}</div></div><button class="btn btn-ghost btn-icon btn-sm" data-cust-clear aria-label="Remove customer">${icon('x', 14)}</button></div>`
-          : `<form class="row gap-8" id="cust-form"><div class="input-group grow"><i data-icon="user"></i><input id="cust-q" type="tel" placeholder="Customer mobile, for points &amp; record" aria-label="Customer mobile"></div><button class="btn btn-glass btn-sm" type="submit">Find</button></form>`}</div>
+        <div class="pc-cust">${cust ? `<div class="row gap-8">${Admin.avatar(cust.name, 'sm')}<div class="grow"><b class="small">${esc(cust.name)}</b><div class="xs muted">${esc(cust.phone || 'Walk-in')}${due ? ` · <span class="err">due ${money(due)}</span>` : ''}</div></div><button class="btn btn-ghost btn-icon btn-sm" data-cust-clear aria-label="Remove customer">${icon('x', 14)}</button></div>`
+          : `<form class="row gap-8" id="cust-form"><div class="input-group grow"><i data-icon="user"></i><input id="cust-q" type="tel" placeholder="Customer mobile (to keep a record)" aria-label="Customer mobile"></div><button class="btn btn-glass btn-sm" type="submit">Find</button></form>`}</div>
         <div class="pc-lines">${st.cart.map((l) => `<div class="pc-line" data-key="${esc(l.key)}"><div class="grow"><b class="small">${esc(l.name)}</b><div class="xs muted">${esc(S.sizeLabel(l.size))}${l.price !== (S.product(l.pid) ? S.price(S.product(l.pid)) : l.price) ? ' · price changed' : ''}</div></div>
           <div class="qty-mini"><button data-q="-1" aria-label="Decrease">${icon('minus', 13)}</button><span class="num">${l.qty}</span><button data-q="1" aria-label="Increase">${icon('plus', 13)}</button></div>
           <b class="num pc-price">${money(l.price * l.qty)}</b><button class="btn btn-ghost btn-icon btn-sm" data-rm aria-label="Remove">${icon('x', 14)}</button></div>`).join('') || `<div class="pc-empty">${icon('barcode', 34)}<p class="muted small">Scan a barcode or tap a product to start a sale.</p></div>`}</div>
         <div class="pc-foot">
           <div class="pc-disc"><label class="xs muted" for="disc">Discount</label><input id="disc" type="number" min="0" value="${st.discount || ''}" placeholder="0"><select id="disc-type" aria-label="Discount type"><option value="amount" ${st.discType === 'amount' ? 'selected' : ''}>৳</option><option value="percent" ${st.discType === 'percent' ? 'selected' : ''}>%</option></select></div>
-          ${t.pts && t.pts.balance >= S.settings().loyalty.minRedeem ? `<label class="check small"><input type="checkbox" id="use-pts" ${st.usePoints ? 'checked' : ''}> Redeem points (${t.pts.balance} pts = ${money(t.pts.value)})</label>` : ''}
-          <div class="pc-sum"><div><span>Subtotal</span><b class="num">${money(t.subtotal)}</b></div>${t.disc ? `<div><span>Discount</span><b class="num ok">- ${money(t.disc)}</b></div>` : ''}${t.pointsDiscount ? `<div><span>Points (${t.pointsUsed})</span><b class="num ok">- ${money(t.pointsDiscount)}</b></div>` : ''}${t.vat ? `<div><span>VAT (${settings.vatRate}%)</span><b class="num">${money(t.vat)}</b></div>` : ''}<div class="g"><span>Total</span><b class="num">${money(t.total)}</b></div></div>
+          <div class="pc-sum"><div><span>Subtotal</span><b class="num">${money(t.subtotal)}</b></div>${t.disc ? `<div><span>Discount</span><b class="num ok">- ${money(t.disc)}</b></div>` : ''}${t.vat ? `<div><span>VAT (${settings.vatRate}%)</span><b class="num">${money(t.vat)}</b></div>` : ''}<div class="g"><span>Total</span><b class="num">${money(t.total)}</b></div></div>
           ${closed ? '<p class="xs err">The day is closed for this showroom. Reopen it in Day close to sell.</p>' : ''}
           <div class="row gap-8"><button class="btn btn-glass" data-hold ${st.cart.length ? '' : 'disabled'}>${icon('pause', 16)} Hold</button><button class="btn btn-violet grow btn-lg" data-pay ${st.cart.length && !closed ? '' : 'disabled'}>Pay ${money(t.total)}</button></div>
         </div>`;
@@ -208,12 +200,12 @@
           channel: 'store', storeId: st.loc, cashier: st.cashier, status: 'completed',
           customer: cust || { name: 'Walk-in customer', phone: '', email: '', district: '', address: '' },
           items: st.cart.map((l) => { const p = S.product(l.pid) || {}; return { pid: l.pid, name: l.name, price: l.price, cost: p.cost || l.cost, qty: l.qty, size: l.size, color: ((p.colors || []).find((c) => c.hex === l.color) || {}).name || '', hex: l.color, style: l.style }; }),
-          subtotal: t.subtotal, shipping: 0, discount: t.disc + t.pointsDiscount, coupon: '', vat: t.vat, total: t.total,
-          payment: payments[0].method, payments, due: val('due'), change: r.change, payRef: '', note: '', pointsUsed: t.pointsUsed,
+          subtotal: t.subtotal, shipping: 0, discount: t.disc, coupon: '', vat: t.vat, total: t.total,
+          payment: payments[0].method, payments, due: val('due'), change: r.change, payRef: '', note: '',
           notes: [{ text: 'Sold at the counter.', date: new Date().toISOString(), by: st.cashier }]
         });
         if (st.holdId) { S.saveHolds(S.holds().filter((h) => h.id !== st.holdId)); st.holdId = null; }
-        st.cart = []; st.customer = null; st.discount = 0; st.usePoints = false;
+        st.cart = []; st.customer = null; st.discount = 0;
         m.close(); paintCart(); paintGrid(); paintTop();
         Admin.printModal(`Receipt #${order.id}`, Admin.receiptHTML(order));
       });
@@ -243,8 +235,8 @@
         if (q && l) { const n = l.qty + Number(q.dataset.q); if (n <= 0) st.cart = st.cart.filter((x) => x !== l); else if (n > S.stock(l.pid, st.loc, l.size)) A.toast('No more stock of that size here', 'err'); else l.qty = n; paintCart(); return; }
         if (t.closest('[data-rm]')) { st.cart = st.cart.filter((x) => x !== l); paintCart(); return; }
       }
-      if (t.closest('[data-clear]')) { st.cart = []; st.discount = 0; st.usePoints = false; st.holdId = null; paintCart(); return; }
-      if (t.closest('[data-cust-clear]')) { st.customer = null; st.usePoints = false; paintCart(); return; }
+      if (t.closest('[data-clear]')) { st.cart = []; st.discount = 0; st.holdId = null; paintCart(); return; }
+      if (t.closest('[data-cust-clear]')) { st.customer = null; paintCart(); return; }
       if (t.closest('[data-hold]')) {
         const holds = S.holds(); holds.push({ id: st.holdId || A.uid(), date: new Date().toISOString(), loc: st.loc, cashier: st.cashier, customer: st.customer, cart: st.cart, discount: st.discount, discType: st.discType });
         S.saveHolds(holds.filter((h, i, a) => a.findIndex((x) => x.id === h.id) === i));
@@ -255,7 +247,6 @@
     $('#pos-cart').addEventListener('change', (e) => {
       if (e.target.id === 'disc') { st.discount = Math.max(0, Number(e.target.value) || 0); paintCart(); }
       if (e.target.id === 'disc-type') { st.discType = e.target.value; paintCart(); }
-      if (e.target.id === 'use-pts') { st.usePoints = e.target.checked; paintCart(); }
     });
     $('#pos-cart').addEventListener('submit', (e) => {
       if (e.target.id !== 'cust-form') return;
@@ -265,7 +256,7 @@
       const d = (x) => String(x).replace(/\D/g, '').slice(-10);
       const known = S.customers().find((c) => d(c.phone) === d(raw));
       if (known) { st.customer = { name: known.name, phone: known.phone, email: known.email || '', district: known.district, address: known.address }; paintCart(); A.toast(`Found ${known.name}`); return; }
-      const m = A.modal({ title: 'New customer', body: `<p class="xs muted" style="margin-bottom:10px">${esc(raw)} is not in your customer list yet. Save the details so you can find them next time and give loyalty points.</p><div class="form-grid2"><div class="field"><label for="nc-name">Name *</label><input id="nc-name" placeholder="Customer name"><span class="msg">Enter a name.</span></div><div class="field"><label for="nc-district">District</label><select id="nc-district">${S.districts.map((d) => `<option ${d === 'Dhaka' ? 'selected' : ''}>${d}</option>`).join('')}</select></div><div class="field full"><label for="nc-addr">Address (optional)</label><input id="nc-addr" placeholder="House, road, area"></div></div>`, footer: '<button class="btn btn-ghost" data-close>Skip (walk-in)</button><button class="btn btn-violet" data-ok>Save customer</button>' });
+      const m = A.modal({ title: 'New customer', body: `<p class="xs muted" style="margin-bottom:10px">${esc(raw)} is not in your customer list yet. Save the details so you can find them next time.</p><div class="form-grid2"><div class="field"><label for="nc-name">Name *</label><input id="nc-name" placeholder="Customer name"><span class="msg">Enter a name.</span></div><div class="field"><label for="nc-district">District</label><select id="nc-district">${S.districts.map((d) => `<option ${d === 'Dhaka' ? 'selected' : ''}>${d}</option>`).join('')}</select></div><div class="field full"><label for="nc-addr">Address (optional)</label><input id="nc-addr" placeholder="House, road, area"></div></div>`, footer: '<button class="btn btn-ghost" data-close>Skip (walk-in)</button><button class="btn btn-violet" data-ok>Save customer</button>' });
       m.el.addEventListener('click', (ev) => { if (!ev.target.closest('[data-ok]')) return; const n = $('#nc-name', m.el).value.trim(); $('#nc-name', m.el).closest('.field').classList.toggle('err', !n); if (!n) return; st.customer = { name: n, phone: raw.replace(/[\s-]/g, ''), email: '', district: $('#nc-district', m.el).value, address: $('#nc-addr', m.el).value.trim() }; m.close(); paintCart(); A.toast(`${n} saved with this sale`); });
     });
     $('#pos-holds').addEventListener('click', () => {

@@ -1,6 +1,6 @@
 /* ==========================================================================
-   Amnu Fashion — admin controllers: finance & revenue
-   finance · expenses · accounts · reports · loyalty
+   AMNO Fashion — admin controllers: finance & revenue
+   finance · expenses · accounts · reports
    ========================================================================== */
 (function () {
   'use strict';
@@ -402,63 +402,4 @@
     render();
   };
 
-  /* ======================================================================
-     Loyalty points
-     ====================================================================== */
-  P.loyalty = () => {
-    const cfg = () => S.settings().loyalty;
-    const members = () => S.customers().filter((c) => c.phone).map((c) => Object.assign({}, c, { pts: S.points(c.phone) }));
-    const kp = () => {
-      const mem = members();
-      const out = sum(mem, (c) => c.pts.balance);
-      $('#loy-kpis').innerHTML = [
-        kpiCard('Members with points', mem.filter((c) => c.pts.balance > 0).length, '', 'users', 'violet', `${mem.length} customers with a phone number`),
-        kpiCard('Points outstanding', out.toLocaleString('en-IN'), '', 'sparkle', 'green', `Worth ${money(out * cfg().pointValue)} at today's rate`),
-        kpiCard('Points redeemed', sum(mem, (c) => c.pts.used).toLocaleString('en-IN'), '', 'tag', 'blue', 'Across online and store orders')
-      ].join('');
-    };
-    kp();
-
-    const f = $('#loy-form').elements;
-    const fill = () => { $('#l-earn').value = cfg().earnPer; $('#l-val').value = cfg().pointValue; $('#l-min').value = cfg().minRedeem; };
-    fill();
-    $('#loy-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const earnPer = Math.round(Number($('#l-earn').value)); const pointValue = Number($('#l-val').value); const minRedeem = Math.max(0, Math.round(Number($('#l-min').value) || 0));
-      $('#l-earn').closest('.field').classList.toggle('err', !(earnPer >= 1));
-      if (!(earnPer >= 1) || !(pointValue > 0)) { A.toast('Check the highlighted values', 'err'); return; }
-      S.saveSettings({ loyalty: Object.assign({}, cfg(), { earnPer, pointValue, minRedeem }) });
-      kp(); members_api.refresh(); A.toast('Loyalty programme saved');
-    });
-    void f;
-
-    /* members + manual point adjustments */
-    const adjust = (phone, api) => {
-      const c = members().find((x) => x.phone === phone); if (!c) return;
-      const m = A.modal({
-        title: `Adjust points · ${c.name}`,
-        body: `<p class="small muted">Current balance: <b>${c.pts.balance} points</b> (${money(c.pts.value)}). Use a negative number to remove points.</p><div class="form-grid2" style="margin-top:10px"><div class="field"><label for="pa-d">Points to add or remove</label><input id="pa-d" type="number" placeholder="e.g. 50 or -20"></div><div class="field"><label for="pa-r">Reason</label><input id="pa-r" placeholder="e.g. Goodwill"></div></div>`,
-        footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Apply</button>'
-      });
-      m.el.addEventListener('click', (e) => {
-        if (!e.target.closest('[data-save]')) return;
-        const d = Math.round(Number($('#pa-d', m.el).value));
-        if (!d) { A.toast('Enter a number of points', 'err'); return; }
-        if (c.pts.balance + d < 0) { A.toast('That would take the balance below zero', 'err'); return; }
-        S.adjustPoints(phone, d); m.close(); api.refresh(); kp(); A.toast(`${d > 0 ? '+' : ''}${d} points for ${c.name}`);
-      });
-    };
-    const members_api = Admin.listTable({
-      id: 'members', mount: $('#members'), perPage: 8, empty: 'No members yet', searchPlaceholder: 'Search members',
-      rows: members, rowId: (c) => c.phone, search: (c, q) => (c.name + c.phone).toLowerCase().includes(q), sort: { col: 'bal', dir: 'desc' },
-      views: [{ id: 'all', label: 'All members' }, { id: 'pts', label: 'With points', filter: (c) => c.pts.balance > 0 }],
-      columns: [
-        { id: 'name', label: 'Member', sort: (a, b) => a.name.localeCompare(b.name), render: (c) => `<div class="row gap-8">${Admin.avatar(c.name, 'sm')}<div><b class="row-title">${esc(c.name)}</b><div class="xs muted mono">${esc(c.phone)}</div></div></div>${Admin.actions([{ label: 'Adjust points', act: 'adj', id: c.phone }])}` },
-        { id: 'earned', label: 'Earned', cls: 'right', render: (c) => `<span class="num">${c.pts.earned}</span>` },
-        { id: 'used', label: 'Used', cls: 'right', render: (c) => `<span class="num">${c.pts.used}</span>` },
-        { id: 'bal', label: 'Balance', cls: 'right', sort: (a, b) => a.pts.balance - b.pts.balance, render: (c) => `<b class="num">${c.pts.balance}</b><div class="xs muted">${money(c.pts.value)}</div>` }
-      ],
-      actions: { adj: (phone, c, a) => adjust(phone, a) }
-    });
-  };
 })();
