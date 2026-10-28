@@ -776,7 +776,7 @@ a.store-row:hover b:first-of-type { color: var(--primary); }
 
 /* ---------- business dashboard ---------- */
 .dash-split { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
-.flow { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 14px; }
+.flow { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; }
 .flow-step { position: relative; display: flex; flex-direction: column; gap: 3px; padding: 14px 14px 12px; border-radius: 18px; background: var(--glass-soft); border: 1px solid var(--line); color: var(--ink); transition: transform .15s, background .15s; }
 .flow-step:hover { transform: translateY(-2px); background: var(--glass-strong); }
 .flow-step b { font-size: 19px; font-weight: 700; letter-spacing: -.01em; }
