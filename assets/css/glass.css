@@ -333,7 +333,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 .field.err input, .field.err select, .field.err textarea { border-color: var(--err); box-shadow: 0 0 0 3px var(--err-soft); }
 .field .msg { font-size: 12px; color: var(--err); display: none; }
 .field.err .msg { display: block; }
-.input, input[type=text], input[type=email], input[type=tel], input[type=password], input[type=number], input[type=search], input[type=url], input[type=date], input[type=time], select, textarea {
+.input, input:not([type]), input[type=text], input[type=email], input[type=tel], input[type=password], input[type=number], input[type=search], input[type=url], input[type=date], input[type=time], select, textarea {
   width: 100%;
   min-height: 44px;
   padding: 10px 16px;

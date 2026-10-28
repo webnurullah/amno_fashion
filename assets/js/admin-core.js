@@ -40,7 +40,8 @@
     footer: `<button class="btn btn-ghost" data-close>Close</button><button class="btn btn-violet" data-print>${icon('printer', 16)} Print</button>`,
     onOpen(el) { el.querySelector('[data-print]').addEventListener('click', () => { document.body.classList.add('printing'); window.print(); document.body.classList.remove('printing'); }); }
   });
-  Admin.channelBadge = (o) => (S.channelOf(o) === 'store' ? '<span class="badge b-violet">In store</span>' : '<span class="badge b-info">Online</span>');
+  const CH_BADGE = { store: 'b-violet', online: 'b-info', social: 'b-accent' };
+  Admin.channelBadge = (o) => `<span class="badge ${CH_BADGE[S.channelOf(o)] || ''}">${esc(S.channelLabel(o))}</span>`;
   Admin.pageBadge = (status) => (status === 'publish' ? '<span class="badge b-ok">Published</span>' : status === 'draft' ? '<span class="badge b-warn">Draft</span>' : `<span class="badge">${esc(status)}</span>`);
   Admin.stockHTML = (p) => {
     const st = S.stockState(p);
@@ -55,22 +56,29 @@
      ====================================================================== */
   const NAV = () => {
     const open = S.orders().filter((o) => o.status === 'processing' || o.status === 'pending').length;
+    const toBook = S.parcels().filter((o) => S.isLive(o) && o.ship.status === 'pending' && o.ship.courier !== 'pickup').length;
+    const wip = S.inProduction().length;
     return [
       { id: 'dashboard', label: 'Dashboard', icon: 'home', href: 'index.html' },
       { heading: 'Sales' },
       { id: 'orders', label: 'Orders', icon: 'bag', href: 'orders.html', badge: open },
-      { id: 'pos', label: 'POS register', icon: 'receipt', href: 'pos.html' },
+      { id: 'order-new', label: 'Social media order', icon: 'message', href: 'order-new.html' },
+      { id: 'pos', label: 'Showroom POS', icon: 'receipt', href: 'pos.html' },
       { id: 'customers', label: 'Customers', icon: 'users', href: 'customers.html' },
       { id: 'coupons', label: 'Coupons', icon: 'tag', href: 'coupons.html' },
       { id: 'loyalty', label: 'Loyalty points', icon: 'sparkle', href: 'loyalty.html' },
-      { heading: 'Catalog' },
-      { id: 'products', label: 'Products', icon: 'package', href: 'products.html', sub: [['All Products', 'products.html', 'products'], ['Add New', 'product-edit.html', 'product-edit'], ['Categories', 'categories.html', 'categories']] },
-      { id: 'inventory', label: 'Inventory', icon: 'barcode', href: 'inventory.html' },
+      { heading: 'Delivery' },
+      { id: 'couriers', label: 'Couriers & COD', icon: 'truck', href: 'couriers.html', badge: toBook },
+      { heading: 'Warehouse' },
+      { id: 'fabrics', label: 'Fabric stock', icon: 'package', href: 'fabrics.html' },
+      { id: 'production', label: 'Production', icon: 'scissors', href: 'production.html', badge: wip },
+      { id: 'purchases', label: 'Fabric purchases', icon: 'swap', href: 'purchases.html' },
+      { id: 'suppliers', label: 'Suppliers', icon: 'building', href: 'suppliers.html' },
+      { heading: 'Showroom & catalog' },
+      { id: 'products', label: 'Designs & products', icon: 'tag', href: 'products.html', sub: [['All Products', 'products.html', 'products'], ['Add New', 'product-edit.html', 'product-edit'], ['Categories', 'categories.html', 'categories']] },
+      { id: 'inventory', label: 'Showroom stock', icon: 'barcode', href: 'inventory.html' },
       { id: 'media', label: 'Media', icon: 'image', href: 'media.html' },
       { id: 'pages', label: 'Pages & Posts', icon: 'file', href: 'pages.html' },
-      { heading: 'Purchasing' },
-      { id: 'suppliers', label: 'Suppliers', icon: 'truck', href: 'suppliers.html' },
-      { id: 'purchases', label: 'Purchases', icon: 'swap', href: 'purchases.html' },
       { heading: 'Finance' },
       { id: 'finance', label: 'Finance overview', icon: 'coins', href: 'finance.html' },
       { id: 'expenses', label: 'Expenses', icon: 'trend-down', href: 'expenses.html' },

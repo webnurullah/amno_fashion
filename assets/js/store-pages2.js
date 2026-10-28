@@ -13,7 +13,7 @@
   const settings = Shop.settings;
   const P = Shop.pages;
 
-  const STATUS_TEXT = { completed: ['RECEIVED', 'ok'], processing: ['PROCESSING', 'info'], pending: ['PENDING', 'warn'], 'on-hold': ['ON HOLD', 'warn'], cancelled: ['CANCELLED', 'err'], refunded: ['REFUNDED', 'muted'] };
+  const STATUS_TEXT = { completed: ['RECEIVED', 'ok'], processing: ['PROCESSING', 'info'], pending: ['PENDING', 'warn'], 'on-hold': ['ON HOLD', 'warn'], shipped: ['ON THE WAY', 'info'], returned: ['RETURNED', 'err'], cancelled: ['CANCELLED', 'err'], refunded: ['REFUNDED', 'muted'] };
   const statusText = (s) => { const [t, c] = STATUS_TEXT[s] || [String(s).toUpperCase(), 'muted']; return `<b class="st st-${c}">${t}</b>`; };
   const phoneOk = (v) => /^(?:\+?88)?01[3-9]\d{8}$/.test(String(v).replace(/[\s-]/g, ''));
   const digits = (s) => String(s).replace(/\D/g, '').slice(-10);
@@ -234,15 +234,15 @@
   };
   P.track = () => {
     const steps = [['Order placed', 'We received your order'], ['Confirmed', 'Our team verified your order'], ['Packed & shipped', 'Your parcel is on its way'], ['Delivered', 'Enjoy your panjabi!']];
-    const stage = { pending: 0, 'on-hold': 1, processing: 2, completed: 3 };
+    const stage = { pending: 0, 'on-hold': 0, processing: 1, shipped: 2, completed: 3 };
     const show = (id, phone) => {
       const out = $('#track-result');
       const o = S.order(String(id).replace(/[^\d]/g, ''));
       if (!o || !o.customer.phone || digits(o.customer.phone) !== digits(phone)) { out.innerHTML = `<div class="empty glass pad"><h3>We couldn't find that order</h3><p class="muted small">Check the order number and the mobile number you used at checkout.</p></div>`; return; }
-      const dead = o.status === 'cancelled' || o.status === 'refunded';
+      const dead = !S.isLive(o);
       const at = stage[o.status] ?? 0;
       out.innerHTML = `<div class="glass pad track-card"><div class="row between wrap"><div><span class="xs muted">Order</span><h2>#${o.id}</h2></div>${statusText(o.status)}</div>
-        <p class="muted small">Placed on ${A.dateTime(o.date)} · ${esc(S.payLabel[o.payment])} · ${money(o.total)}${o.pickup ? ' · Pick up at ' + esc(S.locName(o.pickup)) : ''}</p>
+        <p class="muted small">Placed on ${A.dateTime(o.date)} · ${esc(S.payLabel[o.payment])} · ${money(o.total)}${o.pickup ? ' · Pick up at ' + esc(S.locName(o.pickup)) : ''}${o.ship && o.ship.courier && S.isMerchant(o.ship.courier) ? ` · ${esc(S.courierName(o.ship.courier))}${o.ship.tracking ? ' <span class="mono">' + esc(o.ship.tracking) + '</span>' : ''}` : ''}</p>
         ${dead ? `<div class="pay-note glass-soft"><b>This order was ${esc(S.statusLabel(o.status).toLowerCase())}.</b> Contact us if you have any questions.</div>` : `<ol class="timeline">${steps.map(([t, s], i) => `<li class="${i <= at ? 'done' : ''} ${i === at ? 'now' : ''}"><span class="tl-dot">${i <= at ? icon('check', 14) : ''}</span><div><b>${t}</b><span class="xs muted" style="display:block">${s}</span></div></li>`).join('')}</ol>`}
         <hr>${o.items.map((i) => `<div class="sum-row"><span>${esc(i.name)} <span class="muted xs">· ${esc(S.sizeLabel(i.size))} × ${i.qty}</span></span><b class="num">${money(i.price * i.qty)}</b></div>`).join('')}</div>`;
     };

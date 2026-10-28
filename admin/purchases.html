@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Purchase Orders ‹ Amnu Fashion Admin</title>
+  <title>Fabric Purchases ‹ Amnu Fashion Admin</title>
   <meta name="robots" content="noindex">
   <link rel="icon" type="image/png" href="../assets/img/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,8 +23,8 @@
 
       <main class="content" id="content">
         <div class="page-head">
-          <div><h1>Purchase orders</h1><p class="muted">Order stock from suppliers, receive it into a location and track what you still owe.</p></div>
-          <div class="row gap-8 wrap"><button class="btn btn-violet" id="add-po" type="button"><i data-icon="plus" data-size="18"></i> New purchase order</button></div>
+          <div><h1>Fabric purchases</h1><p class="muted">Cloth bought from suppliers by the yard or inch. Receiving it adds to the warehouse; unpaid amounts show as supplier dues.</p></div>
+          <div class="row gap-8 wrap"><a class="btn btn-glass" href="fabrics.html"><i data-icon="package" data-size="18"></i> Fabric stock</a><button class="btn btn-violet" id="add-po" type="button"><i data-icon="plus" data-size="18"></i> Buy fabric</button></div>
         </div>
         <section class="kpis three" id="po-kpis"></section>
         <div id="list"></div>
@@ -36,12 +36,14 @@
 
   <script src="../assets/js/data.js"></script>
   <script src="../assets/js/ops.js"></script>
+  <script src="../assets/js/prod.js"></script>
   <script src="../assets/js/charts.js"></script>
   <script src="../assets/js/admin-core.js"></script>
   <script src="../assets/js/admin-pages.js"></script>
   <script src="../assets/js/admin-pages2.js"></script>
   <script src="../assets/js/admin-ops.js"></script>
   <script src="../assets/js/admin-fin.js"></script>
+  <script src="../assets/js/admin-prod.js"></script>
   <script>Amnu.admin.boot('purchases', Amnu.adminPages['purchases']);</script>
 </body>
 </html>
