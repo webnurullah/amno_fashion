@@ -615,75 +615,105 @@ a.store-row:hover b:first-of-type { color: var(--primary); }
 }
 
 /* ==========================================================================
-   Brand theme: black + gold, taken from the Amnu logo
-   (gold #d5a54e, black #0b0b0d, white). Overrides the base admin palette.
+   Clean light theme: white cards, soft blue accent, pastel icon tiles
    ========================================================================== */
 [data-surface=admin] {
-  --primary: #946a14;            /* gold, dark enough for text on light glass */
-  --primary-2: #e3b95f;
-  --primary-soft: rgba(213, 165, 78, .2);
-  --primary-ink: #1a1206;
-  --page: #f3efe5;
-  --mesh:
-    radial-gradient(44% 40% at 0% 36%, rgba(213, 165, 78, .34) 0, transparent 70%),
-    radial-gradient(40% 40% at 100% 14%, rgba(255, 226, 160, .5) 0, transparent 70%),
-    radial-gradient(46% 46% at 52% 106%, rgba(120, 100, 60, .22) 0, transparent 70%),
-    radial-gradient(34% 34% at 55% 0%, rgba(255, 255, 255, .7) 0, transparent 70%),
-    linear-gradient(160deg, #f6f2e8, #ebe5d6);
-  --viz-1: #a8761a;
-  --viz-a: #26262c;
-  --viz-b: #c9972f;
-  --viz-c: #1f8a80;
-  --viz-grid: rgba(60, 45, 10, .1);
+  --primary: #2563eb;
+  --primary-2: #4f8bf5;
+  --primary-soft: #e6efff;
+  --primary-ink: #fff;
+  --page: #f5f7fb;
+  --mesh: linear-gradient(180deg, #f7f9fd, #f1f4fa);
+  --glass-bg: #fff;
+  --glass-strong: #fff;
+  --glass-soft: #f3f6fb;
+  --glass-line: #e8ecf3;
+  --line: #eceff5;
+  --field: #fff;
+  --blur: 0px;
+  --shadow: 0 1px 2px rgba(20, 30, 60, .04), 0 8px 24px -14px rgba(20, 30, 60, .14);
+  --shadow-sm: 0 1px 2px rgba(20, 30, 60, .05);
+  --edge: none;
+  --viz-1: #2563eb;
+  --viz-a: #2563eb;
+  --viz-b: #f5b301;
+  --viz-c: #14b8a6;
+  --viz-grid: #e9edf5;
+  --r-lg: 22px;
+  --ink: #1b2437;
+  --ink-2: #4a5568;
+  --ink-3: #7b8699;
 }
 [data-surface=admin][data-theme=dark] {
-  --primary: #e3b95f;
-  --primary-2: #f0cf85;
-  --primary-soft: rgba(227, 185, 95, .18);
-  --primary-ink: #1a1206;
-  --page: #0b0b0d;
-  --mesh:
-    radial-gradient(40% 40% at 0% 40%, rgba(213, 165, 78, .2) 0, transparent 70%),
-    radial-gradient(40% 40% at 100% 12%, rgba(213, 165, 78, .14) 0, transparent 70%),
-    radial-gradient(46% 46% at 50% 106%, rgba(150, 110, 40, .2) 0, transparent 70%),
-    linear-gradient(160deg, #141416, #09090a);
-  --viz-1: #e3b95f;
-  --viz-a: #c9c9d2;
-  --viz-b: #e3b95f;
-  --viz-c: #3fb8ab;
-  --viz-grid: rgba(255, 255, 255, .1);
+  --primary: #6ea0ff;
+  --primary-2: #9cbcff;
+  --primary-soft: rgba(110, 160, 255, .16);
+  --primary-ink: #0c1530;
+  --page: #0e1320;
+  --mesh: linear-gradient(180deg, #11172a, #0b101c);
+  --glass-bg: #151b2d;
+  --glass-strong: #19203a;
+  --glass-soft: #1c2440;
+  --glass-line: #252e4a;
+  --line: #222b47;
+  --field: #1a2138;
+  --shadow: 0 8px 24px -14px rgba(0, 0, 0, .6);
+  --viz-1: #6ea0ff; --viz-a: #6ea0ff; --viz-b: #f5c443; --viz-c: #3fd0c0; --viz-grid: #252e4a;
+  --ink: #eef2fb; --ink-2: #b8c1d6; --ink-3: #8993ab;
 }
+[data-surface=admin] .glass, [data-surface=admin] .glass-strong, [data-surface=admin] .glass-soft, [data-surface=admin] .card, [data-surface=admin] .topbar, [data-surface=admin] .sidebar { -webkit-backdrop-filter: none; backdrop-filter: none; }
+[data-surface=admin] .glass-soft { box-shadow: none; }
+.bg { opacity: 0; }
 
-/* black glass sidebar, gold active item */
-[data-surface=admin] .sidebar {
-  background: linear-gradient(180deg, rgba(20, 20, 22, .97), rgba(8, 8, 9, .98)) !important;
-  border-color: rgba(213, 165, 78, .28);
-  --ink: #f5efe2; --ink-2: #d2c9b4; --ink-3: #a09784;
-  --primary: #e3b95f;
-  --glass-soft: rgba(255, 255, 255, .07);
-  --glass-strong: rgba(213, 165, 78, .16);
-  --glass-line: rgba(213, 165, 78, .3);
-  --line: rgba(255, 255, 255, .1);
-  color: var(--ink);
-}
-.sidebar .nav-count { background: rgba(213, 165, 78, .25); color: #f0cf85; }
-.sidebar .logo-mark { background: #000; box-shadow: 0 0 0 1px rgba(213, 165, 78, .5), 0 8px 16px -6px rgba(213, 165, 78, .5); }
-.sidebar .side-card { background: rgba(255, 255, 255, .06); }
+/* light sidebar: blue active item, no logo, name only */
+[data-surface=admin] .sidebar { background: var(--glass-bg) !important; border: 1px solid var(--glass-line); border-radius: 26px; }
+.side-brand { gap: 0; }
+.side-brand .nav-label b { font-size: 19px; font-weight: 700; letter-spacing: -.01em; color: var(--ink); }
+.side-brand small { letter-spacing: .12em; }
+.collapsed .side-brand { display: none; }
+.nav-item { border-radius: 14px; font-weight: 500; }
+.nav-item.on { background: var(--primary-soft); border-color: transparent; box-shadow: none; color: var(--primary); font-weight: 600; }
+.nav-item.on > .i { color: var(--primary); }
+.nav-count { background: var(--primary-soft); color: var(--primary); }
+.sidebar .side-card { background: var(--glass-soft); }
+.nav-heading { color: var(--ink-3); }
 
-/* gold buttons and chips carry dark text */
-.btn-violet, [data-surface=admin] .chip.active, [data-surface=admin] .size.on, .count-pill, .plugin.on .plugin-ico, .media-tag { color: var(--primary-ink) !important; }
-[data-surface=admin] .btn-violet { background: linear-gradient(180deg, #efcb7c -30%, #cf9d3f 110%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 10px 20px -8px rgba(180, 125, 25, .7); }
-[data-surface=admin] .chip.active, [data-surface=admin] .size.on { background: linear-gradient(180deg, #efcb7c, #cf9d3f); }
-.count-pill, .media-tag { background: #cf9d3f; }
-.kpi-ico.violet { background: linear-gradient(145deg, #efcb7c, #c08a2a); color: #1a1206; }
-.kpi-ico.blue { background: linear-gradient(145deg, #4a4a52, #16161a); }
-.kpi-ico.pink { background: linear-gradient(145deg, #e8b27a, #a8681f); }
-.insight-ico { background: linear-gradient(145deg, #efcb7c, #c08a2a); color: #1a1206; }
-.pl-row.grand { background: rgba(213, 165, 78, .22); }
-.split-dot.s-a { background: var(--viz-a); } .split-dot.s-b { background: var(--viz-b); }
-.login-body .login-card, .login-card { border-color: rgba(213, 165, 78, .35); }
-[data-surface=admin][data-theme=dark] { --glass-bg: rgba(255, 255, 255, .06); --glass-strong: rgba(30, 28, 24, .82); --glass-soft: rgba(255, 255, 255, .05); --field: rgba(255, 255, 255, .06); }
-[data-theme=dark][data-surface=admin] .modal, [data-theme=dark][data-surface=admin] .modal-backdrop .modal { background: rgba(24, 23, 20, .94); }
+/* buttons, chips: solid blue with white text */
+[data-surface=admin] .btn-violet { color: #fff !important; background: var(--primary); border: 1px solid var(--primary); box-shadow: 0 6px 14px -8px var(--primary); }
+[data-surface=admin] .btn-violet:hover { filter: brightness(1.06); }
+[data-theme=dark][data-surface=admin] .btn-violet { color: #0c1530 !important; }
+[data-surface=admin] .btn-glass { background: #fff; border: 1px solid var(--glass-line); box-shadow: none; }
+[data-theme=dark][data-surface=admin] .btn-glass { background: var(--glass-soft); }
+[data-surface=admin] .chip.active, [data-surface=admin] .size.on { color: #fff !important; background: var(--primary); box-shadow: none; }
+[data-theme=dark][data-surface=admin] .chip.active, [data-theme=dark][data-surface=admin] .size.on { color: #0c1530 !important; }
+.count-pill, .media-tag, .plugin.on .plugin-ico { color: #fff !important; background: var(--primary); }
+[data-theme=dark] .count-pill { color: #0c1530 !important; }
+
+/* pastel icon tiles, like the reference */
+.kpi-ico { width: 46px; height: 46px; border-radius: 14px; box-shadow: none; font-weight: 700; }
+.kpi-ico.violet { background: #e6efff; color: #2563eb; }
+.kpi-ico.green { background: #dcf7e6; color: #16a34a; }
+.kpi-ico.blue { background: #e3f4ff; color: #0284c7; }
+.kpi-ico.pink { background: #fff3d1; color: #c98a00; }
+[data-theme=dark] .kpi-ico.violet { background: rgba(110, 160, 255, .18); color: #8db3ff; }
+[data-theme=dark] .kpi-ico.green { background: rgba(34, 197, 94, .18); color: #4ade80; }
+[data-theme=dark] .kpi-ico.blue { background: rgba(56, 189, 248, .18); color: #7dd3fc; }
+[data-theme=dark] .kpi-ico.pink { background: rgba(245, 179, 1, .18); color: #fbd34d; }
+.insight-ico, .flow-ico, .acc-ico, .loc-ico { background: var(--primary-soft); color: var(--primary); box-shadow: none; }
+.flow-step { background: #fff; border-color: var(--glass-line); }
+.flow-step:hover { background: var(--primary-soft); }
+.pl-row.grand { background: var(--primary-soft); }
+.pl-row.sum { background: var(--glass-soft); }
+.meter { background: #eef1f7; } .meter span { background: #f5b301; }
+.hb-track { background: #eef3ff; }
+[data-theme=dark] .hb-track { background: rgba(110, 160, 255, .12); }
+.split-dot.s-a { background: var(--viz-a); } .split-dot.s-b { background: var(--viz-b); } .split-dot.s-c { background: var(--viz-c); }
+.login-card { border-color: var(--glass-line); }
+.login-brand-name { display: block; margin: 4px 0 6px; font-size: 26px; font-weight: 700; letter-spacing: -.02em; text-align: center; color: var(--primary); }
+.badge.b-violet { color: var(--primary); background: var(--primary-soft); }
+.receipt { box-shadow: none; border: 1px dashed #cfd6e4; }
+[data-theme=dark][data-surface=admin] .modal { background: #171d33; }
+[data-surface=admin] .modal { background: #fff; }
 
 /* ==========================================================================
    Warehouse, production & delivery screens
