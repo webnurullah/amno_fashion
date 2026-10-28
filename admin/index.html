@@ -23,38 +23,44 @@
 
       <main class="content" id="content">
         <div class="page-head">
-          <div><h1>Dashboard</h1><p class="muted">Welcome back. Here is how your online and store sales are doing.</p></div>
+          <div><h1>Business overview</h1><p class="muted">From fabric in the warehouse to cash in the bank: what Amnu makes, sells and collects, in one place.</p></div>
           <div class="row gap-8 wrap">
             <select id="range" aria-label="Date range" class="pill-select">
               <option value="7">Last 7 days</option><option value="14">Last 14 days</option><option value="30">Last 30 days</option><option value="60">Last 60 days</option>
             </select>
-            <a class="btn btn-glass" href="product-edit.html"><i data-icon="plus" data-size="18"></i> Add product</a>
+            <a class="btn btn-glass" href="order-new.html"><i data-icon="message" data-size="18"></i> Social order</a>
             <a class="btn btn-violet" href="pos.html"><i data-icon="receipt" data-size="18"></i> Open POS</a>
           </div>
         </div>
 
         <section class="kpis" id="kpis" aria-label="Key metrics"></section>
 
-        <section class="dash-grid">
-          <div class="card chart-card">
-            <div class="card-h">
-              <div><span class="card-title">Sales overview</span>
-                <div class="big-row"><b class="big num" id="sales-total">৳0</b><span class="delta" id="sales-delta"></span></div></div>
-            </div>
-            <div id="sales-chart"></div>
-          </div>
-          <div class="side-stats" id="side-stats"></div>
+        <section class="card flow-card" aria-labelledby="flow-h">
+          <div class="card-h"><span class="card-title" id="flow-h">How the business is flowing</span><span class="xs muted" id="flow-note"></span></div>
+          <div class="flow" id="flow"></div>
         </section>
 
-        <section class="dash-two">
-          <div class="card">
-            <div class="card-h"><div><span class="card-title">Online vs store sales</span><div class="big-row"><b class="small" id="ch-split"></b></div></div></div>
+        <section class="dash-split">
+          <div class="card chart-card">
+            <div class="card-h"><div><span class="card-title">Sales by channel</span><div class="big-row"><b class="big num" id="sales-total"></b><span id="sales-delta"></span></div></div></div>
             <div id="channel-chart"></div>
           </div>
           <div class="card">
-            <div class="card-h"><span class="card-title">Store today</span><a class="btn-link small" href="day-close.html">Day close</a></div>
-            <div id="stores-today"></div>
+            <div class="card-h"><span class="card-title">Where sales come from</span><a class="btn-link small" href="orders.html?channel=social">Social orders</a></div>
+            <div id="channel-rows"></div>
+            <div id="delivery-econ"></div>
           </div>
+        </section>
+
+        <section class="dash-two">
+          <div class="card"><div class="card-h"><span class="card-title">Couriers &amp; cash on delivery</span><a class="btn-link small" href="couriers.html">Manage</a></div><div id="courier-box"></div></div>
+          <div class="card"><div class="card-h"><span class="card-title">Fabric watch</span><a class="btn-link small" href="fabrics.html">Fabric stock</a></div><div id="fabric-box"></div></div>
+        </section>
+
+        <section class="dash-three">
+          <div class="card"><div class="card-h"><span class="card-title">In production</span><a class="btn-link small" href="production.html">Production</a></div><div id="prod-box"></div></div>
+          <div class="card"><div class="card-h"><span class="card-title">Showroom today</span><a class="btn-link small" href="day-close.html">Day close</a></div><div id="stores-today"></div></div>
+          <div class="card"><div class="card-h"><span class="card-title">Showroom stock alerts</span><a class="btn-link small" href="inventory.html?view=low">Manage</a></div><div id="stock-alerts" class="top-list"></div></div>
         </section>
 
         <section class="dash-two">
@@ -63,26 +69,12 @@
             <div class="table-wrap"><table class="mini-table" id="recent-orders"></table></div>
           </div>
           <div class="card">
-            <div class="card-h"><span class="card-title">Top products</span><a class="btn-link small" href="products.html">View all products</a></div>
+            <div class="card-h"><span class="card-title">Most profitable designs</span><a class="btn-link small" href="production.html">Designs &amp; costing</a></div>
             <div id="top-products" class="top-list"></div>
           </div>
         </section>
 
-        <section class="dash-three">
-          <div class="card"><div class="card-h"><span class="card-title">Money snapshot</span><a class="btn-link small" href="finance.html">Finance</a></div><div id="money-snap"></div></div>
-          <div class="card"><div class="card-h"><span class="card-title">Stock alerts</span><a class="btn-link small" href="products.html?stock=low">Manage</a></div><div id="stock-alerts" class="top-list"></div></div>
-          <div class="card">
-            <div class="card-h"><span class="card-title">Quick draft</span></div>
-            <form id="quick-draft" class="col" novalidate>
-              <div class="field"><label for="qd-title">Title</label><input id="qd-title" type="text" placeholder="Post or page title"></div>
-              <div class="field"><label for="qd-body">Content</label><textarea id="qd-body" rows="3" placeholder="What's on your mind?"></textarea></div>
-              <button class="btn btn-violet btn-sm" type="submit" style="align-self:flex-start">Save draft</button>
-            </form>
-            <div id="drafts" class="drafts"></div>
-          </div>
-        </section>
-
-        <section class="card insight" id="insight"></section>
+        <section class="card insights" id="insights" aria-labelledby="ins-h"></section>
       </main>
 
       <footer class="admin-footer" id="admin-footer"></footer>
@@ -91,12 +83,14 @@
 
   <script src="../assets/js/data.js"></script>
   <script src="../assets/js/ops.js"></script>
+  <script src="../assets/js/prod.js"></script>
   <script src="../assets/js/charts.js"></script>
   <script src="../assets/js/admin-core.js"></script>
   <script src="../assets/js/admin-pages.js"></script>
   <script src="../assets/js/admin-pages2.js"></script>
   <script src="../assets/js/admin-ops.js"></script>
   <script src="../assets/js/admin-fin.js"></script>
+  <script src="../assets/js/admin-prod.js"></script>
   <script>Amnu.admin.boot('dashboard', Amnu.adminPages.dashboard);</script>
 </body>
 </html>

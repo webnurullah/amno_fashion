@@ -1,7 +1,8 @@
 /* ==========================================================================
    Amnu Fashion — store operations layer (extends Amnu.store)
-   Locations · size-level inventory · accounts & ledger · expenses ·
-   suppliers & purchases · day close · loyalty · P&L.
+   Showroom stock (per size) · accounts & ledger · expenses ·
+   suppliers & fabric purchases · day close · loyalty · P&L.
+   Fabric warehouse, production and courier parcels live in prod.js.
    DEMO data: swap these methods for calls to your backend.
    ========================================================================== */
 (function () {
@@ -23,7 +24,7 @@
   const dayStart = (offset = 0) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - offset); return d.getTime(); };
   const sum = (arr, f) => arr.reduce((n, x) => n + (f ? f(x) : x), 0);
   const clone = (x) => JSON.parse(JSON.stringify(x));
-  const isValid = (o) => o.status !== 'cancelled' && o.status !== 'refunded';
+  const isValid = S.isLive;
   S.isValidOrder = isValid;
 
   /* ======================================================================
@@ -138,14 +139,17 @@
     { id: 'cash', name: 'Cash in hand', type: 'cash', opening: 25000 },
     { id: 'bank', name: 'Bank account', type: 'bank', opening: 150000 },
     { id: 'bkash', name: 'bKash merchant', type: 'mfs', opening: 12000 },
-    { id: 'nagad', name: 'Nagad merchant', type: 'mfs', opening: 6000 }
+    { id: 'nagad', name: 'Nagad merchant', type: 'mfs', opening: 6000 },
+    { id: 'pathao', name: 'Pathao merchant balance', type: 'courier', opening: 0 },
+    { id: 'steadfast', name: 'Steadfast merchant balance', type: 'courier', opening: 0 }
   ];
   S.accounts = () => DB.get('accounts', null) || (DB.set('accounts', SEED_ACCOUNTS), clone(SEED_ACCOUNTS));
   S.saveAccounts = (l) => DB.set('accounts', l);
   S.account = (id) => S.accounts().find((a) => a.id === id);
   S.accountName = (id) => (S.account(id) || { name: id }).name;
-  /* which account a sale tender lands in (COD is settled by the courier into the bank) */
-  const TENDER_ACCOUNT = { cash: 'cash', card: 'bank', bkash: 'bkash', nagad: 'nagad', cod: 'bank' };
+  /* which account a sale tender lands in. Cash on delivery is collected by the courier and lands in
+     that courier's merchant balance when the parcel is delivered (see prod.js), so it is not listed here. */
+  const TENDER_ACCOUNT = { cash: 'cash', card: 'bank', bkash: 'bkash', nagad: 'nagad' };
   S.tenderAccount = (m) => TENDER_ACCOUNT[m] || null;
   S.tenders = (o) => o.payments || [{ method: o.payment, amount: o.total }];
 
@@ -178,7 +182,8 @@
   }
 
   /* ---------- expenses ---------- */
-  S.expenseCats = ['Rent', 'Salaries', 'Utilities', 'Transport & courier', 'Packaging', 'Marketing & ads', 'Repairs & maintenance', 'Tailoring & production', 'Miscellaneous'];
+  /* courier charges are counted per parcel automatically, and tailoring is part of production cost, so neither is an expense category */
+  S.expenseCats = ['Rent', 'Salaries', 'Utilities', 'Transport', 'Packaging', 'Marketing & ads', 'Repairs & maintenance', 'Miscellaneous'];
   function genExpenses() {
     const r = rng(99);
     const out = [];
@@ -191,7 +196,6 @@
       if (dom === 1) add('Rent', 58000, 'bank', 's1', 'Landlord', 'Monthly shop rent');
       if (dom === dim) add('Salaries', 52000, 'bank', 's1', 'Staff payroll', 'Shop and packing staff');
       if (dom === 15) { add('Utilities', 10000 + r() * 5000, 'cash', 's1', 'Electricity', 'Shop electricity bill'); add('Utilities', 3000 + r() * 1500, 'bank', 's1', 'Internet', 'Internet bill'); }
-      if (d % 7 === 3) add('Transport & courier', 3000 + r() * 3500, 'bank', 's1', 'Courier fees', 'Weekly parcel charges');
       if (d % 6 === 2) add('Packaging', 1800 + r() * 1800, 'bank', 's1', 'Packaging supplies', 'Poly bags, boxes and tags');
       if (d % 4 === 1) add('Marketing & ads', 1500 + r() * 4500, 'bank', 's1', 'Facebook ads', 'Page boost and campaigns');
       if (r() < 0.9) add('Miscellaneous', 300 + r() * 600, 'cash', 's1', 'Petty cash', 'Tea, cleaning and small repairs');
@@ -236,45 +240,49 @@
     { id: 'sup1', name: 'Rahman Textiles', contact: 'Mr. Rahman', phone: '01700-000020', address: 'Narayanganj', category: 'Cotton and linen fabric' },
     { id: 'sup2', name: 'Dhaka Embroidery House', contact: 'Ms. Sultana', phone: '01700-000021', address: 'Mirpur, Dhaka', category: 'Embroidery and finishing' },
     { id: 'sup3', name: 'Jamdani Weavers Co-op', contact: 'Mr. Karim', phone: '01700-000022', address: 'Sonargaon', category: 'Jamdani and silk' },
-    { id: 'sup4', name: 'Button & Trim Traders', contact: 'Mr. Hasan', phone: '01700-000023', address: 'Islampur, Dhaka', category: 'Buttons, thread and trims' }
+    { id: 'sup4', name: 'Button & Trim Traders', contact: 'Mr. Hasan', phone: '01700-000023', address: 'Islampur, Dhaka', category: 'Buttons, thread and trims' },
+    { id: 'sup5', name: 'Islampur Fabric House', contact: 'Mr. Jalal', phone: '01700-000024', address: 'Islampur, Dhaka', category: 'Velvet, raw silk and satin' }
   ];
   S.suppliers = () => DB.get('suppliers', null) || (DB.set('suppliers', SEED_SUPPLIERS), clone(SEED_SUPPLIERS));
   S.saveSuppliers = (l) => DB.set('suppliers', l);
   S.supplier = (id) => S.suppliers().find((s) => s.id === id);
 
-  const poItems = (pids, qty) => pids.flatMap((pid) => { const p = S.seedProducts.find((x) => x.id === pid); return p.sizes.map((size) => ({ pid, size, qty, cost: p.cost })); });
+  /* purchase orders buy fabric by the yard: items = [{ fabricId, yards, rate }] (rate = BDT per yard) */
   const ago = (n) => new Date(dayStart(n) + 11 * 36e5).toISOString();
   function seedPurchases() {
     const pay = (days, amount, account = 'bank', note = '') => ({ id: A.uid(), date: ago(days), account, amount, note });
-    const mk = (n, sup, days, status, pids, qty, payments) => {
-      const items = poItems(pids, qty);
-      return { id: 'PO-' + pad(n, 4), n, date: ago(days), supplierId: sup, locId: 's1', status, items, shipping: 0, payments: payments(sum(items, (i) => i.qty * i.cost)), note: '' };
+    const mk = (n, sup, days, status, lines, payments) => {
+      const items = lines.map(([fabricId, yards, rate]) => ({ fabricId, yards, rate }));
+      const po = { id: 'PO-' + pad(n, 4), n, date: ago(days), supplierId: sup, status, items, shipping: n % 2 ? 500 : 0, note: '' };
+      if (status === 'received') po.receivedAt = ago(Math.max(0, days - 1));
+      po.payments = payments(S.poTotal(po));
+      return po;
     };
     return [
-      mk(1, 'sup1', 52, 'received', [5, 6, 9, 15], 6, (t) => [pay(50, t)]),
-      mk(2, 'sup2', 41, 'received', [2, 4, 7, 17], 4, (t) => [pay(40, Math.round(t / 2)), pay(30, t - Math.round(t / 2))]),
-      mk(3, 'sup3', 30, 'received', [3, 11], 5, (t) => [pay(28, Math.round(t * 0.6), 'bank', 'Advance')]),
-      mk(4, 'sup1', 18, 'received', [1, 8, 18, 10], 5, (t) => [pay(16, Math.round(t * 0.5), 'bank', 'Part payment')]),
-      mk(5, 'sup4', 9, 'received', [13, 14, 16], 4, (t) => [pay(8, t, 'bank', 'Bank transfer')]),
-      mk(6, 'sup2', 3, 'ordered', [12, 19], 3, () => [])
+      mk(1, 'sup1', 55, 'received', [['fab5', 300, 205], ['fab9', 200, 295]], (t) => [pay(54, t)]),
+      mk(2, 'sup3', 46, 'received', [['fab11', 60, 640], ['fab2', 120, 515]], (t) => [pay(45, Math.round(t / 2)), pay(30, t - Math.round(t / 2))]),
+      mk(3, 'sup5', 37, 'received', [['fab12', 50, 770], ['fab4', 80, 940]], (t) => [pay(36, Math.round(t * 0.6), 'bank', 'Advance'), pay(20, t - Math.round(t * 0.6))]),
+      mk(4, 'sup1', 26, 'received', [['fab10', 200, 335], ['fab6', 150, 255], ['fab8', 120, 228]], (t) => [pay(25, Math.round(t * 0.7), 'bank', 'Part payment')]),
+      mk(5, 'sup1', 15, 'received', [['fab1', 220, 415], ['fab7', 120, 238]], (t) => [pay(14, Math.round(t * 0.5), 'bank', 'Part payment')]),
+      mk(6, 'sup5', 6, 'received', [['fab3', 90, 380], ['fab12', 30, 780]], () => []),
+      mk(7, 'sup3', 2, 'ordered', [['fab11', 80, 650]], () => [])
     ];
   }
   S.purchases = () => DB.get('purchases', null) || (DB.set('purchases', seedPurchases()), DB.get('purchases', []));
   S.savePurchases = (l) => DB.set('purchases', l);
-  S.poTotal = (po) => sum(po.items, (i) => i.qty * i.cost) + (po.shipping || 0);
+  S.poTotal = (po) => sum(po.items, (i) => Math.round(i.yards * i.rate)) + (po.shipping || 0);
+  S.poYards = (po) => sum(po.items, (i) => i.yards);
   S.poPaid = (po) => sum(po.payments || [], (p) => p.amount);
   S.poDue = (po) => (po.status === 'received' ? Math.max(0, S.poTotal(po) - S.poPaid(po)) : 0);
   S.nextPoId = () => 'PO-' + pad(S.purchases().reduce((m, p) => Math.max(m, p.n || 0), 0) + 1, 4);
-  S.receivePO = (id, locId) => {
+  /** receiving adds the yards to the warehouse and re-averages each fabric's cost per yard */
+  S.receivePO = (id) => {
     const list = S.purchases();
     const po = list.find((p) => p.id === id);
     if (!po || po.status === 'received') return false;
-    const loc = locId || po.locId || S.onlineLoc();
-    po.items.forEach((i) => S.adjust(i.pid, loc, i.size, i.qty, 'purchase', { ref: po.id }));
-    const prods = S.products();
-    po.items.forEach((i) => { const p = prods.find((x) => x.id === i.pid); if (p) p.cost = i.cost; });
-    S.saveProducts(prods);
-    po.status = 'received'; po.locId = loc; po.receivedAt = new Date().toISOString();
+    const yards = S.poYards(po) || 1;
+    po.items.forEach((i) => S.fabricIn(i.fabricId, i.yards, i.rate + (po.shipping || 0) / yards, po.id));
+    po.status = 'received'; po.receivedAt = new Date().toISOString();
     S.savePurchases(list);
     return true;
   };
@@ -375,11 +383,9 @@
       S.tenders(o).forEach((t) => {
         const acc = TENDER_ACCOUNT[t.method];
         if (!acc || !(t.amount > 0)) return;
-        if (ch === 'online') {
-          const got = t.method === 'cod' ? o.status === 'completed' : (o.status === 'processing' || o.status === 'completed');
-          if (!got) return;
-        }
-        out.push({ date: o.date, account: acc, dir: 1, amount: t.amount, kind: 'sale', ref: '#' + o.id, orderId: o.id, loc: o.storeId, label: `${ch === 'store' ? 'Store' : 'Online'} sale #${o.id} · ${S.payLabel[t.method] || t.method}` });
+        /* website / social prepayments count once the order is confirmed */
+        if (ch !== 'store' && !['processing', 'shipped', 'completed'].includes(o.status)) return;
+        out.push({ date: o.date, account: acc, dir: 1, amount: t.amount, kind: 'sale', ref: '#' + o.id, orderId: o.id, loc: o.storeId, label: `${S.channelLabel(o)} sale #${o.id} · ${S.payLabel[t.method] || t.method}` });
       });
     });
     ['bkash', 'nagad'].forEach((acc) => {
@@ -402,6 +408,8 @@
     S.closes().forEach((c) => { if (c.deposit > 0) { out.push({ date: c.submittedAt, account: 'cash', dir: -1, amount: c.deposit, kind: 'transfer', ref: c.id, label: `Cash deposited to bank · ${S.locName(c.loc)}` }); out.push({ date: c.submittedAt, account: 'bank', dir: 1, amount: c.deposit, kind: 'transfer', ref: c.id, label: `Cash deposit from ${S.locName(c.loc)}` }); } });
     S.otherIncome().forEach((i) => out.push({ date: i.date, account: i.account, dir: 1, amount: i.amount, kind: 'income', ref: 'INC', label: `${i.source || 'Other income'}${i.note ? ' · ' + i.note : ''}` }));
     COLLECTIONS.all().forEach((c) => out.push({ date: c.date, account: c.account, dir: 1, amount: c.amount, kind: 'due', ref: 'DUE', label: `Due collected · ${c.name || c.phone}` }));
+    /* courier COD, courier charges, payouts and production labour (prod.js) */
+    (S.ledgerHooks || []).forEach((fn) => fn(out));
     let rows = out;
     if (opts.account) rows = rows.filter((r) => r.account === opts.account);
     if (opts.from != null) rows = rows.filter((r) => r.kind !== 'opening' && new Date(r.date).getTime() >= opts.from);
@@ -438,11 +446,11 @@
     shipping: o.shipping || 0,
     vat: o.vat || 0
   });
-  /** profit & loss for a period, with online vs store split */
+  /** profit & loss for a period, split by channel: showroom, website, social media */
   S.pnl = (from, to) => {
     const orders = S.orders().filter((o) => isValid(o) && within(o.date, from, to));
     const mk = () => ({ orders: 0, revenue: 0, cogs: 0, shipping: 0, vat: 0, discount: 0, pieces: 0 });
-    const ch = { online: mk(), store: mk() };
+    const ch = { store: mk(), online: mk(), social: mk() };
     const loc = {};
     orders.forEach((o) => {
       const parts = orderParts(o);
@@ -450,16 +458,20 @@
       const l = (loc[o.storeId] = loc[o.storeId] || mk());
       [c, l].forEach((x) => { x.orders += 1; x.revenue += parts.revenue; x.cogs += parts.cogs; x.shipping += parts.shipping; x.vat += parts.vat; x.discount += o.discount || 0; x.pieces += sum(o.items, (i) => i.qty); });
     });
-    const revenue = ch.online.revenue + ch.store.revenue;
-    const cogs = ch.online.cogs + ch.store.cogs;
-    const shipping = ch.online.shipping + ch.store.shipping;
-    const vat = ch.online.vat + ch.store.vat;
+    const all = Object.values(ch);
+    const revenue = sum(all, (c) => c.revenue);
+    const cogs = sum(all, (c) => c.cogs);
+    const shipping = sum(all, (c) => c.shipping);
+    const vat = sum(all, (c) => c.vat);
     const exp = S.expenses().filter((e) => within(e.date, from, to));
     const byCat = {};
     exp.forEach((e) => { byCat[e.category] = (byCat[e.category] || 0) + e.amount; });
-    const expenses = sum(exp, (e) => e.amount);
+    /* what couriers charged you for delivered and returned parcels in the period */
+    const courier = S.courierCosts ? S.courierCosts(from, to) : { total: 0 };
+    if (courier.total) byCat['Courier charges'] = courier.total;
+    const expenses = sum(exp, (e) => e.amount) + courier.total;
     const grossProfit = revenue - cogs;
-    return { orders: orders.length, revenue, cogs, grossProfit, shipping, vat, expenses, byCat, expList: exp, net: grossProfit + shipping - expenses, ch, loc, margin: revenue ? (grossProfit / revenue) * 100 : 0 };
+    return { orders: orders.length, revenue, cogs, grossProfit, shipping, vat, expenses, byCat, expList: exp, courier, net: grossProfit + shipping - expenses, ch, loc, margin: revenue ? (grossProfit / revenue) * 100 : 0 };
   };
   /** stock valuation (cost + retail) by product, with per-location quantities */
   S.valuation = () => {
@@ -485,7 +497,7 @@
     const res = patchOrder(id, patch);
     if (before && patch.status && patch.status !== before.status) {
       const wasLive = isValid(before);
-      const isLive = patch.status !== 'cancelled' && patch.status !== 'refunded';
+      const isLive = S.isLive({ status: patch.status });
       const loc = before.storeId || S.onlineLoc();
       if (wasLive && !isLive) before.items.forEach((i) => S.adjust(i.pid, loc, i.size || 'M', i.qty, 'return', { ref: before.id, note: `Order #${before.id} ${patch.status}` }));
       if (!wasLive && isLive) before.items.forEach((i) => S.adjust(i.pid, loc, i.size || 'M', -i.qty, 'sale', { ref: before.id, note: `Order #${before.id} reinstated` }));

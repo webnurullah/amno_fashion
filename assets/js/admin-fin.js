@@ -23,21 +23,23 @@
   const inverseDelta = (d, label) => `<span class="delta ${d <= 0 ? 'up' : 'down'}">${icon(d >= 0 ? 'arrow-up' : 'arrow-down', 14)}${Math.abs(d).toFixed(1)}%${label ? `<span class="muted"> ${esc(label)}</span>` : ''}</span>`;
   const kpiCard = (label, value, delta, ic, tone, sub) => `<article class="kpi glass"><div class="kpi-top"><div><span class="kpi-label">${label}</span><b class="kpi-val num">${value}</b></div><span class="kpi-ico ${tone}">${icon(ic, 22)}</span></div>${delta}${sub ? `<div class="xs muted" style="margin-top:6px">${sub}</div>` : ''}</article>`;
 
-  /** revenue per day split by channel (grouped weekly for long ranges) */
+  /** revenue per day split by channel: showroom, website, social media (grouped weekly for long ranges) */
+  const CHS = ['store', 'online', 'social'];
+  Admin.CH_SERIES = [{ name: 'Showroom', cls: 's-a' }, { name: 'Website', cls: 's-b' }, { name: 'Social media', cls: 's-c' }];
   const channelSeries = (from, to) => {
     const days = eachDay(from, to);
     const idx = new Map(days.map((t, i) => [t, i]));
-    const online = days.map(() => 0); const store = days.map(() => 0);
-    S.orders().forEach((o) => { if (!valid(o)) return; const i = idx.get(M.startOf(o.date)); if (i == null) return; (S.channelOf(o) === 'store' ? store : online)[i] += rev(o); });
+    const by = CHS.map(() => days.map(() => 0));
+    S.orders().forEach((o) => { if (!valid(o)) return; const i = idx.get(M.startOf(o.date)); if (i == null) return; by[Math.max(0, CHS.indexOf(S.channelOf(o)))][i] += rev(o); });
     const step = days.length > 45 ? 7 : 1;
     const out = [];
     for (let i = 0; i < days.length; i += step) {
-      const o = sum(online.slice(i, i + step)); const s = sum(store.slice(i, i + step));
       const a = days[i]; const b = days[Math.min(i + step, days.length) - 1];
-      out.push({ label: A.dateShort(a), tip: step > 1 ? `${A.dateShort(a)} – ${A.dateShort(b)}` : A.date(a), values: [o, s] });
+      out.push({ label: A.dateShort(a), tip: step > 1 ? `${A.dateShort(a)} – ${A.dateShort(b)}` : A.date(a), values: by.map((arr) => sum(arr.slice(i, i + step))) });
     }
     return out;
   };
+  Admin.channelSeries = channelSeries;
 
   /** the profit & loss statement as stacked rows */
   const plRow = (label, val, cls = '', sub = '') => `<div class="pl-row ${cls}"><span>${label}${sub ? `<small>${sub}</small>` : ''}</span><b class="num">${val}</b></div>`;
@@ -45,8 +47,9 @@
     const cats = Object.entries(p.byCat).sort((a, b) => b[1] - a[1]);
     return `<div class="pl">
       ${plRow('Sales revenue', money(p.revenue), 'head', 'After discounts, before delivery and VAT')}
-      ${plRow('Online store', money(p.ch.online.revenue), 'indent')}
-      ${plRow('Store counters (POS)', money(p.ch.store.revenue), 'indent')}
+      ${plRow('Showroom (POS)', money(p.ch.store.revenue), 'indent')}
+      ${plRow('Website', money(p.ch.online.revenue), 'indent')}
+      ${plRow('Social media (Facebook, WhatsApp…)', money(p.ch.social.revenue), 'indent')}
       ${plRow('Cost of goods sold', '− ' + money(p.cogs))}
       ${plRow('Gross profit', money(p.grossProfit), 'sum', p.margin.toFixed(1) + '% margin')}
       ${p.shipping ? plRow('Delivery charges collected', '+ ' + money(p.shipping)) : ''}
@@ -76,25 +79,28 @@
 
       $('#f-total').textContent = money(p.revenue);
       $('#f-delta').innerHTML = M.deltaHTML(M.pctDelta(p.revenue, q.revenue), label);
-      A.charts.stacked($('#f-rev'), channelSeries(r[0], r[1]), [{ name: 'Online', cls: 's-a' }, { name: 'Store', cls: 's-b' }], { height: 270 });
+      A.charts.stacked($('#f-rev'), channelSeries(r[0], r[1]), Admin.CH_SERIES, { height: 270 });
 
       $('#f-pnl').innerHTML = pnlHTML(p);
 
       const bal = S.balances(); const liquid = sum(S.accounts(), (a) => bal[a.id] || 0);
       const dues = sum(S.dueList(), (d) => d.due);
-      const cod = sum(S.orders().filter((o) => S.channelOf(o) === 'online' && valid(o) && o.status !== 'completed'), (o) => sum(S.tenders(o).filter((t) => t.method === 'cod'), (t) => t.amount));
-      const stock = S.valuation().cost; const owe = S.payables();
+      const cod = sum(S.parcels().filter((o) => o.ship.status === 'transit'), (o) => o.ship.cod || 0);
+      const stock = S.valuation().cost; const owe = S.payables(); const fabric = S.fabricValue();
+      const wip = sum(S.inProduction(), (b) => b.yards * b.rate);
       $('#f-pos').innerHTML = `<div class="pl">
         ${S.accounts().map((a) => plRow(esc(a.name), money(bal[a.id] || 0), 'indent')).join('')}
         ${plRow('Money in hand and bank', money(liquid), 'sum')}
         ${plRow('Customer dues', '+ ' + money(dues), '', 'Credit sales not yet collected')}
-        ${plRow('COD with couriers', '+ ' + money(cod), '', 'Online orders not yet delivered')}
-        ${plRow('Stock at cost', '+ ' + money(stock))}
+        ${plRow('Cash on delivery in transit', '+ ' + money(cod), '', 'Parcels with Pathao / Steadfast, not yet delivered')}
+        ${plRow('Fabric in warehouse', '+ ' + money(fabric), '', 'At average cost per yard')}
+        ${plRow('Fabric in production', '+ ' + money(wip), '', 'Batches being cut or stitched')}
+        ${plRow('Showroom stock at cost', '+ ' + money(stock))}
         ${plRow('Owed to suppliers', '− ' + money(owe))}
-        ${plRow('Estimated business value', money(liquid + dues + cod + stock - owe), 'sum grand')}</div>`;
+        ${plRow('Estimated business value', money(liquid + dues + cod + fabric + wip + stock - owe), 'sum grand')}</div>`;
 
-      const locRows = [['Online store', p.ch.online.revenue], ['Store counter (POS)', p.ch.store.revenue]];
-      A.charts.hbars($('#f-loc'), locRows.sort((a, b) => b[1] - a[1]).map(([l, v]) => ({ label: l, value: v, display: `${money(v)}${p.revenue ? ` · ${Math.round((v / p.revenue) * 100)}%` : ''}` })));
+      const locRows = S.channelRows(r[0], r[1]).map((x) => [x.label, x.revenue]);
+      A.charts.hbars($('#f-loc'), locRows.map(([l, v]) => ({ label: l, value: v, display: `${money(v)}${p.revenue ? ` · ${Math.round((v / p.revenue) * 100)}%` : ''}` })));
       const cats = Object.entries(p.byCat).sort((a, b) => b[1] - a[1]);
       if (cats.length) A.charts.hbars($('#f-exp'), cats.map(([l, v]) => ({ label: l, value: v, display: `${money(v)} · ${Math.round((v / p.expenses) * 100)}%` })));
       else $('#f-exp').innerHTML = '<p class="muted small">No expenses recorded in this period.</p>';
@@ -175,8 +181,8 @@
      Accounts & ledger
      ====================================================================== */
   P.accounts = () => {
-    const KIND = { sale: ['Sale', 'b-ok'], expense: ['Expense', 'b-err'], supplier: ['Supplier', 'b-warn'], transfer: ['Transfer', 'b-violet'], income: ['Income', 'b-info'], due: ['Due collected', 'b-ok'], opening: ['Opening', ''] };
-    const ICON = { cash: 'coins', bank: 'bank', mfs: 'phone' };
+    const KIND = { cod: ['Cash on delivery', 'b-ok'], 'courier-fee': ['Courier charge', 'b-err'], payout: ['Courier payout', 'b-violet'], production: ['Making cost', 'b-warn'], sale: ['Sale', 'b-ok'], expense: ['Expense', 'b-err'], supplier: ['Supplier', 'b-warn'], transfer: ['Transfer', 'b-violet'], income: ['Income', 'b-info'], due: ['Due collected', 'b-ok'], opening: ['Opening', ''] };
+    const ICON = { cash: 'coins', bank: 'bank', mfs: 'phone', courier: 'truck' };
     const cards = () => {
       const bal = S.balances(); const r = S.range('30');
       const rows = S.ledger({ from: r[0], to: r[1] });
@@ -294,29 +300,31 @@
       const orders = ordersIn(r[0], r[1]);
       const days = eachDay(r[0], r[1]).map((t) => {
         const o = orders.filter((x) => M.startOf(x.date) === t);
-        const on = o.filter((x) => S.channelOf(x) === 'online'); const st = o.filter((x) => S.channelOf(x) === 'store');
-        return [A.date(t), on.length, st.length, n(sum(on, rev)), n(sum(st, rev)), n(sum(o, (x) => x.discount || 0)), n(sum(o, rev))];
-      }).filter((row) => row[1] + row[2] > 0);
-      const foot = ['Total', sum(days, (d) => d[1]), sum(days, (d) => d[2]), n(sum(days, (d) => d[3].n)), n(sum(days, (d) => d[4].n)), n(sum(days, (d) => d[5].n)), n(sum(days, (d) => d[6].n))];
+        const g = CHS.map((c) => o.filter((x) => S.channelOf(x) === c));
+        return [A.date(t)].concat(g.map((x) => x.length), g.map((x) => n(sum(x, rev))), [n(sum(o, (x) => x.discount || 0)), n(sum(o, rev))]);
+      }).filter((row) => row[1] + row[2] + row[3] > 0);
+      const foot = ['Total'].concat([1, 2, 3].map((k) => sum(days, (d) => d[k])), [4, 5, 6, 7, 8].map((k) => n(sum(days, (d) => d[k].n))));
       const prod = new Map();
       orders.forEach((o) => o.items.forEach((i) => { const e = prod.get(i.name) || { q: 0, v: 0 }; e.q += i.qty; e.v += i.price * i.qty; prod.set(i.name, e); }));
       const pay = {}; orders.forEach((o) => S.tenders(o).forEach((t) => { pay[t.method] = (pay[t.method] || 0) + t.amount; }));
       return [
-        sec('Sales by day', ['Date', 'Online orders', 'Store orders', 'Online revenue', 'Store revenue', 'Discounts', 'Total revenue'], days, foot),
+        sec('Sales by day', ['Date', 'Showroom orders', 'Website orders', 'Social orders', 'Showroom revenue', 'Website revenue', 'Social revenue', 'Discounts', 'Total revenue'], days, foot),
+        sec('Sales by channel', ['Channel', 'Orders', 'Pieces', 'Revenue', 'Share'], S.channelRows(r[0], r[1]).map((x, i, all) => [esc(x.label), x.orders, x.pieces, n(x.revenue), Math.round((x.revenue / Math.max(1, sum(all, (y) => y.revenue))) * 100) + '%'])),
         sec('Best sellers', ['Product', 'Units sold', 'Sales'], [...prod].sort((a, b) => b[1].v - a[1].v).slice(0, 10).map(([name, e]) => [esc(name), e.q, n(e.v)])),
         sec('Payments received by method', ['Method', 'Amount'], Object.entries(pay).sort((a, b) => b[1] - a[1]).map(([k, v]) => [esc(S.payLabel[k] || k), n(v)]), ['Total', n(sum(Object.values(pay)))])
       ];
     },
     pnl: (r) => {
-      const p = S.pnl(r[0], r[1]); const o = p.ch.online; const s = p.ch.store;
+      const p = S.pnl(r[0], r[1]); const cs = CHS.map((c) => p.ch[c]);
       const cats = Object.entries(p.byCat).sort((a, b) => b[1] - a[1]);
+      const row = (label, f, total) => [label].concat(cs.map(f), [total]);
+      const pct = (c) => (c.revenue ? ((c.revenue - c.cogs) / c.revenue * 100).toFixed(1) : '0.0') + '%';
       return [
-        sec('Profit & loss by channel', ['', 'Online', 'Store', 'Total'], [
-          ['Orders', o.orders, s.orders, p.orders], ['Pieces sold', o.pieces, s.pieces, o.pieces + s.pieces],
-          ['Sales revenue', n(o.revenue), n(s.revenue), n(p.revenue)], ['Discounts given', n(o.discount), n(s.discount), n(o.discount + s.discount)],
-          ['Cost of goods sold', n(o.cogs), n(s.cogs), n(p.cogs)], ['Gross profit', n(o.revenue - o.cogs), n(s.revenue - s.cogs), n(p.grossProfit)],
-          ['Gross margin', (o.revenue ? ((o.revenue - o.cogs) / o.revenue * 100).toFixed(1) : '0.0') + '%', (s.revenue ? ((s.revenue - s.cogs) / s.revenue * 100).toFixed(1) : '0.0') + '%', p.margin.toFixed(1) + '%'],
-          ['Delivery charges collected', n(o.shipping), n(s.shipping), n(p.shipping)]
+        sec('Profit & loss by channel', ['', 'Showroom', 'Website', 'Social media', 'Total'], [
+          row('Orders', (c) => c.orders, p.orders), row('Pieces sold', (c) => c.pieces, sum(cs, (c) => c.pieces)),
+          row('Sales revenue', (c) => n(c.revenue), n(p.revenue)), row('Discounts given', (c) => n(c.discount), n(sum(cs, (c) => c.discount))),
+          row('Cost of goods sold', (c) => n(c.cogs), n(p.cogs)), row('Gross profit', (c) => n(c.revenue - c.cogs), n(p.grossProfit)),
+          row('Gross margin', pct, p.margin.toFixed(1) + '%'), row('Delivery charges collected', (c) => n(c.shipping), n(p.shipping))
         ]),
         sec('Operating expenses', ['Category', 'Amount', 'Share'], cats.map(([c, v]) => [esc(c), n(v), Math.round((v / p.expenses) * 100) + '%']), ['Total expenses', n(p.expenses), '']),
         sec('Result', ['', 'Amount'], [['Gross profit', n(p.grossProfit)], ['Delivery charges collected', n(p.shipping)], ['Operating expenses', n(-p.expenses)]], ['Net profit', n(p.net)])
@@ -342,6 +350,24 @@
       const days = eachDay(r[0], r[1]).map((t) => { const o = orders.filter((x) => M.startOf(x.date) === t); return [A.date(t), o.length, n(sum(o, rev)), n(sum(o, (x) => x.vat || 0))]; }).filter((x) => x[1] > 0);
       return [sec(`VAT collected · rate ${cfg.vatRate}%${cfg.bin ? ' · BIN ' + cfg.bin : ''}`, ['Date', 'Orders', 'Taxable sales', 'VAT collected'], days, ['Total', sum(days, (d) => d[1]), n(sum(days, (d) => d[2].n)), n(sum(days, (d) => d[3].n))])];
     },
+    fabric: (r) => {
+      const fs = S.fabrics();
+      const moves = S.fabricMoves().filter((m) => S.within(m.date, r[0], r[1]));
+      const used = (id, why) => sum(moves.filter((m) => m.fabricId === id && m.reason === why), (m) => Math.abs(m.delta));
+      return [
+        sec('Fabric in the warehouse (today)', ['Fabric', 'In stock (yd)', 'In stock (in)', 'Cost / yd', 'Value', 'Status'], fs.map((f) => [esc(f.name), f.stock, Math.round(f.stock * 36), n(f.rate), n(f.stock * f.rate), S.fabricLow(f) ? '<span class="err">Low</span>' : 'OK']), ['Total', r2s(sum(fs, (f) => f.stock)), Math.round(sum(fs, (f) => f.stock) * 36), '', n(S.fabricValue()), '']),
+        sec('Fabric in and out in this period (yards)', ['Fabric', 'Bought', 'Sent to production', 'Wastage', 'Counted / found'], fs.map((f) => [esc(f.name), r2s(used(f.id, 'purchase')), r2s(used(f.id, 'production')), r2s(used(f.id, 'wastage')), r2s(used(f.id, 'stocktake') + used(f.id, 'found'))])),
+        sec('Production finished in this period', ['Batch', 'Design', 'Pieces', 'Fabric (yd)', 'Cost / piece', 'Batch cost'], S.batches().filter((b) => b.status === 'ready' && S.within(b.readyAt, r[0], r[1])).map((b) => [b.id, esc((S.product(b.productId) || {}).name || ''), b.qty, b.yards, n(S.batchUnitCost(b)), n(S.batchCost(b))]))
+      ];
+    },
+    couriers: (r) => {
+      const cs = S.couriers().map((c) => Object.assign({ c }, S.courierStats(c.id, r[0], r[1])));
+      return [
+        sec('Couriers in this period', ['Courier', 'Delivered', 'Cash collected', 'Returned', 'Return rate', 'Charges', 'Paid out to you', 'Balance now'], cs.map((x) => [esc(x.c.name), x.delivered, n(x.collected), x.returned, x.returnRate.toFixed(1) + '%', n(x.fees), n(x.paidOut), n(x.balance)]),
+          ['Total', sum(cs, (x) => x.delivered), n(sum(cs, (x) => x.collected)), sum(cs, (x) => x.returned), '', n(sum(cs, (x) => x.fees)), n(sum(cs, (x) => x.paidOut)), n(sum(cs, (x) => x.balance))]),
+        sec('Delivery charges: collected vs paid', ['', 'Amount'], (() => { const p = S.pnl(r[0], r[1]); return [['Charged to customers', n(p.shipping)], ['Paid to couriers (delivery + COD %)', n(p.courier.delivery + p.courier.cod)], ['Return charges', n(p.courier.returns)]]; })(), (() => { const p = S.pnl(r[0], r[1]); return ['Net delivery result', n(p.shipping - p.courier.total)]; })())
+      ];
+    },
     dues: () => {
       const dues = S.dueList(); const pos = S.purchases().filter((p) => S.poDue(p) > 0);
       return [
@@ -350,7 +376,8 @@
       ];
     }
   };
-  const TITLES = { sales: 'Sales report', pnl: 'Profit & loss statement', expenses: 'Expenses report', stock: 'Stock valuation', vat: 'VAT report', dues: 'Receivables & payables' };
+  const r2s = (x) => Math.round(x * 100) / 100;
+  const TITLES = { fabric: 'Fabric & production', couriers: 'Couriers & delivery', sales: 'Sales report', pnl: 'Profit & loss statement', expenses: 'Expenses report', stock: 'Stock valuation', vat: 'VAT report', dues: 'Receivables & payables' };
 
   P.reports = () => {
     const st = { tab: DB.get('rep.tab', 'sales'), range: DB.get('rep.range', '30') };

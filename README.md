@@ -31,80 +31,54 @@ python3 -m http.server 8000      # then open http://localhost:8000
 > `file://` page its own storage, so storefront and admin won't share demo data there. Use a
 > local server in Firefox/Safari.
 
-## One system, two channels
+## How the business flows
 
-Online orders and store sales live in **one orders table** (`channel: 'online' | 'store'`) and draw
-from **one inventory**, so the numbers always agree:
+```
+Fabric (yards / inches)  →  Production  →  Showroom stock  →  Sales  →  Courier  →  Merchant balance  →  Bank
+ warehouse, by cloth name    cut + stitch    finished panjabi   showroom,   Pathao /     cash on delivery      withdraw
+ bought from suppliers       per design      by size            website,    Steadfast    minus their charges
+                                                                Facebook /
+                                                                WhatsApp
+```
 
-| | Online | Store (POS) |
-| --- | --- | --- |
-| Where it's sold | `checkout.html` | `admin/pos.html` |
-| Stock leaves | the store's stock (one single-store setup) | the same store stock |
-| Stock granularity | per size | per size |
-| Payment tenders | COD, bKash, Nagad, card | cash, card, bKash, Nagad, on credit (due), split across several |
-| Money lands in | bank / wallets (COD settles into the bank) | cash drawer, bank, wallets |
-| Customer record | by phone number | optional phone number; walk-ins allowed |
-| Loyalty points | earn and redeem | earn and redeem |
+1. **Buy fabric** (*Fabric purchases*): enter the quantity in **yards or inches** (1 yd = 36 in). Receiving it adds
+   to *Fabric stock* and re-averages the cost per yard. Unpaid amounts show as supplier dues.
+2. **Know what you have** (*Fabric stock*): each cloth by name with yards **and** inches, cost, value, a reorder
+   level, how many days it lasts at your recent pace, and which designs can be cut from it (and how many).
+3. **One cloth, many designs.** Every design has a **recipe** in the product editor: fabric, yards per piece,
+   making/tailoring cost, embroidery/buttons/packing. That gives the cost per piece and profit per design.
+4. **Produce** (*Production*): start a batch, pick the design and pieces per size; the fabric is issued from the
+   warehouse. When the tailor finishes, mark it ready: the pieces land in **showroom stock**, the design's cost
+   is re-averaged, and the making cost is paid from cash or bank. Cancelling a batch returns the fabric.
+5. **Sell** three ways, all from the same showroom stock:
+   * **Showroom** (*POS*): customer pays at the counter.
+   * **Website**: normal checkout.
+   * **Facebook / WhatsApp / Instagram / phone** (*Social media order*): take the order by chat, choose
+     **customer pays delivery or free delivery**, optionally record a bKash advance, pick the courier.
+6. **Deliver** (*Couriers & COD*): book parcels with **Pathao** or **Steadfast** (or your own rider / showroom
+   pickup). When delivered, the cash the courier collected lands in that courier's **merchant balance** minus
+   their delivery and COD charges. Returned parcels restore stock and cost you the return charge.
+7. **Withdraw**: move the merchant balance to your bank. The ledger records every step.
 
-What this gives you on the storefront side: **Find in store** (live stock in the store), **click &
-collect** at checkout (deducts from the store's stock), and a **Store Purchases** list in the customer's
-account next to their online orders. Points earned at the counter appear in the same account.
+The **dashboard** shows this whole flow on one screen, sales by channel, delivery profit/loss (charged to
+customers vs paid to couriers), courier balances and return rates, fabric about to run out, what is in
+production, and plain-language insights computed from the numbers. *Reports* adds fabric & production and
+couriers tabs.
 
-## What's included
+## One system, three sales channels
 
-### Storefront (`/`)
+Showroom, website and social-media orders share **one orders table** (`channel: 'store' | 'online' | 'social'`)
+and **one showroom stock** (per size):
 
-| Page | File |
-| --- | --- |
-| Home: hero tiles, category circles, new arrivals, offers, trending, reviews | `index.html` |
-| Category landing · Shop (filters, sort, grid, pagination) | `category.html`, `shop.html` |
-| Product: colour + size pickers, per-size stock, Find in store, size guide, reviews, related | `product.html` |
-| Shopping bag (select items, coupon, summary) · slide-in bag on every page | `bag.html` |
-| Checkout: address book, delivery method (home / courier / store pickup), COD or digital payment (bKash / Nagad / card), pay-online discount, loyalty points, VAT line when enabled | `checkout.html` |
-| Order received · Track order | `thank-you.html`, `track-order.html` |
-| Log in / register · My account (profile, order history split Online vs Store, addresses, loyalty points) | `login.html`, `account.html` |
-| Store locations · Policies (shipping, terms, privacy, payment, exchange, size guide, loyalty) · About · Contact | `stores.html`, `policy.html`, `about.html`, `contact.html` |
+| | Showroom | Website | Social media |
+| --- | --- | --- | --- |
+| Where it is taken | `admin/pos.html` | `checkout.html` | `admin/order-new.html` |
+| Payment | cash, card, bKash, Nagad, on credit | COD, bKash, Nagad, card | bKash advance + cash on delivery |
+| Delivery | customer takes it | courier | courier (charged or free delivery) |
+| Cash arrives in | cash drawer / bank / wallets | wallets, or courier balance (COD) | wallets, or courier balance (COD) |
 
-### Admin (`/admin`)
-
-| Area | Screens |
-| --- | --- |
-| **Sales** | Orders (online + store, filter by channel / payment, split tenders, restock on cancel) · Order detail (receipt, invoice, notes) · **POS register** · Customers (points, dues, online vs store spend, collect due) · Coupons · **Loyalty points** |
-| **Catalog** | Products · Product editor (cost price, opening stock by size) · Categories · **Inventory** (stock by size, adjust, movement history, low-stock) · Media · Pages & Posts |
-| **Purchasing** | **Suppliers** · **Purchase orders** (order, receive into stock, pay in part or full, what you owe) |
-| **Finance** | **Finance overview** (revenue online vs store, gross profit, expenses, net profit, cash position) · **Expenses** · **Accounts & ledger** (cash, bank, bKash, Nagad; transfers; other income) · **Day close** (count the drawer, variance, deposit, Z-report) · **Reports** (sales, P&L, expenses, stock value, VAT, dues; CSV + print) · Analytics (channel filter) |
-| **Site** | Appearance → Customize (live preview) · Plugins · Users (Cashier / Accountant roles) · Settings (Store & POS: VAT, BIN, receipt footer, pay-online discount) |
-
-Extras: command palette (`Ctrl/⌘ + K`), collapsible sidebar, light/dark mode, WordPress-style list
-tables (views, bulk actions, filters, sort, Screen Options), responsive down to phones,
-keyboard-accessible charts with a "view as table" fallback.
-
-### Typical day at the store
-
-1. **Open** `pos.html`, pick the cashier. The drawer starts with yesterday's float.
-2. **Sell**: tap a product (or type a SKU such as `AMN-1004-M` and press Enter), pick colour + size, add a
-   customer's mobile number for points, apply a discount or redeem points, then **Pay**. Split the
-   payment across cash / card / bKash / Nagad, or put part of it on credit. The receipt prints from the
-   browser. **Hold** a bill to serve someone else first.
-3. **Spend**: record cash paid out (tea, courier, repairs) under *Expenses*, paid from *Cash in hand*.
-4. **Close**: in *Day close* count notes by denomination. The system shows expected cash (float + cash
-   sales − cash expenses) against what you counted, the variance, and how much to deposit to the bank.
-   Submitting locks the day and posts a **Z-report**.
-5. **Owner view**: *Finance overview* shows online and store revenue side by side, profit and loss,
-   and where the money is (cash, bank, wallets, owed by customers, owed to suppliers, stock at cost).
-
-### How the money is counted
-
-* **Revenue** = item subtotal − discounts (delivery charges and VAT are excluded). **Gross profit** =
-  revenue − cost of goods sold (each product's unit cost × quantity). **Net profit** = gross profit +
-  delivery charges collected − operating expenses.
-* Cancelled and refunded orders are excluded and their pieces return to stock.
-* Online prepaid orders count as cash received once they are *processing*; COD counts once *completed*
-  (and is assumed to settle into the bank). Wallet receipts are settled to the bank weekly in the
-  sample data.
-* Customer dues (credit sales) and supplier balances are tracked as receivables / payables.
-* Loyalty: 1 point per ৳100 spent, 1 point = ৳1, redeem from 100 points (all editable in
-  *Loyalty points*). VAT defaults to **0 %** (off); set a rate in *Settings → Store & POS*.
+Cancelling or returning an order puts the pieces back on the shelf. The storefront also has **Find in store**,
+**click & collect**, loyalty points and order tracking that shows the courier and tracking number.
 
 ## How the demo works
 
@@ -121,7 +95,7 @@ Sample data (about 60 days: online orders, store sales, expenses, purchases, day
 deterministically relative to today, so dashboards and reports always have recent numbers. Traffic,
 sessions and funnel stages are **simulated**; revenue and profit come from the orders.
 
-Sample setup: **one store** (it also fulfils online orders), four suppliers, four accounts, and staff users
+Sample setup: **one store** (it also fulfils online orders), twelve fabrics, five suppliers, Pathao and Steadfast merchant accounts, six accounts in total, and staff users
 including a cashier and an accountant. There is deliberately no multi-branch feature.
 
 **Brand:** your logo and the tagline *The Style You Love!* are in `assets/img/` and appear in the storefront

@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en" data-surface="admin">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Couriers & COD ‹ Amnu Fashion Admin</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/png" href="../assets/img/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/glass.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <script src="../assets/js/core.js"></script>
+</head>
+<body data-page="couriers">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="admin" id="admin">
+    <aside class="sidebar glass" id="sidebar"></aside>
+
+    <div class="admin-main">
+      <header class="topbar glass" id="topbar"></header>
+
+      <main class="content" id="content">
+        <div class="page-head">
+          <div><h1>Couriers &amp; cash on delivery</h1><p class="muted">Book parcels with Pathao or Steadfast, track what they collect for you, and withdraw your merchant balance.</p></div>
+          <div class="row gap-8 wrap"><a class="btn btn-glass" href="order-new.html"><i data-icon="plus" data-size="18"></i> Social order</a><button class="btn btn-violet" id="cr-withdraw" type="button"><i data-icon="wallet" data-size="18"></i> Withdraw</button></div>
+        </div>
+        <section class="kpis" id="cr-kpis"></section>
+        <section class="cr-cards" id="cr-cards"></section>
+        <div class="tabs" id="cr-tabs" role="tablist" style="align-self:flex-start">
+          <button type="button" role="tab" data-tab="parcels" aria-selected="true">Parcels</button>
+          <button type="button" role="tab" data-tab="payouts" aria-selected="false">Withdrawals</button>
+          <button type="button" role="tab" data-tab="rates" aria-selected="false">Courier rates</button>
+        </div>
+        <div id="list"></div>
+        <div id="payouts" hidden></div>
+        <div id="rates" hidden></div>
+      </main>
+
+      <footer class="admin-footer" id="admin-footer"></footer>
+    </div>
+  </div>
+
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/ops.js"></script>
+  <script src="../assets/js/prod.js"></script>
+  <script src="../assets/js/charts.js"></script>
+  <script src="../assets/js/admin-core.js"></script>
+  <script src="../assets/js/admin-pages.js"></script>
+  <script src="../assets/js/admin-pages2.js"></script>
+  <script src="../assets/js/admin-ops.js"></script>
+  <script src="../assets/js/admin-fin.js"></script>
+  <script src="../assets/js/admin-prod.js"></script>
+  <script>Amnu.admin.boot('couriers', Amnu.adminPages['couriers']);</script>
+</body>
+</html>

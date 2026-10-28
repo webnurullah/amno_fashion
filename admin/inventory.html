@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Inventory ‹ Amnu Fashion Admin</title>
+  <title>Showroom Stock ‹ Amnu Fashion Admin</title>
   <meta name="robots" content="noindex">
   <link rel="icon" type="image/png" href="../assets/img/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -23,8 +23,8 @@
 
       <main class="content" id="content">
         <div class="page-head">
-          <div><h1>Inventory</h1><p class="muted">Your stock, down to the size. Online orders and store sales draw from the same numbers.</p></div>
-          <div class="row gap-8 wrap"><button class="btn btn-glass" id="inv-export" type="button"><i data-icon="download" data-size="18"></i> Export CSV</button><a class="btn btn-violet" href="purchases.html?new=1"><i data-icon="plus" data-size="18"></i> New purchase order</a></div>
+          <div><h1>Showroom stock</h1><p class="muted">Finished panjabi ready to sell, by size. Production adds to it; showroom, website and social-media sales take from it.</p></div>
+          <div class="row gap-8 wrap"><button class="btn btn-glass" id="inv-export" type="button"><i data-icon="download" data-size="18"></i> Export CSV</button><a class="btn btn-violet" href="production.html?new=1"><i data-icon="scissors" data-size="18"></i> Make more (production)</a></div>
         </div>
         <section class="kpis five" id="inv-kpis"></section>
         <div class="tabs" id="inv-tabs" role="tablist" style="align-self:flex-start">
@@ -41,12 +41,14 @@
 
   <script src="../assets/js/data.js"></script>
   <script src="../assets/js/ops.js"></script>
+  <script src="../assets/js/prod.js"></script>
   <script src="../assets/js/charts.js"></script>
   <script src="../assets/js/admin-core.js"></script>
   <script src="../assets/js/admin-pages.js"></script>
   <script src="../assets/js/admin-pages2.js"></script>
   <script src="../assets/js/admin-ops.js"></script>
   <script src="../assets/js/admin-fin.js"></script>
+  <script src="../assets/js/admin-prod.js"></script>
   <script>Amnu.admin.boot('inventory', Amnu.adminPages['inventory']);</script>
 </body>
 </html>

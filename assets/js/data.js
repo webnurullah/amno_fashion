@@ -7,8 +7,8 @@
   'use strict';
   const A = window.Amnu;
   const DAY = 864e5;
-  /* schema 2: single store. Older demo data (multiple locations) is cleared once. */
-  if (A.DB.get('schema', 0) < 2) { A.DB.reset(); A.DB.set('schema', 2); }
+  /* schema 3: fabric warehouse, production and courier parcels. Older demo data is cleared once. */
+  if (A.DB.get('schema', 0) < 3) { A.DB.reset(); A.DB.set('schema', 3); }
   const daysAgo = (n) => new Date(Date.now() - n * DAY).toISOString();
 
   /* deterministic PRNG so seeded orders are identical on every load */
@@ -30,6 +30,11 @@
     messenger: 'https://m.me/amnufashionbd',
     currency: 'BDT',
     shipping: { dhaka: 70, outside: 130, pickup: 100, freeOver: 5000 },
+    /* what each courier charges you per parcel (BDT); COD % is taken from the cash they collect */
+    couriers: {
+      pathao: { name: 'Pathao', inside: 60, outside: 110, codPct: 1, returnPct: 50 },
+      steadfast: { name: 'Steadfast', inside: 60, outside: 120, codPct: 1, returnPct: 50 }
+    },
     payments: { cod: true, bkash: true, nagad: true, card: false },
     bkashNumber: '01700-000000',
     nagadNumber: '01700-000001',
@@ -60,6 +65,30 @@
     { id: 6, slug: 'kids', name: 'Kids Panjabi', desc: 'Little ones, big occasions' },
     { id: 7, slug: 'sets', name: 'Panjabi Sets', desc: 'Panjabi + pajama ready sets' }
   ];
+
+  /* ---------- fabrics: cloth bought by the yard (stock in yards, 1 yd = 36 in) ---------- */
+  const SEED_FABRICS = [
+    { id: 'fab1', name: 'Jacquard Cotton', type: 'Jacquard', colors: 'Navy, Sand', hex: '#1f2a5c', width: 44, rate: 420, reorder: 60, stock: 186.5, supplierId: 'sup1' },
+    { id: 'fab2', name: 'Cotton-Silk Blend', type: 'Blend', colors: 'Ivory, Teal, Plum', hex: '#efe5cf', width: 44, rate: 520, reorder: 50, stock: 142.25, supplierId: 'sup3' },
+    { id: 'fab3', name: 'Silk-Touch Satin', type: 'Satin', colors: 'Emerald, Ink Blue', hex: '#0f6b4f', width: 44, rate: 380, reorder: 40, stock: 96, supplierId: 'sup5' },
+    { id: 'fab4', name: 'Raw Silk (Zari)', type: 'Silk', colors: 'Maroon, Midnight', hex: '#7a1f33', width: 42, rate: 950, reorder: 40, stock: 38.5, supplierId: 'sup5' },
+    { id: 'fab5', name: 'Combed Cotton', type: 'Cotton', colors: 'Sky, Olive, Royal Blue, Pink', hex: '#7fb2e5', width: 58, rate: 210, reorder: 100, stock: 412, supplierId: 'sup1' },
+    { id: 'fab6', name: 'Cotton Twill', type: 'Cotton', colors: 'Charcoal, Navy, Olive', hex: '#3a3d4a', width: 58, rate: 260, reorder: 50, stock: 128, supplierId: 'sup1' },
+    { id: 'fab7', name: 'Cotton Voile', type: 'Cotton', colors: 'Mint, Cream, Lilac', hex: '#a8dcc8', width: 44, rate: 240, reorder: 60, stock: 74.5, supplierId: 'sup1' },
+    { id: 'fab8', name: 'Cotton Slub', type: 'Cotton', colors: 'Mustard, Terracotta, Teal', hex: '#e0a82e', width: 58, rate: 230, reorder: 50, stock: 61, supplierId: 'sup1' },
+    { id: 'fab9', name: 'Premium Cotton', type: 'Cotton', colors: 'Black, Navy, Brown', hex: '#17171c', width: 58, rate: 300, reorder: 80, stock: 236.75, supplierId: 'sup1' },
+    { id: 'fab10', name: 'Linen Blend', type: 'Linen', colors: 'Beige, Rust, Pearl, Sand', hex: '#cdb89a', width: 56, rate: 340, reorder: 60, stock: 158, supplierId: 'sup1' },
+    { id: 'fab11', name: 'Jamdani Cotton', type: 'Jamdani', colors: 'Peach, Rose', hex: '#f2a98c', width: 42, rate: 650, reorder: 30, stock: 22.5, supplierId: 'sup3' },
+    { id: 'fab12', name: 'Velvet', type: 'Velvet', colors: 'Wine, Black', hex: '#5a1730', width: 44, rate: 780, reorder: 25, stock: 18, supplierId: 'sup5' }
+  ];
+  /* recipe per design: [fabric, yards per piece, making (tailoring) per piece, extras per piece (embroidery, buttons, packing)] */
+  const RECIPES = {
+    1: ['fab1', 2.75, 450, 150], 2: ['fab2', 2.75, 500, 650], 3: ['fab3', 2.75, 400, 100], 4: ['fab4', 3, 600, 700], 5: ['fab5', 2.5, 300, 60],
+    6: ['fab6', 2.6, 380, 60], 7: ['fab7', 2.6, 420, 650], 8: ['fab8', 2.6, 330, 80], 9: ['fab9', 2.6, 350, 60], 10: ['fab10', 2.6, 380, 60],
+    11: ['fab11', 2.75, 450, 120], 12: ['fab12', 3, 700, 1100], 13: ['fab5', 2, 250, 60], 14: ['fab7', 1.5, 220, 180], 15: ['fab5', 2.5, 300, 60],
+    16: ['fab10', 4.5, 520, 80], 17: ['fab2', 2.75, 450, 500], 18: ['fab10', 2.6, 380, 60], 19: ['fab1', 2.75, 450, 150]
+  };
+  const recipeCost = (rc) => { const f = SEED_FABRICS.find((x) => x.id === rc.fabricId); return Math.round(rc.yards * (f ? f.rate : 0) + rc.making + rc.extras); };
 
   /* ---------- products ---------- */
   const COLOR_SETS = {
@@ -104,7 +133,13 @@
       long: `<p>Tailored from ${fabric}, this panjabi is ${FABRIC_COPY[style]}. A mandarin collar, concealed side slits and a tailored placket give it a modern yet traditional look that works from Friday prayers to wedding evenings.</p><ul><li>Fabric: ${fabric}</li><li>Fit: regular, mandarin collar, full sleeves</li><li>Placket: hand-set buttons</li><li>Care: gentle machine wash, cool iron on reverse</li></ul>`,
       tags: [style, kids ? 'kids' : 'men', fabric.split(' ')[0]],
       weight: kids ? 0.3 : 0.5, image: '', gallery: []
-    }, o || {});
+    }, o || {}, recipeOf(id));
+  }
+  function recipeOf(id) {
+    const r = RECIPES[id];
+    if (!r) return {};
+    const recipe = { fabricId: r[0], yards: r[1], making: r[2], extras: r[3] };
+    return { recipe, cost: recipeCost(recipe) };
   }
 
   const SEED_PRODUCTS = [
@@ -208,19 +243,44 @@
           continue;
         }
 
-        let status;
-        if (age > 6) status = roll < 0.84 ? 'completed' : roll < 0.92 ? 'cancelled' : roll < 0.96 ? 'refunded' : 'completed';
-        else if (age > 2) status = roll < 0.55 ? 'completed' : roll < 0.9 ? 'processing' : 'on-hold';
-        else status = roll < 0.25 ? 'pending' : roll < 0.8 ? 'processing' : 'on-hold';
+        /* website or social media (Facebook / WhatsApp / Instagram); every one ships by courier */
+        const social = r() < 0.56;
+        const sr = r();
+        const source = social ? (sr < 0.68 ? 'facebook' : sr < 0.92 ? 'whatsapp' : 'instagram') : '';
+        const freeDelivery = social && r() < 0.3;              /* sometimes you don't charge delivery */
+        const ship = freeDelivery ? 0 : shipping;
+        const otot = subtotal + ship - discount;
+        let payments;
+        if (social) {
+          const adv = r() < 0.35 ? (ship || 100) : 0;            /* advance by bKash, rest cash on delivery */
+          payments = adv ? [{ method: 'bkash', amount: adv }, { method: 'cod', amount: otot - adv }] : [{ method: 'cod', amount: otot }];
+        } else payments = [{ method: payKey, amount: otot }];
+        const cod = (payments.find((x) => x.method === 'cod') || {}).amount || 0;
+        const courier = r() < 0.62 ? 'pathao' : 'steadfast';
+        const rate = DEFAULT_SETTINGS.couriers[courier];
+        const dhaka = cust.district === 'Dhaka';
+        const bookAt = ts + (0.35 + r() * 0.75) * DAY;
+        const doneAt = bookAt + (dhaka ? 0.8 + r() * 0.8 : 1.8 + r() * 1.6) * DAY;
+        const cancel = r() < 0.05; const back = r() < (social ? 0.09 : 0.06);
+        let status; let st;
+        if (cancel && now >= bookAt) { status = 'cancelled'; st = 'pending'; }
+        else if (now < bookAt) { status = !social && payKey !== 'cod' && age < 0.25 ? 'on-hold' : age < 0.08 ? 'pending' : 'processing'; st = 'pending'; }
+        else if (now < doneAt) { status = 'shipped'; st = 'transit'; }
+        else if (back && cod > 0) { status = 'returned'; st = 'returned'; }
+        else { status = 'completed'; st = 'delivered'; }
+        const fee = dhaka ? rate.inside : rate.outside;
+        const parcel = st === 'pending' ? { courier: '', status: 'pending', fee: 0, codFee: 0, cod, collected: 0 }
+          : { courier, status: st, fee, codFee: st === 'delivered' ? Math.round(cod * rate.codPct / 100) : 0, returnFee: st === 'returned' ? Math.round(fee * rate.returnPct / 100) : 0, cod, collected: st === 'delivered' ? cod : 0,
+            bookedAt: new Date(bookAt).toISOString(), doneAt: st === 'delivered' || st === 'returned' ? new Date(doneAt).toISOString() : '' };
         list.push({
-          date: new Date(ts).toISOString(), channel: 'online', storeId: 's1',
-          status, customer: cust, items, subtotal, shipping, discount, coupon: useCoupon ? 'EID200' : '', vat: 0,
-          total, payment: payKey, payRef: payKey === 'cod' ? '' : 'TX' + Math.floor(r() * 9e7 + 1e7), note: '', notes: []
+          date: new Date(ts).toISOString(), channel: social ? 'social' : 'online', source, storeId: 's1',
+          status, customer: cust, items, subtotal, shipping: ship, discount, coupon: useCoupon ? 'EID200' : '', vat: 0,
+          total: otot, payment: payments[0].method, payments, payRef: social || payKey === 'cod' ? '' : 'TX' + Math.floor(r() * 9e7 + 1e7), note: '', notes: [], ship: parcel
         });
       }
     }
     list.sort((a, b) => new Date(a.date) - new Date(b.date));
-    list.forEach((o, i) => { o.id = 1001 + i; });
+    list.forEach((o, i) => { o.id = 1001 + i; if (o.ship && o.ship.courier) o.ship.tracking = (o.ship.courier === 'pathao' ? 'PTH' : 'SFC') + String(o.id * 7919 % 1000000).padStart(6, '0'); });
     return list;
   }
 
@@ -286,15 +346,21 @@
   store.payLabel = PAY_LABEL;
   store.statuses = [
     ['pending', 'Pending payment', 'b-warn'], ['processing', 'Processing', 'b-info'], ['on-hold', 'On hold', 'b-accent'],
-    ['completed', 'Completed', 'b-ok'], ['cancelled', 'Cancelled', 'b-err'], ['refunded', 'Refunded', '']
+    ['shipped', 'With courier', 'b-violet'], ['completed', 'Completed', 'b-ok'], ['returned', 'Returned', 'b-err'],
+    ['cancelled', 'Cancelled', 'b-err'], ['refunded', 'Refunded', '']
   ];
+  /* an order counts as a sale unless it was cancelled, refunded or came back from the courier */
+  store.isLive = (o) => o.status !== 'cancelled' && o.status !== 'refunded' && o.status !== 'returned';
+  store.CHANNELS = { store: 'Showroom', online: 'Website', social: 'Social media' };
+  store.SOURCES = { facebook: 'Facebook', whatsapp: 'WhatsApp', instagram: 'Instagram', phone: 'Phone call' };
+  store.channelLabel = (o) => (o.channel === 'social' ? store.SOURCES[o.source] || 'Social media' : store.CHANNELS[o.channel || 'online']);
   store.statusLabel = (s) => (store.statuses.find((x) => x[0] === s) || [s, s])[1];
   store.statusBadge = (s) => `<span class="badge ${(store.statuses.find((x) => x[0] === s) || [])[2] || ''}">${A.esc(store.statusLabel(s))}</span>`;
 
   store.settings = () => {
     const saved = DB.get('settings', {}) || {};
     const out = Object.assign({}, DEFAULT_SETTINGS, saved);
-    ['shipping', 'payments', 'loyalty'].forEach((k) => { out[k] = Object.assign({}, DEFAULT_SETTINGS[k], saved[k]); });
+    ['shipping', 'payments', 'loyalty', 'couriers'].forEach((k) => { out[k] = Object.assign({}, DEFAULT_SETTINGS[k], saved[k]); });
     return out;
   };
   store.saveSettings = (patch) => DB.set('settings', Object.assign({}, DB.get('settings', {}), patch));
@@ -382,7 +448,7 @@
       if (!key) return;                                  /* walk-in sales have no customer record */
       const c = map.get(key) || Object.assign({}, o.customer, { orders: 0, spent: 0, online: 0, instore: 0, first: o.date, last: o.date });
       c.orders += 1;
-      if (o.status !== 'cancelled' && o.status !== 'refunded') { c.spent += o.total; if (store.channelOf(o) === 'store') c.instore += o.total; else c.online += o.total; }
+      if (store.isLive(o)) { c.spent += o.total; if (store.channelOf(o) === 'store') c.instore += o.total; else c.online += o.total; }
       if (new Date(o.date) > new Date(c.last)) c.last = o.date;
       if (new Date(o.date) < new Date(c.first)) c.first = o.date;
       map.set(key, c);
@@ -417,4 +483,6 @@
   store.saveMedia = (l) => DB.set('media', l);
 
   store.seedProducts = SEED_PRODUCTS;
+  store.seedFabrics = SEED_FABRICS;
+  store.recipeCost = recipeCost;
 })();

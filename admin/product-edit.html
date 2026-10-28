@@ -62,8 +62,18 @@
                     </div>
                     <div class="pd-panel col" id="pd-inventory" hidden>
                       <div class="field"><label for="p-sku">SKU</label><input id="p-sku" type="text" placeholder="Auto-generated if empty"></div>
-                      <div class="field"><label for="p-cost">Unit cost (৳)</label><input id="p-cost" type="number" min="0" step="1" placeholder="0"><span class="hint">What one piece costs you. Used for gross profit and stock value.</span></div>
-                      <div class="field"><span class="label">Stock by location</span><div id="p-inv"></div><span class="hint">Edit quantities in <a class="btn-link" href="inventory.html">Inventory</a> after saving, or receive stock through a purchase order.</span></div>
+                      <div class="pe-recipe glass-soft">
+                        <div class="row between wrap"><b class="small">Production recipe</b><a class="btn-link small" href="production.html?new=1" id="p-make">Make a batch →</a></div>
+                        <div class="form-grid2">
+                          <div class="field full"><label for="p-fab">Cut from fabric</label><select id="p-fab"><option value="">No recipe</option></select></div>
+                          <div class="field"><label for="p-yd">Fabric per piece (yards)</label><input id="p-yd" type="number" min="0" step="0.05" placeholder="e.g. 2.75"><span class="hint" id="p-yd-in"></span></div>
+                          <div class="field"><label for="p-mk">Making / tailoring per piece (৳)</label><input id="p-mk" type="number" min="0" placeholder="0"></div>
+                          <div class="field"><label for="p-ex">Embroidery, buttons, packing per piece (৳)</label><input id="p-ex" type="number" min="0" placeholder="0"></div>
+                          <div class="field"><span class="label">Cost per piece from recipe</span><b class="big-n" id="p-rcost">—</b><span class="hint" id="p-rmargin"></span></div>
+                        </div>
+                      </div>
+                      <div class="field"><label for="p-cost">Current unit cost (৳)</label><input id="p-cost" type="number" min="0" step="1" placeholder="0"><span class="hint">Average cost of the pieces in stock (updated by each production batch). Used for profit and stock value. <button class="btn-link" type="button" id="p-usercost">Use recipe cost</button></span></div>
+                      <div class="field"><span class="label">Showroom stock</span><div id="p-inv"></div><span class="hint">Add stock by making a production batch, or adjust it in <a class="btn-link" href="inventory.html">Showroom stock</a>.</span></div>
                     </div>
                     <div class="pd-panel col" id="pd-shipping" hidden>
                       <div class="field"><label for="p-weight">Weight (kg)</label><input id="p-weight" type="number" min="0" step="0.1"></div>
@@ -143,12 +153,14 @@
 
   <script src="../assets/js/data.js"></script>
   <script src="../assets/js/ops.js"></script>
+  <script src="../assets/js/prod.js"></script>
   <script src="../assets/js/charts.js"></script>
   <script src="../assets/js/admin-core.js"></script>
   <script src="../assets/js/admin-pages.js"></script>
   <script src="../assets/js/admin-pages2.js"></script>
   <script src="../assets/js/admin-ops.js"></script>
   <script src="../assets/js/admin-fin.js"></script>
+  <script src="../assets/js/admin-prod.js"></script>
   <script>Amnu.admin.boot('product-edit', Amnu.adminPages['product-edit']);</script>
 </body>
 </html>

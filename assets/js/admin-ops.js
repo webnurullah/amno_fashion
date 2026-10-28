@@ -1,6 +1,6 @@
 /* ==========================================================================
    Amnu Fashion — admin controllers: store operations
-   pos · inventory · locations · suppliers · purchases · day-close
+   pos · showroom stock · suppliers · day-close (fabric purchases: admin-prod.js)
    ========================================================================== */
 (function () {
   'use strict';
@@ -332,7 +332,7 @@
       actions: { adj: (id, p, a) => adjust(p, a) }
     });
 
-    const REASON = { sale: ['Sale', 'b-info'], purchase: ['Purchase', 'b-ok'], 'transfer-in': ['Transfer in', 'b-violet'], 'transfer-out': ['Transfer out', 'b-violet'], stocktake: ['Stocktake', 'b-warn'], damage: ['Damaged', 'b-err'], correction: ['Correction', 'b-warn'], opening: ['Opening', 'b-ok'], adjustment: ['Adjustment', 'b-warn'], return: ['Return', 'b-ok'] };
+    const REASON = { sale: ['Sale', 'b-info'], production: ['From production', 'b-ok'], purchase: ['Purchase', 'b-ok'], stocktake: ['Stocktake', 'b-warn'], damage: ['Damaged', 'b-err'], correction: ['Correction', 'b-warn'], opening: ['Opening', 'b-ok'], adjustment: ['Adjustment', 'b-warn'], return: ['Return', 'b-ok'] };
     const moves = Admin.listTable({
       id: 'moves', mount: $('#moves'), perPage: 10, empty: 'No stock movements yet. Sell something, receive a purchase or transfer stock.', searchPlaceholder: 'Search movements',
       rows: () => S.moves(), rowId: (m) => m.id,
@@ -398,102 +398,6 @@
     });
     $('#add-supplier').addEventListener('click', () => edit(null, api));
     if (A.qs.get('new')) edit(null, api);
-  };
-
-  /* ======================================================================
-     Purchases
-     ====================================================================== */
-  P.purchases = () => {
-    const payStatus = (po) => { const t = S.poTotal(po); const p = S.poPaid(po); return p <= 0 ? 'unpaid' : p >= t ? 'paid' : 'partial'; };
-    const payBadge = (po) => { const s = payStatus(po); return `<span class="badge ${s === 'paid' ? 'b-ok' : s === 'partial' ? 'b-warn' : 'b-err'}">${s === 'paid' ? 'Paid' : s === 'partial' ? 'Part paid' : 'Unpaid'}</span>`; };
-
-    const detail = (id, api) => {
-      const po = S.purchases().find((p) => p.id === id); if (!po) return;
-      const sup = S.supplier(po.supplierId) || { name: '—' };
-      const m = A.modal({
-        title: `${po.id} · ${sup.name}`, wide: true,
-        body: `<div class="row gap-16 wrap" style="margin-bottom:12px"><span class="badge ${po.status === 'received' ? 'b-ok' : 'b-info'}">${po.status === 'received' ? 'Received' : 'Ordered'}</span>${payBadge(po)}<span class="muted small">${A.date(po.date)} · ${esc(S.locName(po.locId))}</span></div>
-          <div class="table-wrap"><table class="wp-table"><thead><tr><th>Product</th><th>Size</th><th class="right">Qty</th><th class="right">Unit cost</th><th class="right">Total</th></tr></thead><tbody>${po.items.map((i) => `<tr><td>${esc((S.product(i.pid) || { name: '#' + i.pid }).name)}</td><td>${esc(S.sizeLabel(i.size))}</td><td class="right num">${i.qty}</td><td class="right num">${money(i.cost)}</td><td class="right num">${money(i.qty * i.cost)}</td></tr>`).join('')}</tbody></table></div>
-          <div class="totals"><div><span>Items</span><b class="num">${money(sum(po.items, (i) => i.qty * i.cost))}</b></div>${po.shipping ? `<div><span>Freight</span><b class="num">${money(po.shipping)}</b></div>` : ''}<div class="grand"><span>Total</span><b class="num">${money(S.poTotal(po))}</b></div><div><span>Paid</span><b class="num ok">${money(S.poPaid(po))}</b></div><div><span>Due</span><b class="num err">${money(Math.max(0, S.poTotal(po) - S.poPaid(po)))}</b></div></div>
-          ${(po.payments || []).length ? `<h4 class="sub-h" style="margin-top:14px">Payments</h4>${po.payments.map((p) => `<div class="draft-row"><span>${A.date(p.date)} · ${esc(S.accountName(p.account))}${p.note ? ' · ' + esc(p.note) : ''}</span><b class="num">${money(p.amount)}</b></div>`).join('')}` : ''}
-          ${po.status === 'ordered' ? `<div class="row gap-8 wrap" style="margin-top:16px"><button class="btn btn-violet" data-receive>Receive stock</button></div>` : ''}
-          ${S.poTotal(po) - S.poPaid(po) > 0 ? `<div class="row gap-8 wrap" style="margin-top:14px"><input id="pp-amt" type="number" min="1" value="${S.poTotal(po) - S.poPaid(po)}" style="width:140px"><select id="pp-acc" style="width:auto">${Admin.accountOptions('bank')}</select><input id="pp-note" placeholder="Note" style="width:180px"><button class="btn btn-glass" data-pay>Record payment</button></div>` : ''}`
-      });
-      m.el.addEventListener('click', (e) => {
-        if (e.target.closest('[data-receive]')) { S.receivePO(id, po.locId); m.close(); api.refresh(); A.toast('Stock received'); return; }
-        if (e.target.closest('[data-pay]')) {
-          const amt = Number($('#pp-amt', m.el).value);
-          if (!(amt > 0) || amt > S.poTotal(po) - S.poPaid(po)) { A.toast('Enter an amount up to the balance due', 'err'); return; }
-          S.payPO(id, $('#pp-acc', m.el).value, amt, $('#pp-note', m.el).value); m.close(); api.refresh(); A.toast('Payment recorded');
-        }
-      });
-    };
-
-    const create = (api, supId) => {
-      const prods = S.products();
-      const lines = [{ pid: prods[0].id, size: prods[0].sizes[0], qty: 5, cost: prods[0].cost }];
-      const m = A.modal({
-        title: 'New purchase order', wide: true,
-        body: `<div class="form-grid2"><div class="field"><label>Supplier *</label><select id="po-sup">${S.suppliers().map((s) => `<option value="${s.id}" ${s.id === supId ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select></div></div>
-          <h4 class="sub-h" style="margin:16px 0 8px">Items</h4><div id="po-lines" class="col gap-8"></div><button class="btn btn-glass btn-sm" id="po-add" type="button" style="align-self:flex-start;margin-top:8px">${icon('plus', 14)} Add line</button>
-          <div class="form-grid2" style="margin-top:16px"><div class="field"><label>Freight / other charges (৳)</label><input id="po-ship" type="number" min="0" value="0"></div><div class="field"><label>Note</label><input id="po-note" placeholder="Optional"></div></div>
-          <div class="row between wrap" style="margin-top:12px"><label class="check small"><input type="checkbox" id="po-recv"> Mark as received now (adds stock)</label><b class="big-n" id="po-total"></b></div>
-          <div class="row gap-8 wrap" style="margin-top:10px"><span class="small">Pay now:</span><input id="po-pay" type="number" min="0" value="0" style="width:140px"><select id="po-acc" style="width:auto">${Admin.accountOptions('bank')}</select></div>`,
-        footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Create order</button>'
-      });
-      const paintLines = () => {
-        $('#po-lines', m.el).innerHTML = lines.map((l, i) => { const p = S.product(l.pid); return `<div class="po-line" data-i="${i}"><select data-k="pid">${prods.map((x) => `<option value="${x.id}" ${x.id === l.pid ? 'selected' : ''}>${esc(x.name)}</option>`).join('')}</select><select data-k="size">${p.sizes.map((z) => `<option value="${z}" ${z === l.size ? 'selected' : ''}>${esc(S.sizeLabel(z))}</option>`).join('')}</select><input data-k="qty" type="number" min="1" value="${l.qty}" aria-label="Quantity"><input data-k="cost" type="number" min="0" value="${l.cost}" aria-label="Unit cost"><b class="num">${money(l.qty * l.cost)}</b><button class="btn btn-ghost btn-icon btn-sm" data-rm aria-label="Remove line">${icon('x', 14)}</button></div>`; }).join('');
-        total();
-      };
-      const total = () => { $('#po-total', m.el).textContent = 'Total ' + money(sum(lines, (l) => l.qty * l.cost) + (Number($('#po-ship', m.el).value) || 0)); };
-      paintLines();
-      m.el.addEventListener('change', (e) => {
-        const row = e.target.closest('.po-line');
-        if (row) { const l = lines[Number(row.dataset.i)]; const k = e.target.dataset.k; if (k === 'pid') { l.pid = Number(e.target.value); const p = S.product(l.pid); l.size = p.sizes[0]; l.cost = p.cost; } else l[k] = k === 'size' ? e.target.value : Math.max(0, Number(e.target.value) || 0); paintLines(); }
-      });
-      m.el.addEventListener('input', (e) => { if (e.target.id === 'po-ship') total(); });
-      m.el.addEventListener('click', (e) => {
-        if (e.target.closest('#po-add')) { const p = prods[0]; lines.push({ pid: p.id, size: p.sizes[0], qty: 5, cost: p.cost }); paintLines(); return; }
-        const rm = e.target.closest('[data-rm]'); if (rm) { if (lines.length > 1) { lines.splice(Number(rm.closest('.po-line').dataset.i), 1); paintLines(); } return; }
-        if (!e.target.closest('[data-save]')) return;
-        const bad = lines.find((l) => !(l.qty > 0));
-        if (bad) { A.toast('Every line needs a quantity', 'err'); return; }
-        const list = S.purchases();
-        const id = S.nextPoId();
-        const pay = Number($('#po-pay', m.el).value) || 0;
-        const po = { id, n: Number(id.slice(3)), date: new Date().toISOString(), supplierId: $('#po-sup', m.el).value, locId: S.onlineLoc(), status: 'ordered', items: lines.map((l) => ({ pid: l.pid, size: l.size, qty: l.qty, cost: l.cost })), shipping: Number($('#po-ship', m.el).value) || 0, payments: pay > 0 ? [{ id: A.uid(), date: new Date().toISOString(), account: $('#po-acc', m.el).value, amount: pay, note: 'Paid at order' }] : [], note: $('#po-note', m.el).value.trim() };
-        if (pay > S.poTotal(po)) { A.toast('Payment cannot exceed the order total', 'err'); return; }
-        list.unshift(po); S.savePurchases(list);
-        if ($('#po-recv', m.el).checked) S.receivePO(id, po.locId);
-        m.close(); api.refresh(); A.toast(`${id} created${$('#po-recv', m.el).checked ? ' and stock received' : ''}`);
-      });
-    };
-
-    const api = Admin.listTable({
-      id: 'purchases', mount: $('#list'), perPage: 10, empty: 'No purchase orders yet', searchPlaceholder: 'Search purchase orders',
-      rows: () => S.purchases().slice().sort((a, b) => new Date(b.date) - new Date(a.date)), rowId: (p) => p.id,
-      views: [{ id: 'all', label: 'All' }, { id: 'ordered', label: 'Ordered', filter: (p) => p.status === 'ordered' }, { id: 'received', label: 'Received', filter: (p) => p.status === 'received' }, { id: 'due', label: 'Payment due', filter: (p) => S.poDue(p) > 0 }],
-      filters: [{ id: 'sup', label: 'All suppliers', options: S.suppliers().map((s) => [s.id, s.name]), test: (p, v) => p.supplierId === v }],
-      search: (p, q) => (p.id + ' ' + (S.supplier(p.supplierId) || {}).name).toLowerCase().includes(q),
-      columns: [
-        { id: 'id', label: 'Order', sort: (a, b) => a.n - b.n, render: (p) => `<a class="row-title" href="#" data-act="view" data-id="${p.id}">${p.id}</a><div class="xs muted">${A.date(p.date)}</div>${Admin.actions([{ label: 'View', act: 'view', id: p.id }, p.status === 'ordered' ? { label: 'Receive', act: 'recv', id: p.id } : null])}` },
-        { id: 'sup', label: 'Supplier', render: (p) => esc((S.supplier(p.supplierId) || { name: '—' }).name) },
-        { id: 'items', label: 'Pieces', cls: 'right', render: (p) => `<span class="num">${sum(p.items, (i) => i.qty)}</span>` },
-        { id: 'total', label: 'Total', cls: 'right', sort: (a, b) => S.poTotal(a) - S.poTotal(b), render: (p) => `<b class="num">${money(S.poTotal(p))}</b>` },
-        { id: 'due', label: 'Due', cls: 'right', render: (p) => { const d = S.poDue(p); return d ? `<b class="num err">${money(d)}</b>` : '<span class="muted">—</span>'; } },
-        { id: 'status', label: 'Status', render: (p) => `<span class="badge ${p.status === 'received' ? 'b-ok' : 'b-info'}">${p.status === 'received' ? 'Received' : 'Ordered'}</span>` },
-        { id: 'pay', label: 'Payment', render: payBadge }
-      ],
-      actions: {
-        view: (id, p, a) => detail(id, a),
-        recv: (id, p, a) => A.confirm(`Receive all items of ${id} into ${S.locName(p.locId)}?`, 'Receive').then((ok) => { if (ok) { S.receivePO(id); a.refresh(); A.toast('Stock received'); } })
-      }
-    });
-    document.addEventListener('click', (e) => { const a = e.target.closest('a[data-act]'); if (a) e.preventDefault(); });
-    $('#add-po').addEventListener('click', () => create(api));
-    if (A.qs.get('new')) create(api, A.qs.get('sup') || undefined);
-    const kp = () => { const open = S.purchases().filter((p) => p.status === 'ordered'); $('#po-kpis').innerHTML = [['Open orders', open.length], ['Open order value', money(sum(open, S.poTotal))], ['Owed to suppliers', money(S.payables())]].map(([l, v]) => `<div class="card kpi-lite"><span class="kpi-label">${l}</span><b class="num">${v}</b></div>`).join(''); };
-    kp();
   };
 
   /* ======================================================================

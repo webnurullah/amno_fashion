@@ -16,7 +16,7 @@
   /* ---------- shared date / order maths ---------- */
   const dayStart = (offset = 0) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - offset); return d.getTime(); };
   const startOf = (date) => { const d = new Date(date); d.setHours(0, 0, 0, 0); return d.getTime(); };
-  const isValid = (o) => o.status !== 'cancelled' && o.status !== 'refunded';
+  const isValid = S.isLive;
   const profitOf = (o) => o.items.reduce((s, i) => s + (i.price - (i.cost != null ? i.cost : i.price * 0.56)) * i.qty, 0) - (o.discount || 0);
   const noise = (t) => { const x = Math.sin((t / DAY) * 12.9898) * 43758.5453; return x - Math.floor(x); };
   /** per-day buckets for a window of `days` ending `offset` days before today */
@@ -42,112 +42,118 @@
      Dashboard
      ====================================================================== */
   P.dashboard = () => {
-    const orders = S.orders();
     const sel = $('#range');
-    sel.value = DB.get('dash.range', '7');
-    let chart;
+    sel.value = DB.get('dash.range', '30');
+    const rev = (o) => Math.max(0, o.subtotal - (o.discount || 0));
 
     const render = () => {
       const N = Number(sel.value);
       DB.set('dash.range', String(N));
-      const cur = buckets(orders, N, 0);
-      const prev = buckets(orders, N, N);
-      const label = `vs last ${N} days`;
-      const m = (f) => [sum(cur, f), sum(prev, f)];
+      const R = [dayStart(N - 1), dayStart(-1) - 1];
+      const Rp = [dayStart(2 * N - 1), dayStart(N - 1) - 1];
+      const label = `vs previous ${N} days`;
+      const p = S.pnl(R[0], R[1]); const q = S.pnl(Rp[0], Rp[1]);
+      const bal = S.balances();
+      const merchants = S.couriers();
+      const atCouriers = sum(merchants, (c) => Math.max(0, bal[c.id] || 0));
+      const cashBank = sum(S.accounts().filter((a) => a.type !== 'courier'), (a) => bal[a.id] || 0);
+      const pieces = sum(Object.values(p.ch), (c) => c.pieces);
 
-      const [rev, revP] = m((b) => b.revenue);
-      const [ord, ordP] = m((b) => b.orders);
-      const [cus, cusP] = [new Set(cur.flatMap((b) => [...b.customers])).size, new Set(prev.flatMap((b) => [...b.customers])).size];
-      const [pro, proP] = m((b) => b.profit);
+      /* KPIs */
       const kpis = [
-        ['Total sales', money(rev), pctDelta(rev, revP), '৳', 'violet'], ['Orders', ord.toLocaleString('en-IN'), pctDelta(ord, ordP), icon('bag', 22), 'green'],
-        ['Customers', cus.toLocaleString('en-IN'), pctDelta(cus, cusP), icon('users', 22), 'blue'], ['Total profit (est.)', money(pro), pctDelta(pro, proP), icon('trend', 22), 'pink']
+        ['Sales (all channels)', money(p.revenue), deltaHTML(pctDelta(p.revenue, q.revenue), label), '৳', 'violet', `${p.orders} orders · ${pieces} pieces`],
+        ['Gross profit', money(p.grossProfit), deltaHTML(pctDelta(p.grossProfit, q.grossProfit), label), icon('trend', 22), 'green', `${p.margin.toFixed(1)}% after fabric + making cost`],
+        ['Net profit', money(p.net), deltaHTML(pctDelta(p.net, q.net), label), icon('coins', 22), 'blue', `After expenses and ${money(p.courier.total)} courier charges`],
+        ['Money you have', money(cashBank + atCouriers), '', icon('bank', 22), 'pink', `Cash, bank, wallets + ${money(atCouriers)} waiting at couriers`]
       ];
-      $('#kpis').innerHTML = kpis.map(([l, v, d, ic, c]) => `<article class="kpi glass"><div class="kpi-top"><div><span class="kpi-label">${l}</span><b class="kpi-val num">${v}</b></div><span class="kpi-ico ${c}">${ic}</span></div>${deltaHTML(d, label)}</article>`).join('');
+      $('#kpis').innerHTML = kpis.map(([l, v, d, ic, c, sub]) => `<article class="kpi glass"><div class="kpi-top"><div><span class="kpi-label">${l}</span><b class="kpi-val num">${v}</b></div><span class="kpi-ico ${c}">${ic}</span></div>${d}<div class="xs muted">${sub}</div></article>`).join('');
 
-      $('#sales-total').textContent = money(rev);
-      $('#sales-delta').outerHTML = `<span class="delta ${rev >= revP ? 'up' : 'down'}" id="sales-delta">${icon(rev >= revP ? 'arrow-up' : 'arrow-down', 14)}${Math.abs(pctDelta(rev, revP)).toFixed(1)}%<span class="muted"> ${label}</span></span>`;
-      chart = A.charts.area($('#sales-chart'), cur.map((b) => ({ x: new Date(b.t), y: b.revenue })), { name: 'Sales', height: 290 });
-
-      const sessions = cur.map((b) => b.sessions); const sessionsP = sum(prev, (b) => b.sessions);
-      const conv = (arr) => { const s = sum(arr, (b) => b.sessions); return s ? (sum(arr, (b) => b.orders) / s) * 100 : 0; };
-      const aov = (arr) => { const o = sum(arr, (b) => b.orders); return o ? sum(arr, (b) => b.revenue) / o : 0; };
-      const spark = (arr, f) => arr.slice(-Math.max(7, Math.min(14, arr.length))).map(f);
-      const sideStats = [
-        ['Total sessions', sum(cur, (b) => b.sessions).toLocaleString('en-IN'), pctDelta(sum(cur, (b) => b.sessions), sessionsP), spark(cur, (b) => b.sessions)],
-        ['Conversion rate', conv(cur).toFixed(2) + '%', pctDelta(conv(cur), conv(prev)), spark(cur, (b) => (b.sessions ? (b.orders / b.sessions) * 100 : 0))],
-        ['Average order value', money(aov(cur)), pctDelta(aov(cur), aov(prev)), spark(cur, (b) => (b.orders ? b.revenue / b.orders : 0))]
+      /* the business flow: fabric -> production -> showroom -> sold -> couriers -> merchant balance -> bank */
+      const fabrics = S.fabrics(); const lowFab = fabrics.filter(S.fabricLow);
+      const wip = S.inProduction(); const v = S.valuation();
+      const lowStock = S.published().filter((x) => S.stock(x.id) <= settings.lowStock).length;
+      const parcels = S.parcels().filter((o) => S.isLive(o));
+      const transit = parcels.filter((o) => o.ship.status === 'transit'); const toBook = parcels.filter((o) => o.ship.status === 'pending' && o.ship.courier !== 'pickup');
+      const steps = [
+        ['package', 'Fabric in warehouse', S.fmtYd(S.fabricYards()), `${money(S.fabricValue())} · ${S.fmtIn(S.fabricYards())}`, lowFab.length ? `${lowFab.length} running low` : '', 'fabrics.html'],
+        ['scissors', 'In production', `${sum(wip, (b) => b.qty)} pcs`, `${wip.length} batch${wip.length === 1 ? '' : 'es'} cutting / stitching`, '', 'production.html'],
+        ['store', 'Showroom stock', `${v.qty.toLocaleString('en-IN')} pcs`, `${money(v.cost)} at cost`, lowStock ? `${lowStock} designs low` : '', 'inventory.html'],
+        ['bag', `Sold · ${N} days`, `${pieces} pcs`, `${money(p.revenue)} · ${p.orders} orders`, '', 'orders.html'],
+        ['truck', 'With couriers', `${transit.length} parcels`, `${money(sum(transit, (o) => o.ship.cod))} cash to collect`, toBook.length ? `${toBook.length} to book` : '', 'couriers.html?view=transit'],
+        ['wallet', 'At Pathao / Steadfast', money(atCouriers), 'Delivered, ready to withdraw', atCouriers > 10000 ? 'Withdraw' : '', 'couriers.html'],
+        ['bank', 'Cash & bank', money(cashBank), 'Cash, bank, bKash, Nagad', '', 'accounts.html']
       ];
-      $('#side-stats').innerHTML = sideStats.map(([l, v, d, s], i) => `<article class="card mini-stat"><div><span class="kpi-label">${l}</span><div class="mini-val"><b class="num">${v}</b>${deltaHTML(d)}</div></div><div class="spark-host" data-spark="${i}"></div></article>`).join('') + `<p class="xs muted sim-note">${icon('info', 14)} Traffic metrics are simulated. Connect Google Analytics or Facebook Pixel in Plugins for live data.</p>`;
-      sideStats.forEach(([, , , s], i) => A.charts.spark($(`[data-spark="${i}"]`), s));
+      $('#flow').innerHTML = steps.map(([ic, l, big, sub, flag, href]) => `<a class="flow-step" href="${href}"><span class="flow-ico">${icon(ic, 20)}</span><span class="kpi-label">${l}</span><b class="num">${big}</b><span class="xs muted">${sub}</span>${flag ? `<span class="badge b-warn flow-flag">${flag}</span>` : ''}</a>`).join('');
+      $('#flow-note').textContent = 'Click a step to open it';
 
-      /* online vs store split + live store status */
-      const days = cur.map((b) => b.t);
-      const onl = days.map(() => 0); const sto = days.map(() => 0);
-      orders.forEach((o) => { if (!isValid(o)) return; const i = days.indexOf(startOf(o.date)); if (i < 0) return; (S.channelOf(o) === 'store' ? sto : onl)[i] += o.total; });
-      const so = sum(onl, (x) => x); const ss = sum(sto, (x) => x);
-      const pct = (v) => (so + ss ? Math.round((v / (so + ss)) * 100) : 0);
-      $('#ch-split').textContent = `Online ${money(so)} (${pct(so)}%) · Store ${money(ss)} (${pct(ss)}%)`;
-      A.charts.stacked($('#channel-chart'), days.map((t, i) => ({ label: A.dateShort(t), tip: A.date(t), values: [onl[i], sto[i]] })), [{ name: 'Online', cls: 's-a' }, { name: 'Store', cls: 's-b' }], { height: 240 });
+      /* channels */
+      $('#sales-total').textContent = money(p.revenue);
+      $('#sales-delta').innerHTML = deltaHTML(pctDelta(p.revenue, q.revenue), label);
+      A.charts.stacked($('#channel-chart'), Admin.channelSeries(R[0], R[1]), Admin.CH_SERIES, { height: 260 });
+      const rows = S.channelRows(R[0], R[1]);
+      A.charts.hbars($('#channel-rows'), rows.map((x) => ({ label: x.label, value: x.revenue, display: `${money(x.revenue)} · ${p.revenue ? Math.round((x.revenue / p.revenue) * 100) : 0}%`, sub: `${x.orders} orders` })));
+      const dnet = p.shipping - p.courier.total;
+      $('#delivery-econ').innerHTML = `<div class="econ glass-soft"><b class="small">Delivery, ${N} days</b><div><span>Charged to customers</span><b class="num">${money(p.shipping)}</b></div><div><span>Paid to couriers</span><b class="num">− ${money(p.courier.total)}</b></div><div class="g"><span>${dnet >= 0 ? 'Delivery profit' : 'Delivery cost to you'}</span><b class="num ${dnet >= 0 ? 'ok' : 'err'}">${money(dnet)}</b></div></div>`;
+
+      /* couriers */
+      $('#courier-box').innerHTML = (toBook.length ? `<a class="alert-row" href="couriers.html">${icon('package', 18)}<span><b>${toBook.length} parcel${toBook.length === 1 ? '' : 's'}</b> packed and waiting to be booked · ${money(sum(toBook, (o) => o.ship.cod))} to collect</span></a>` : '')
+        + merchants.map((c) => { const st = S.courierStats(c.id, R[0], R[1]); return `<div class="cr-row"><span class="cr-logo cr-${c.id}">${esc(c.name.slice(0, 1))}</span><div class="grow"><b class="small">${esc(c.name)}</b><div class="xs muted">${st.transit} in transit (${money(st.transitCod)}) · ${st.delivered} delivered · <span class="${st.returnRate > 10 ? 'err' : ''}">${st.returnRate.toFixed(1)}% returned</span></div></div><div class="right"><b class="num">${money(st.balance)}</b><div class="xs muted">to withdraw</div></div></div>`; }).join('')
+        + '<a class="btn btn-glass btn-sm btn-block" href="couriers.html" style="margin-top:10px">Withdraw or book parcels</a>';
+
+      /* fabric watch */
+      const watch = fabrics.map((f) => ({ f, d: S.daysOfCover(f) })).sort((a, b) => (S.fabricLow(b.f) - S.fabricLow(a.f)) || (a.d - b.d)).slice(0, 5);
+      $('#fabric-box').innerHTML = watch.map(({ f, d }) => `<div class="fw-row"><span class="fab-sw" style="--c:${esc(f.hex)}"></span><div class="grow"><b class="small">${esc(f.name)}</b><div class="xs muted">${S.fmtYd(f.stock)} · ${S.fmtIn(f.stock)} · ${S.designsFor(f.id).map((x) => `${S.canMake(x)} ${esc(x.name.replace(' Panjabi', ''))}`).join(', ')}</div></div><div class="right">${S.fabricLow(f) ? '<span class="badge b-err">Low</span>' : d === Infinity ? '<span class="badge">Not used</span>' : `<span class="badge ${d < 20 ? 'b-warn' : 'b-ok'}">~${d} days</span>`}<div><a class="btn-link xs" href="purchases.html?new=1&fab=${f.id}">Buy</a></div></div></div>`).join('');
+
+      /* production */
+      const monthDone = S.batches().filter((b) => b.status === 'ready' && new Date(b.readyAt).getTime() >= S.range('month')[0]);
+      $('#prod-box').innerHTML = (wip.map((b) => { const pr = S.product(b.productId); return `<a class="top-row" href="production.html">${pr ? Admin.thumb(pr, 'sm') : ''}<div class="grow"><b class="small">${esc(pr ? pr.name : '#' + b.productId)}</b><div class="xs muted">${b.id} · ${b.qty} pcs · ${S.fmtYd(b.yards)} ${esc(S.fabricName(b.fabricId))}</div></div><span class="badge ${b.status === 'cutting' ? 'b-warn' : 'b-violet'}">${b.status === 'cutting' ? 'Cutting' : 'Stitching'}</span></a>`; }).join('') || '<p class="muted small">Nothing in production right now.</p>')
+        + `<p class="xs muted" style="margin-top:8px">${sum(monthDone, (b) => b.qty)} pieces finished this month · avg ${money(sum(monthDone, S.batchCost) / Math.max(1, sum(monthDone, (b) => b.qty)))} per piece</p>`;
+
+      /* showroom today */
       const todayKey = A.ymd(Date.now());
-      const rows = S.showrooms().map((l) => {
-        const sale = S.salesFor(l.id, todayKey); const closed = S.closeFor(l.id, todayKey);
-        return `<a class="store-row" href="${closed ? 'day-close.html' : 'pos.html'}"><span class="loc-ico">${icon('store', 18)}</span><div class="grow"><b class="small">${esc(l.name)}</b><div class="xs muted">${A.plural(sale.count, 'order')} · ${A.plural(sale.pieces, 'piece')}</div></div><div class="right"><b class="num small">${money(sale.total)}</b><div>${closed ? '<span class="badge b-err">Closed</span>' : '<span class="badge b-ok">Open</span>'}</div></div></a>`;
-      });
-      const onlineToday = sum(orders.filter((o) => isValid(o) && S.channelOf(o) === 'online' && startOf(o.date) === dayStart(0)), (o) => o.total);
-      $('#stores-today').innerHTML = rows.join('') + `<div class="store-row online"><span class="loc-ico">${icon('globe', 18)}</span><div class="grow"><b class="small">Online store</b><div class="xs muted">Orders placed today</div></div><div class="right"><b class="num small">${money(onlineToday)}</b></div></div>`;
+      const t0 = dayStart(0);
+      const todayOrders = S.orders().filter((o) => isValid(o) && startOf(o.date) === t0);
+      const shop = S.showrooms().map((l) => { const sale = S.salesFor(l.id, todayKey); const closed = S.closeFor(l.id, todayKey); return `<a class="store-row" href="${closed ? 'day-close.html' : 'pos.html'}"><span class="loc-ico">${icon('store', 18)}</span><div class="grow"><b class="small">Showroom</b><div class="xs muted">${A.plural(sale.count, 'sale')} · ${A.plural(sale.pieces, 'piece')}</div></div><div class="right"><b class="num small">${money(sale.total)}</b><div>${closed ? '<span class="badge b-err">Closed</span>' : '<span class="badge b-ok">Open</span>'}</div></div></a>`; }).join('');
+      const ch = (k, ic, lbl) => { const os = todayOrders.filter((o) => S.channelOf(o) === k); return `<div class="store-row"><span class="loc-ico">${icon(ic, 18)}</span><div class="grow"><b class="small">${lbl}</b><div class="xs muted">${A.plural(os.length, 'order')} today</div></div><div class="right"><b class="num small">${money(sum(os, (o) => o.total))}</b></div></div>`; };
+      $('#stores-today').innerHTML = shop + ch('social', 'message', 'Facebook & WhatsApp') + ch('online', 'globe', 'Website');
 
       /* recent orders */
-      const recent = orders.slice().sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
-      $('#recent-orders').innerHTML = `<thead><tr><th>Order</th><th>Customer</th><th>Date</th><th class="right">Total</th><th>Status</th></tr></thead><tbody>${recent.map((o) => {
-        const p = S.product(o.items[0].pid);
-        const thumb = p ? Admin.thumb(p, 'sm') : `<span class="thumb sm">${A.panjabi(o.items[0].hex || '#888', o.items[0].style || 'plain')}</span>`;
-        return `<tr><td><a class="row-title with-thumb" href="order-view.html?id=${o.id}">${thumb}<span>#${o.id}</span></a></td><td>${esc(o.customer.name)}</td><td class="muted">${A.dateShort(o.date)}</td><td class="right num">${money(o.total)}</td><td>${S.statusBadge(o.status)}</td></tr>`;
+      const recent = S.orders().slice().sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 6);
+      $('#recent-orders').innerHTML = `<thead><tr><th>Order</th><th>Customer</th><th>Channel</th><th class="right">Total</th><th>Status</th></tr></thead><tbody>${recent.map((o) => {
+        const pr = S.product(o.items[0].pid);
+        const thumb = pr ? Admin.thumb(pr, 'sm') : `<span class="thumb sm">${A.panjabi(o.items[0].hex || '#888', o.items[0].style || 'plain')}</span>`;
+        return `<tr><td><a class="row-title with-thumb" href="order-view.html?id=${o.id}">${thumb}<span>#${o.id}</span></a></td><td>${esc(o.customer.name)}<div class="xs muted">${A.ago(o.date)}</div></td><td>${Admin.channelBadge(o)}</td><td class="right num">${money(o.total)}</td><td>${S.statusBadge(o.status)}</td></tr>`;
       }).join('')}</tbody>`;
 
-      /* top products */
+      /* most profitable designs */
       const tally = new Map();
-      orders.filter((o) => isValid(o) && startOf(o.date) >= dayStart(N - 1)).forEach((o) => o.items.forEach((i) => {
-        const t = tally.get(i.pid) || { pid: i.pid, name: i.name, units: 0, revenue: 0, hex: i.hex, style: i.style };
-        t.units += i.qty; t.revenue += i.price * i.qty; tally.set(i.pid, t);
+      S.orders().filter((o) => isValid(o) && S.within(o.date, R[0], R[1])).forEach((o) => o.items.forEach((i) => {
+        const t = tally.get(i.pid) || { pid: i.pid, name: i.name, units: 0, profit: 0, revenue: 0 };
+        t.units += i.qty; t.revenue += i.price * i.qty; t.profit += (i.price - (i.cost != null ? i.cost : i.price * 0.56)) * i.qty; tally.set(i.pid, t);
       }));
-      const top = [...tally.values()].sort((a, b) => b.revenue - a.revenue).slice(0, 6);
-      const maxRev = Math.max(1, ...top.map((t) => t.revenue));
-      $('#top-products').innerHTML = top.map((t) => {
-        const p = S.product(t.pid);
-        return `<a class="top-row" href="product-edit.html?id=${t.pid}">${p ? Admin.thumb(p, 'sm') : ''}<div class="grow"><b class="small">${esc(t.name)}</b><div class="meter"><span style="width:${(t.revenue / maxRev) * 100}%"></span></div></div><div class="right"><b class="num small">${money(t.revenue)}</b><div class="xs muted">${t.units} sold</div></div></a>`;
-      }).join('') || '<p class="muted small">No sales in this period.</p>';
+      const top = [...tally.values()].sort((a, b) => b.profit - a.profit).slice(0, 6);
+      const maxP = Math.max(1, ...top.map((t) => t.profit));
+      $('#top-products').innerHTML = top.map((t) => { const pr = S.product(t.pid); return `<a class="top-row" href="product-edit.html?id=${t.pid}">${pr ? Admin.thumb(pr, 'sm') : ''}<div class="grow"><b class="small">${esc(t.name)}</b><div class="meter"><span style="width:${(t.profit / maxP) * 100}%"></span></div></div><div class="right"><b class="num small">${money(t.profit)}</b><div class="xs muted">${t.units} sold · ${t.revenue ? Math.round((t.profit / t.revenue) * 100) : 0}% margin</div></div></a>`; }).join('') || '<p class="muted small">No sales in this period.</p>';
 
-      /* insight */
-      const up = rev >= revP;
-      $('#insight').innerHTML = `<span class="insight-ico">${icon('sparkle', 24)}</span><div class="grow"><b>${up ? "You're doing great!" : 'Sales are a little slower'}</b><p class="muted small">Your store sales are ${up ? 'up' : 'down'} <b class="${up ? 'ok' : 'err'}">${Math.abs(pctDelta(rev, revP)).toFixed(1)}%</b> compared to the previous ${N} days.${up ? '' : ' Try a coupon or an Eid campaign to bring buyers back.'}</p></div><a class="btn btn-glass" href="analytics.html">View full report</a>`;
+      /* insights written from the numbers */
+      const ins = [];
+      if (rows[0] && p.revenue) ins.push(['trend', `<b>${esc(rows[0].label)}</b> brought ${Math.round((rows[0].revenue / p.revenue) * 100)}% of sales in the last ${N} days (${money(rows[0].revenue)}).`]);
+      const social = S.orders().filter((o) => o.channel === 'social' && o.ship && o.ship.doneAt && S.within(o.ship.doneAt, R[0], R[1]));
+      const sRet = social.filter((o) => o.ship.status === 'returned').length;
+      if (social.length) ins.push(['truck', `Social media parcels came back <b>${Math.round((sRet / social.length) * 100)}%</b> of the time (${sRet} of ${social.length}). A bKash advance or a confirmation call before booking cuts returns.`]);
+      const freeCost = sum(S.parcels().filter((o) => !o.shipping && o.ship.doneAt && S.isMerchant(o.ship.courier) && S.within(o.ship.doneAt, R[0], R[1])), (o) => (o.ship.fee || 0) + (o.ship.codFee || 0) + (o.ship.returnFee || 0));
+      if (freeCost) ins.push(['coins', `Free delivery cost you <b>${money(freeCost)}</b> in courier charges over ${N} days.`]);
+      if (atCouriers > 10000) ins.push(['wallet', `<b>${money(atCouriers)}</b> is sitting in your Pathao / Steadfast merchant balance. <a class="btn-link" href="couriers.html">Withdraw it</a>.`]);
+      const soon = fabrics.filter((f) => S.daysOfCover(f) !== Infinity).sort((a, b) => S.daysOfCover(a) - S.daysOfCover(b))[0];
+      if (soon) ins.push(['package', `<b>${esc(soon.name)}</b> lasts about ${S.daysOfCover(soon)} days at the current pace (${S.fmtYd(soon.stock)} left). <a class="btn-link" href="purchases.html?new=1&fab=${soon.id}">Buy more</a>.`]);
+      const best = S.published().filter((x) => x.recipe).map((x) => ({ x, m: (S.price(x) - S.recipeCostLive(x.recipe)) / S.price(x) })).sort((a, b) => b.m - a.m)[0];
+      if (best) ins.push(['sparkle', `Best margin design: <b>${esc(best.x.name)}</b> keeps ${Math.round(best.m * 100)}% of its price after fabric and making cost.`]);
+      $('#insights').innerHTML = `<div class="card-h"><span class="card-title" id="ins-h">What the numbers say</span></div><div class="ins-grid">${ins.map(([ic, t]) => `<div class="ins">${icon(ic, 18)}<p class="small">${t}</p></div>`).join('')}</div>`;
     };
 
-    /* glance, stock alerts, quick draft (don't depend on the range) */
-    const products = S.products();
-    const pub = products.filter((p) => p.status === 'publish');
-    const bal = S.balances();
-    const dues = S.dueList().reduce((n, d) => n + d.due, 0);
-    const snap = (l, v, cls = '') => `<div class="snap-row"><span>${l}</span><b class="num ${cls}">${v}</b></div>`;
-    $('#money-snap').innerHTML = S.accounts().map((a) => snap(esc(a.name), money(bal[a.id] || 0))).join('')
-      + snap('Customers owe you', money(dues)) + snap('You owe suppliers', money(S.payables()), S.payables() ? 'err' : '') + snap('Stock at cost', money(S.valuation().cost));
-    const low = pub.filter((p) => p.stock <= settings.lowStock).sort((a, b) => a.stock - b.stock).slice(0, 5);
-    $('#stock-alerts').innerHTML = low.map((p) => `<a class="top-row" href="product-edit.html?id=${p.id}">${Admin.thumb(p, 'sm')}<div class="grow"><b class="small">${esc(p.name)}</b><div class="xs muted">${esc(p.sku)}</div></div>${Admin.stockHTML(p)}</a>`).join('') || '<p class="muted small">All products are well stocked.</p>';
-
-    const drafts = () => {
-      const list = S.pages().filter((x) => x.status === 'draft').sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 3);
-      $('#drafts').innerHTML = list.length ? `<div class="label" style="margin-top:14px">Your recent drafts</div>` + list.map((d) => `<div class="draft-row"><a href="pages.html?q=${encodeURIComponent(d.title)}"><b class="small">${esc(d.title)}</b></a><span class="xs muted">${A.date(d.date)}</span></div>`).join('') : '';
-    };
-    $('#quick-draft').addEventListener('submit', (e) => {
-      e.preventDefault();
-      const title = $('#qd-title').value.trim();
-      if (!title) { A.toast('Add a title first', 'err'); $('#qd-title').focus(); return; }
-      const list = S.pages();
-      list.unshift({ id: list.reduce((m, x) => Math.max(m, x.id), 0) + 1, type: 'post', title, slug: '/blog/' + A.slug(title), author: 'Amnu Admin', status: 'draft', date: new Date().toISOString(), cat: 'Uncategorised', body: $('#qd-body').value });
-      S.savePages(list);
-      e.target.reset(); drafts(); A.toast('Draft saved');
-    });
-    drafts();
+    /* low showroom stock (doesn't depend on the range) */
+    const low = S.published().filter((x) => x.stock <= settings.lowStock).sort((a, b) => a.stock - b.stock).slice(0, 5);
+    $('#stock-alerts').innerHTML = low.map((x) => `<a class="top-row" href="production.html?new=1&p=${x.id}">${Admin.thumb(x, 'sm')}<div class="grow"><b class="small">${esc(x.name)}</b><div class="xs muted">${x.recipe ? `${S.canMake(x)} more possible from ${esc(S.fabricName(x.recipe.fabricId))}` : esc(x.sku)}</div></div>${Admin.stockHTML(x)}</a>`).join('') || '<p class="muted small">All designs are well stocked.</p>';
     sel.addEventListener('change', render);
     render();
   };
@@ -349,6 +355,22 @@
       if (e.target.dataset.os) opening[e.target.dataset.os] = Math.max(0, Math.round(Number(e.target.value) || 0));
       preview();
     });
+    /* production recipe: fabric, yards per piece, making and extras -> cost per piece */
+    const rc0 = draft.recipe || {};
+    $('#p-fab').innerHTML = '<option value="">No recipe</option>' + S.fabrics().map((f) => `<option value="${f.id}" ${f.id === rc0.fabricId ? 'selected' : ''}>${esc(f.name)} · ${money(f.rate)}/yd · ${S.fmtYd(f.stock)} in stock</option>`).join('');
+    $('#p-yd').value = rc0.yards || ''; $('#p-mk').value = rc0.making || ''; $('#p-ex').value = rc0.extras || '';
+    const readRecipe = () => ($('#p-fab').value ? { fabricId: $('#p-fab').value, yards: Number($('#p-yd').value) || 0, making: Number($('#p-mk').value) || 0, extras: Number($('#p-ex').value) || 0 } : null);
+    const recipePaint = () => {
+      const rc = readRecipe(); const cost = rc ? S.recipeCostLive(rc) : 0; const price = Number(val('#p-sale')) || Number(val('#p-price')) || 0;
+      $('#p-yd-in').textContent = rc && rc.yards ? `${Math.round(rc.yards * 36)} inches` : '';
+      $('#p-rcost').textContent = rc ? money(cost) : '—';
+      $('#p-rmargin').textContent = rc && price ? `Profit ${money(price - cost)} per piece (${Math.round(((price - cost) / price) * 100)}%)${rc.yards ? ` · ${S.canMake({ recipe: rc })} pieces possible from stock` : ''}` : '';
+      $('#p-make').href = isNew ? 'production.html?new=1' : `production.html?new=1&p=${draft.id}`;
+    };
+    ['#p-fab', '#p-yd', '#p-mk', '#p-ex', '#p-price', '#p-sale'].forEach((sel) => $(sel).addEventListener('input', recipePaint));
+    $('#p-fab').addEventListener('change', recipePaint);
+    $('#p-usercost').addEventListener('click', () => { const rc = readRecipe(); if (!rc) { A.toast('Choose a fabric first', 'err'); return; } $('#p-cost').value = S.recipeCostLive(rc); });
+    recipePaint();
     permalink(); renderInv(); preview();
 
     /* save */
@@ -369,7 +391,7 @@
       let slug = A.slug(name); if (all.some((p) => p.slug === slug && p.id !== draft.id)) slug += '-' + draft.id;
       const sku = val('#p-sku').trim() || 'AMN-' + (1000 + draft.id);
       const product = Object.assign({}, draft, {
-        name, slug, price, sale, sku, status, cost: Number(val('#p-cost')) || Math.round(price * 0.56),
+        name, slug, price, sale, sku, status, recipe: readRecipe(), cost: Number(val('#p-cost')) || (readRecipe() ? S.recipeCostLive(readRecipe()) : Math.round(price * 0.56)),
         stock: isNew ? draft.sizes.reduce((n, z) => n + (opening[z] || 0), 0) : draft.stock, weight: Number(val('#p-weight')) || 0, fabric: val('#p-fabric').trim() || 'cotton', style: val('#p-style'), badge: val('#p-badge'), featured: $('#p-featured').checked,
         short: val('#p-short').trim(), long: $('#p-long').innerHTML, tags: val('#p-tags').split(',').map((t) => t.trim()).filter(Boolean), color: draft.colors[0].hex, colorName: draft.colors[0].name
       });
@@ -440,7 +462,8 @@
       initialView: A.qs.get('status') || undefined, initialQ: A.qs.get('q') || '', initialFilters: { channel: A.qs.get('channel') || '' },
       views: [{ id: 'all', label: 'All' }].concat(statuses.map(([k, l]) => ({ id: k, label: l, filter: (o) => o.status === k }))),
       filters: [
-        { id: 'channel', label: 'All channels', options: [['online', 'Online'], ['store', 'In store (POS)']], test: (o, v) => S.channelOf(o) === v },
+        { id: 'channel', label: 'All channels', options: [['store', 'Showroom (POS)'], ['online', 'Website'], ['social', 'Social media (all)']].concat(Object.entries(S.SOURCES).map(([k, l]) => ['src:' + k, l])), test: (o, v) => (v.startsWith('src:') ? o.source === v.slice(4) : S.channelOf(o) === v) },
+        { id: 'ship', label: 'Any delivery state', options: [['pending', 'To book'], ['transit', 'With courier'], ['delivered', 'Delivered'], ['returned', 'Returned']], test: (o, v) => o.ship && o.ship.status === v },
         { id: 'pay', label: 'All payment methods', options: Object.entries(S.payLabel), test: (o, v) => S.tenders(o).some((t) => t.method === v) },
         { id: 'district', label: 'All districts', options: [...new Set(S.orders().map((o) => o.customer.district))].sort().map((d) => [d, d]), test: (o, v) => o.customer.district === v }
       ],
@@ -452,6 +475,7 @@
         { id: 'status', label: 'Status', sort: (a, b) => a.status.localeCompare(b.status), render: (o) => S.statusBadge(o.status) },
         { id: 'items', label: 'Items', render: (o) => `<div class="item-stack">${o.items.slice(0, 3).map((i) => { const p = S.product(i.pid); return p ? Admin.thumb(p, 'xs') : `<span class="thumb xs">${A.panjabi(i.hex || '#888', i.style || 'plain')}</span>`; }).join('')}<span class="xs muted">${A.plural(o.items.reduce((n, i) => n + i.qty, 0), 'pc')}</span></div>` },
         { id: 'district', label: 'District', hidden: true, render: (o) => esc(o.customer.district || '—') },
+        { id: 'delivery', label: 'Delivery', render: (o) => (o.ship ? `<span class="small">${esc(S.courierName(o.ship.courier))}</span>${o.ship.tracking ? `<div class="xs muted mono">${esc(o.ship.tracking)}</div>` : ''}` : '<span class="xs muted">Counter</span>') },
         { id: 'payment', label: 'Payment', render: (o) => `<span class="small">${S.tenders(o).map((t) => esc(S.payLabel[t.method] || t.method)).join(' + ')}</span>${o.due ? `<div class="xs err">Due ${money(o.due)}</div>` : ''}${o.payRef ? `<div class="xs muted mono">${esc(o.payRef)}</div>` : ''}` },
         { id: 'total', label: 'Total', cls: 'right', sort: (a, b) => a.total - b.total, render: (o) => `<b class="num">${money(o.total)}</b>` }
       ],
@@ -479,7 +503,7 @@
       const isStore = S.channelOf(o) === 'store';
       const tenders = S.tenders(o);
       root.innerHTML = `
-      <div class="page-head"><div><div class="row gap-8 wrap"><h1>Order #${o.id}</h1>${S.statusBadge(o.status)}${Admin.channelBadge(o)}</div><p class="muted">${isStore ? `Sold at the store${o.cashier ? ' by ' + esc(o.cashier) : ''}` : 'Placed online'} on ${A.dateTime(o.date)} · ${tenders.map((t) => esc(S.payLabel[t.method] || t.method)).join(' + ')}${o.payRef ? ` · TrxID <span class="mono">${esc(o.payRef)}</span>` : ''}</p></div>
+      <div class="page-head"><div><div class="row gap-8 wrap"><h1>Order #${o.id}</h1>${S.statusBadge(o.status)}${Admin.channelBadge(o)}</div><p class="muted">${isStore ? `Sold at the showroom${o.cashier ? ' by ' + esc(o.cashier) : ''}` : o.channel === 'social' ? `Ordered on ${esc(S.channelLabel(o))}` : 'Placed on the website'} on ${A.dateTime(o.date)} · ${tenders.map((t) => esc(S.payLabel[t.method] || t.method)).join(' + ')}${o.payRef ? ` · TrxID <span class="mono">${esc(o.payRef)}</span>` : ''}</p></div>
         <div class="row gap-8 wrap no-print"><a class="btn btn-glass" href="orders.html">${icon('chevron-left', 16)} All orders</a>${isStore ? `<button class="btn btn-glass" id="print-rc">${icon('receipt', 16)} Receipt</button>` : ''}<button class="btn btn-glass" id="print">${icon('printer', 16)} Print invoice</button></div></div>
       <div class="editor-layout">
         <div class="col gap-16">
@@ -492,6 +516,16 @@
             <div class="totals"><div><span>Items subtotal</span><b class="num">${money(sub)}</b></div>${o.discount ? `<div><span>Discounts${o.coupon ? ` (${esc(o.coupon)})` : ''}${o.pointsUsed ? ` · ${o.pointsUsed} points` : ''}</span><b class="num ok">− ${money(o.discount)}</b></div>` : ''}${o.vat ? `<div><span>VAT</span><b class="num">${money(o.vat)}</b></div>` : ''}${isStore ? '' : `<div><span>Shipping</span><b class="num">${o.shipping ? money(o.shipping) : 'Free'}</b></div>`}<div class="grand"><span>Order total</span><b class="num">${money(o.total)}</b></div></div></section>
         </div>
         <aside class="col gap-16 no-print">
+          ${o.ship ? `<section class="metabox card"><div class="metabox-h"><h3>Delivery</h3></div><div class="metabox-b col">
+            <div class="row between"><b>${esc(S.courierName(o.ship.courier))}</b>${{ pending: '<span class="badge b-warn">To book</span>', transit: '<span class="badge b-violet">In transit</span>', delivered: '<span class="badge b-ok">Delivered</span>', returned: '<span class="badge b-err">Returned</span>' }[o.ship.status] || ''}</div>
+            ${o.ship.tracking ? `<div class="small">Tracking <span class="mono">${esc(o.ship.tracking)}</span></div>` : ''}
+            <div class="draft-row"><span>Courier collects (COD)</span><b class="num">${money(o.ship.cod)}</b></div>
+            ${o.ship.status === 'delivered' ? `<div class="draft-row"><span>Collected</span><b class="num ok">${money(o.ship.collected)}</b></div>` : ''}
+            <div class="draft-row"><span>Delivery charged to customer</span><b class="num">${o.shipping ? money(o.shipping) : 'Free'}</b></div>
+            ${(o.ship.fee || o.ship.codFee || o.ship.returnFee) ? `<div class="draft-row"><span>Courier charges you</span><b class="num err">${money((o.ship.fee || 0) + (o.ship.codFee || 0) + (o.ship.returnFee || 0))}</b></div>` : ''}
+            <div class="row gap-8 wrap">${o.ship.status === 'pending' && o.ship.courier !== 'pickup' && S.isLive(o) ? S.couriers().map((c) => `<button class="btn btn-glass btn-sm" data-book="${c.id}">Book ${esc(c.name)}</button>`).join('') : ''}
+              ${o.ship.status === 'transit' || (o.ship.courier === 'pickup' && o.ship.status === 'pending' && S.isLive(o)) ? `<button class="btn btn-violet btn-sm" data-deliver>${o.ship.courier === 'pickup' ? 'Picked up' : 'Delivered'}</button>` : ''}${o.ship.status === 'transit' ? '<button class="btn btn-danger btn-sm" data-return>Returned</button>' : ''}</div>
+            <a class="btn-link small" href="couriers.html">Couriers &amp; COD →</a></div></section>` : ''}
           <section class="metabox card"><div class="metabox-h"><h3>Order actions</h3></div><div class="metabox-b col">
             <div class="field"><label for="ov-status">Status</label><select id="ov-status">${S.statuses.map(([k, l]) => `<option value="${k}" ${o.status === k ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
             <div class="row between"><button class="btn-link danger small" id="ov-del" type="button">Move to trash</button><button class="btn btn-violet" id="ov-update" type="button">Update</button></div></div></section>
@@ -516,6 +550,9 @@
         S.patchOrder(o.id, { notes: (o.notes || []).concat([{ text, date: new Date().toISOString(), by: 'Amnu Admin', customer: $('#ov-note-c').checked }]) });
         A.toast('Note added'); render();
       });
+      root.querySelectorAll('[data-book]').forEach((b) => b.addEventListener('click', () => { S.bookParcel(o.id, b.dataset.book); A.toast(`Booked with ${S.courierName(b.dataset.book)}`); render(); }));
+      if ($('[data-deliver]', root)) $('[data-deliver]', root).addEventListener('click', () => { S.deliverParcel(o.id); A.toast('Marked delivered'); render(); });
+      if ($('[data-return]', root)) $('[data-return]', root).addEventListener('click', () => A.confirm('Mark this parcel returned? The pieces go back into showroom stock.', 'Mark returned').then((ok) => { if (ok) { S.returnParcel(o.id); A.toast('Parcel returned'); render(); } }));
       $('#ov-del').addEventListener('click', () => A.confirm(`Delete order #${o.id}?`, 'Delete').then((ok) => { if (ok) { S.deleteOrders([o.id]); location.href = 'orders.html'; } }));
     };
     render();
