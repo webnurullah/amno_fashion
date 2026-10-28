@@ -64,7 +64,7 @@
   /** every yard in or out, newest first: purchases received, production issues, counts and wastage */
   S.fabricMoves = () => {
     const out = [];
-    S.purchases().filter((po) => po.status === 'received').forEach((po) => po.items.forEach((i) => out.push({ date: po.receivedAt || po.date, fabricId: i.fabricId, delta: i.yards, reason: 'purchase', ref: po.id, note: (S.supplier(po.supplierId) || {}).name || '' })));
+    S.purchases().filter((po) => po.status === 'received').forEach((po) => po.items.forEach((i) => out.push({ date: po.receivedAt || po.date, fabricId: i.fabricId, delta: i.yards, reason: 'purchase', ref: po.id, note: 'Bought' })));
     S.batches().forEach((b) => out.push({ date: b.date, fabricId: b.fabricId, delta: -b.yards, reason: 'production', ref: b.id, note: `${(S.product(b.productId) || { name: 'Design #' + b.productId }).name} × ${b.qty}` }));
     S.fabricAdjustments().forEach((a) => out.push({ date: a.date, fabricId: a.fabricId, delta: a.delta, reason: a.reason, ref: '', note: a.note }));
     return out.sort((a, b) => new Date(b.date) - new Date(a.date));

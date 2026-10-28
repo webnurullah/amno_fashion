@@ -180,12 +180,12 @@
      Appearance → Customize (live preview in an iframe)
      ====================================================================== */
   P.appearance = () => {
-    const DEF = { accent: '#121216', blur: 22, opacity: 0.4, radius: 24 };
+    const DEF = { accent: '#2563eb', blur: 22, opacity: 0.4, radius: 24 };
     const set = S.settings();
     const saved = Object.assign({}, DEF, S.look());
     const st = { look: Object.assign({}, saved), heroTitle: set.heroTitle, heroSub: set.heroSub, announcement: set.announcement };
     const frame = $('#preview-frame');
-    const presets = [['#121216', 'Black'], ['#c8102e', 'Red'], ['#1f3a5f', 'Navy'], ['#0f6b4e', 'Forest'], ['#8a5a35', 'Camel'], ['#6250d6', 'Violet']];
+    const presets = [['#2563eb', 'Blue'], ['#121216', 'Black'], ['#c8102e', 'Red'], ['#1f3a5f', 'Navy'], ['#0f6b4e', 'Forest'], ['#8a5a35', 'Camel'], ['#6250d6', 'Violet']];
 
     $('#presets').innerHTML = presets.map(([hex, n]) => `<button type="button" class="swatch lg ${hex === st.look.accent ? 'on' : ''}" data-hex="${hex}" style="--c:${hex}" title="${n}" aria-label="${n}"></button>`).join('');
     const fill = () => {
