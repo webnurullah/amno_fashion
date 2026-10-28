@@ -142,7 +142,7 @@
       $('#pos-cart').innerHTML = `
         <div class="pc-head"><h2>Current sale</h2><button class="btn-link danger small" data-clear ${st.cart.length ? '' : 'disabled'}>Clear</button></div>
         <div class="pc-cust">${cust ? `<div class="row gap-8">${Admin.avatar(cust.name, 'sm')}<div class="grow"><b class="small">${esc(cust.name)}</b><div class="xs muted">${esc(cust.phone || 'Walk-in')}${due ? ` · <span class="err">due ${money(due)}</span>` : ''}</div></div><button class="btn btn-ghost btn-icon btn-sm" data-cust-clear aria-label="Remove customer">${icon('x', 14)}</button></div>`
-          : `<form class="row gap-8" id="cust-form"><div class="input-group grow"><i data-icon="user"></i><input id="cust-q" type="tel" placeholder="Customer mobile (to keep a record)" aria-label="Customer mobile"></div><button class="btn btn-glass btn-sm" type="submit">Find</button></form>`}</div>
+          : `<form class="col gap-8" id="cust-form"><div class="xs muted">Customer details (optional, so you can track who buys from the showroom)</div><div class="input-group"><i data-icon="user"></i><input id="cust-phone" type="tel" placeholder="Mobile number (01XXXXXXXXX)" aria-label="Customer mobile" autocomplete="off"></div><div class="input-group"><i data-icon="user"></i><input id="cust-name" placeholder="Customer name" aria-label="Customer name" autocomplete="off"></div><div class="row gap-8"><input id="cust-addr" class="grow" placeholder="Address / area (optional)" aria-label="Address" autocomplete="off"><button class="btn btn-violet btn-sm" type="submit">Add customer</button></div><span class="xs muted" id="cust-hint"></span></form>`}</div>
         <div class="pc-lines">${st.cart.map((l) => `<div class="pc-line" data-key="${esc(l.key)}"><div class="grow"><b class="small">${esc(l.name)}</b><div class="xs muted">${esc(S.sizeLabel(l.size))}${l.price !== (S.product(l.pid) ? S.price(S.product(l.pid)) : l.price) ? ' · price changed' : ''}</div></div>
           <div class="qty-mini"><button data-q="-1" aria-label="Decrease">${icon('minus', 13)}</button><span class="num">${l.qty}</span><button data-q="1" aria-label="Increase">${icon('plus', 13)}</button></div>
           <b class="num pc-price">${money(l.price * l.qty)}</b><button class="btn btn-ghost btn-icon btn-sm" data-rm aria-label="Remove">${icon('x', 14)}</button></div>`).join('') || `<div class="pc-empty">${icon('barcode', 34)}<p class="muted small">Scan a barcode or tap a product to start a sale.</p></div>`}</div>
@@ -248,16 +248,24 @@
       if (e.target.id === 'disc') { st.discount = Math.max(0, Number(e.target.value) || 0); paintCart(); }
       if (e.target.id === 'disc-type') { st.discType = e.target.value; paintCart(); }
     });
+    const d10 = (x) => String(x).replace(/\D/g, '').slice(-10);
+    const validPhone = (raw) => /^(?:\+?88)?01[3-9]\d{8}$/.test(raw.replace(/[\s-]/g, ''));
+    $('#pos-cart').addEventListener('input', (e) => {
+      if (e.target.id !== 'cust-phone') return;
+      const raw = e.target.value.trim(); const hint = $('#cust-hint');
+      const known = validPhone(raw) ? S.customers().find((c) => d10(c.phone) === d10(raw)) : null;
+      if (known) { $('#cust-name').value = known.name; if (known.address) $('#cust-addr').value = known.address; hint.textContent = 'Existing customer found'; } else hint.textContent = '';
+    });
     $('#pos-cart').addEventListener('submit', (e) => {
       if (e.target.id !== 'cust-form') return;
       e.preventDefault();
-      const raw = $('#cust-q').value.trim(); if (!raw) return;
-      if (!/^(?:\+?88)?01[3-9]\d{8}$/.test(raw.replace(/[\s-]/g, ''))) { A.toast('Enter a valid mobile number (01XXXXXXXXX)', 'err'); return; }
-      const d = (x) => String(x).replace(/\D/g, '').slice(-10);
-      const known = S.customers().find((c) => d(c.phone) === d(raw));
-      if (known) { st.customer = { name: known.name, phone: known.phone, email: known.email || '', district: known.district, address: known.address }; paintCart(); A.toast(`Found ${known.name}`); return; }
-      const m = A.modal({ title: 'New customer', body: `<p class="xs muted" style="margin-bottom:10px">${esc(raw)} is not in your customer list yet. Save the details so you can find them next time.</p><div class="form-grid2"><div class="field"><label for="nc-name">Name *</label><input id="nc-name" placeholder="Customer name"><span class="msg">Enter a name.</span></div><div class="field"><label for="nc-district">District</label><select id="nc-district">${S.districts.map((d) => `<option ${d === 'Dhaka' ? 'selected' : ''}>${d}</option>`).join('')}</select></div><div class="field full"><label for="nc-addr">Address (optional)</label><input id="nc-addr" placeholder="House, road, area"></div></div>`, footer: '<button class="btn btn-ghost" data-close>Skip (walk-in)</button><button class="btn btn-violet" data-ok>Save customer</button>' });
-      m.el.addEventListener('click', (ev) => { if (!ev.target.closest('[data-ok]')) return; const n = $('#nc-name', m.el).value.trim(); $('#nc-name', m.el).closest('.field').classList.toggle('err', !n); if (!n) return; st.customer = { name: n, phone: raw.replace(/[\s-]/g, ''), email: '', district: $('#nc-district', m.el).value, address: $('#nc-addr', m.el).value.trim() }; m.close(); paintCart(); A.toast(`${n} saved with this sale`); });
+      const raw = $('#cust-phone').value.trim(); const name = $('#cust-name').value.trim();
+      if (!validPhone(raw)) { A.toast('Enter a valid mobile number (01XXXXXXXXX)', 'err'); return; }
+      const known = S.customers().find((c) => d10(c.phone) === d10(raw));
+      if (!name && !known) { A.toast('Enter the customer name', 'err'); $('#cust-name').focus(); return; }
+      const base = known || { email: '', district: 'Dhaka', address: '' };
+      st.customer = { name: name || known.name, phone: raw.replace(/[\s-]/g, ''), email: base.email || '', district: base.district || 'Dhaka', address: $('#cust-addr').value.trim() || base.address || '' };
+      paintCart(); A.toast(known ? `${st.customer.name} added to this sale` : `${st.customer.name} saved with this sale`);
     });
     $('#pos-holds').addEventListener('click', () => {
       const holds = S.holds().filter((h) => h.loc === st.loc);
