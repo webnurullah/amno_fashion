@@ -76,7 +76,6 @@
       const transit = parcels.filter((o) => o.ship.status === 'transit'); const toBook = parcels.filter((o) => o.ship.status === 'pending' && o.ship.courier !== 'pickup');
       const steps = [
         ['package', 'Fabric in warehouse', S.fmtYd(S.fabricYards()), `${money(S.fabricValue())} · ${S.fmtIn(S.fabricYards())}`, lowFab.length ? `${lowFab.length} running low` : '', 'fabrics.html'],
-        ['scissors', 'In production', `${sum(wip, (b) => b.qty)} pcs`, `${wip.length} batch${wip.length === 1 ? '' : 'es'} cutting / stitching`, '', 'production.html'],
         ['store', 'Showroom stock', `${v.qty.toLocaleString('en-IN')} pcs`, `${money(v.cost)} at cost`, lowStock ? `${lowStock} designs low` : '', 'inventory.html'],
         ['bag', `Sold · ${N} days`, `${pieces} pcs`, `${money(p.revenue)} · ${p.orders} orders`, '', 'orders.html'],
         ['truck', 'With couriers', `${transit.length} parcels`, `${money(sum(transit, (o) => o.ship.cod))} cash to collect`, toBook.length ? `${toBook.length} to book` : '', 'couriers.html?view=transit'],
@@ -103,11 +102,6 @@
       /* fabric watch */
       const watch = fabrics.map((f) => ({ f, d: S.daysOfCover(f) })).sort((a, b) => (S.fabricLow(b.f) - S.fabricLow(a.f)) || (a.d - b.d)).slice(0, 5);
       $('#fabric-box').innerHTML = watch.map(({ f, d }) => `<div class="fw-row"><span class="fab-sw" style="--c:${esc(f.hex)}"></span><div class="grow"><b class="small">${esc(f.name)}</b><div class="xs muted">${S.fmtYd(f.stock)} · ${S.fmtIn(f.stock)} · ${S.designsFor(f.id).map((x) => `${S.canMake(x)} ${esc(x.name.replace(' Panjabi', ''))}`).join(', ')}</div></div><div class="right">${S.fabricLow(f) ? '<span class="badge b-err">Low</span>' : d === Infinity ? '<span class="badge">Not used</span>' : `<span class="badge ${d < 20 ? 'b-warn' : 'b-ok'}">~${d} days</span>`}<div><a class="btn-link xs" href="purchases.html?new=1&fab=${f.id}">Buy</a></div></div></div>`).join('');
-
-      /* production */
-      const monthDone = S.batches().filter((b) => b.status === 'ready' && new Date(b.readyAt).getTime() >= S.range('month')[0]);
-      $('#prod-box').innerHTML = (wip.map((b) => { const pr = S.product(b.productId); return `<a class="top-row" href="production.html">${pr ? Admin.thumb(pr, 'sm') : ''}<div class="grow"><b class="small">${esc(pr ? pr.name : '#' + b.productId)}</b><div class="xs muted">${b.id} · ${b.qty} pcs · ${S.fmtYd(b.yards)} ${esc(S.fabricName(b.fabricId))}</div></div><span class="badge ${b.status === 'cutting' ? 'b-warn' : 'b-violet'}">${b.status === 'cutting' ? 'Cutting' : 'Stitching'}</span></a>`; }).join('') || '<p class="muted small">Nothing in production right now.</p>')
-        + `<p class="xs muted" style="margin-top:8px">${sum(monthDone, (b) => b.qty)} pieces finished this month · avg ${money(sum(monthDone, S.batchCost) / Math.max(1, sum(monthDone, (b) => b.qty)))} per piece</p>`;
 
       /* showroom today */
       const todayKey = A.ymd(Date.now());
@@ -153,7 +147,7 @@
 
     /* low showroom stock (doesn't depend on the range) */
     const low = S.published().filter((x) => x.stock <= settings.lowStock).sort((a, b) => a.stock - b.stock).slice(0, 5);
-    $('#stock-alerts').innerHTML = low.map((x) => `<a class="top-row" href="production.html?new=1&p=${x.id}">${Admin.thumb(x, 'sm')}<div class="grow"><b class="small">${esc(x.name)}</b><div class="xs muted">${x.recipe ? `${S.canMake(x)} more possible from ${esc(S.fabricName(x.recipe.fabricId))}` : esc(x.sku)}</div></div>${Admin.stockHTML(x)}</a>`).join('') || '<p class="muted small">All designs are well stocked.</p>';
+    $('#stock-alerts').innerHTML = low.map((x) => `<a class="top-row" href="product-edit.html?id=${x.id}">${Admin.thumb(x, 'sm')}<div class="grow"><b class="small">${esc(x.name)}</b><div class="xs muted">${x.recipe ? `${S.canMake(x)} more possible from ${esc(S.fabricName(x.recipe.fabricId))}` : esc(x.sku)}</div></div>${Admin.stockHTML(x)}</a>`).join('') || '<p class="muted small">All designs are well stocked.</p>';
     sel.addEventListener('change', render);
     render();
   };
@@ -365,7 +359,6 @@
       $('#p-yd-in').textContent = rc && rc.yards ? `${Math.round(rc.yards * 36)} inches` : '';
       $('#p-rcost').textContent = rc ? money(cost) : '—';
       $('#p-rmargin').textContent = rc && price ? `Profit ${money(price - cost)} per piece (${Math.round(((price - cost) / price) * 100)}%)${rc.yards ? ` · ${S.canMake({ recipe: rc })} pieces possible from stock` : ''}` : '';
-      $('#p-make').href = isNew ? 'production.html?new=1' : `production.html?new=1&p=${draft.id}`;
     };
     ['#p-fab', '#p-yd', '#p-mk', '#p-ex', '#p-price', '#p-sale'].forEach((sel) => $(sel).addEventListener('input', recipePaint));
     $('#p-fab').addEventListener('change', recipePaint);
@@ -571,7 +564,9 @@
         body: `<div class="row gap-16 wrap" style="margin-bottom:16px">${Admin.avatar(c.name, 'lg')}<div class="grow"><h3>${esc(c.name)}</h3><p class="muted small">${esc(c.phone)}${c.email ? ' · ' + esc(c.email) : ''}<br>${esc(c.address || '')}${c.address && c.district ? ', ' : ''}${esc(c.district || '')}</p></div>
           <div class="stat-pills"><div><span class="xs muted">Orders</span><b>${c.orders}</b></div><div><span class="xs muted">Total spent</span><b>${money(c.spent)}</b></div><div><span class="xs muted">Online</span><b>${money(c.online)}</b></div><div><span class="xs muted">In store</span><b>${money(c.instore)}</b></div><div><span class="xs muted">Customer since</span><b>${A.date(c.first)}</b></div></div></div>
           ${due ? `<div class="due-box"><div class="grow"><b class="err">Owes ${money(due)}</b><div class="xs muted">Credit sales not yet collected</div></div><input id="dc-amt" type="number" min="1" max="${due}" value="${due}" aria-label="Amount collected"><select id="dc-acc" aria-label="Received in">${Admin.accountOptions('cash')}</select><button class="btn btn-violet btn-sm" data-collect>Collect</button></div>` : ''}
-          <div class="table-wrap"><table class="wp-table"><thead><tr><th>Order</th><th>Date</th><th>Channel</th><th>Status</th><th class="right">Total</th></tr></thead><tbody>${orders.slice(0, 8).map((o) => `<tr><td><a class="row-title" href="order-view.html?id=${o.id}">#${o.id}</a></td><td>${A.date(o.date)}</td><td>${Admin.channelBadge(o)}</td><td>${S.statusBadge(o.status)}</td><td class="right num">${money(o.total)}</td></tr>`).join('')}</tbody></table></div>`
+          <h4 class="sub-h" style="margin:14px 0 8px">Purchase history (${orders.length} order${orders.length === 1 ? '' : 's'})</h4>
+          <div class="table-wrap" style="max-height:360px;overflow:auto"><table class="wp-table"><thead><tr><th>Order</th><th>Date</th><th>Channel</th><th>Items bought</th><th>Status</th><th class="right">Total</th></tr></thead><tbody>${orders.map((o) => `<tr><td><a class="row-title" href="order-view.html?id=${o.id}">#${o.id}</a></td><td>${A.date(o.date)}</td><td>${Admin.channelBadge(o)}</td><td class="small">${o.items.map((i) => `${esc(i.name)}${i.size ? ' (' + esc(S.sizeLabel ? S.sizeLabel(i.size) : i.size) + ')' : ''} × ${i.qty}`).join('<br>')}</td><td>${S.statusBadge(o.status)}</td><td class="right num">${money(o.total)}</td></tr>`).join('') || '<tr><td colspan="6" class="muted">No purchases yet</td></tr>'}</tbody></table></div>
+          ${(() => { const t = {}; orders.filter((o) => S.isLive(o)).forEach((o) => o.items.forEach((i) => { t[i.name] = (t[i.name] || 0) + i.qty; })); const top = Object.entries(t).sort((x, y) => y[1] - x[1]).slice(0, 3); return top.length ? `<p class="small muted" style="margin-top:10px">Buys most: ${top.map(([n, q]) => `<b>${esc(n)}</b> (${q})`).join(', ')}</p>` : ''; })()}`
       });
       m.el.addEventListener('click', (e) => {
         if (!e.target.closest('[data-collect]')) return;

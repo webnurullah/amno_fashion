@@ -43,15 +43,13 @@ Fabric (yards / inches)  →  Production  →  Showroom stock  →  Sales  →  
 
 1. **Buy fabric** (*Fabric purchases*): type the **seller's name** and the **fabric name** (both plain text, no dropdowns; new names are
    saved automatically) and the quantity in **yards or inches** (1 yd = 36 in). Pay in full, pay part now, or pay nothing now: whatever
-   is left is recorded as owed to that supplier and can be paid later from *Fabric purchases* or *Suppliers*. Receiving the cloth adds
+   is left is recorded as owed to that supplier and can be paid later from *Fabric purchases*. Receiving the cloth adds
    to *Fabric stock* and re-averages the cost per yard.
 2. **Know what you have** (*Fabric stock*): each cloth by name with yards **and** inches, cost, value, a reorder
    level, how many days it lasts at your recent pace, and which designs can be cut from it (and how many).
 3. **One cloth, many designs.** Every design has a **recipe** in the product editor: fabric, yards per piece,
    making/tailoring cost, embroidery/buttons/packing. That gives the cost per piece and profit per design.
-4. **Produce** (*Production*): start a batch, pick the design and pieces per size; the fabric is issued from the
-   warehouse. When the tailor finishes, mark it ready: the pieces land in **showroom stock**, the design's cost
-   is re-averaged, and the making cost is paid from cash or bank. Cancelling a batch returns the fabric.
+4. **Produce.** There is no separate Production page: add the finished pieces to showroom stock from *Showroom stock*.
 5. **Sell** three ways, all from the same showroom stock:
    * **Showroom** (*POS*): customer pays at the counter. Type the customer's mobile number in the sale panel: a
      known customer is found, a new one is saved with name, district and address.
