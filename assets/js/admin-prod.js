@@ -118,7 +118,7 @@
     const moves = Admin.listTable({
       id: 'fabric-moves', mount: $('#moves'), perPage: 15, empty: 'No fabric movements yet', searchPlaceholder: 'Search movements',
       rows: () => S.fabricMoves().map((m, i) => Object.assign({ _id: i }, m)), rowId: (m) => m._id,
-      filters: [{ id: 'fab', label: 'All fabrics', options: S.fabrics().map((f) => [f.id, f.name]), test: (m, v) => m.fabricId === v }, { id: 'reason', label: 'All reasons', options: Object.entries(REASON).map(([k, v]) => [k, v[0]]), test: (m, v) => m.reason === v }],
+      filters: [{ id: 'sup', label: 'All suppliers', options: S.suppliers().map((x) => [x.id, x.name]), test: (p, v) => (p.supplierId || '') === v }, { id: 'fab', label: 'All fabrics', options: S.fabrics().map((f) => [f.id, f.name]), test: (m, v) => m.fabricId === v }, { id: 'reason', label: 'All reasons', options: Object.entries(REASON).map(([k, v]) => [k, v[0]]), test: (m, v) => m.reason === v }],
       search: (m, q) => (S.fabricName(m.fabricId) + ' ' + m.ref + ' ' + m.note).toLowerCase().includes(q),
       columns: [
         { id: 'date', label: 'Date', sort: (a, b) => new Date(a.date) - new Date(b.date), render: (m) => `<span class="small">${A.date(m.date)}</span>` },
@@ -144,66 +144,74 @@
   };
 
   /* ======================================================================
-     Fabric purchases (by yard or inch)
+     Fabric purchases (by yard or inch; pay now, part now, or later) + suppliers
      ====================================================================== */
   P.purchases = () => {
+    const payStatus = (po) => { const t = S.poTotal(po); const p = S.poPaid(po); return p <= 0 ? 'unpaid' : p >= t ? 'paid' : 'partial'; };
+    const payBadge = (po) => { const st = payStatus(po); return `<span class="badge ${st === 'paid' ? 'b-ok' : st === 'partial' ? 'b-warn' : 'b-err'}">${st === 'paid' ? 'Paid' : st === 'partial' ? 'Part paid' : 'Not paid'}</span>`; };
     const kp = () => {
       const open = S.purchases().filter((p) => p.status === 'ordered');
-      $('#po-kpis').innerHTML = [kpi('Open orders', open.length, money(sum(open, S.poTotal)), 'swap'), kpi('Fabric on order', S.fmtYd(sum(open, S.poYards)), S.fmtIn(sum(open, S.poYards)), 'package'), kpi('Spent on fabric (30 days)', money(sum(S.purchases().filter((p) => S.within(p.date, ...S.range('30'))), S.poTotal)), 'All purchases', 'coins')].join('');
+      $('#po-kpis').innerHTML = [kpi('Open orders', open.length, money(sum(open, S.poTotal)), 'swap'), kpi('Fabric on order', S.fmtYd(sum(open, S.poYards)), S.fmtIn(sum(open, S.poYards)), 'package'), kpi('You owe for cloth', money(S.payables()), `${S.purchases().filter((p) => S.poDue(p) > 0).length} purchases with a balance`, 'coins')].join('');
     };
 
     const detail = (id, api) => {
       const po = S.purchases().find((p) => p.id === id); if (!po) return;
       const m = A.modal({
-        title: `${po.id} · ${A.date(po.date)}`, wide: true,
-        body: `<div class="row gap-16 wrap" style="margin-bottom:12px"><span class="badge ${po.status === 'received' ? 'b-ok' : 'b-info'}">${po.status === 'received' ? 'Received in warehouse' : 'Ordered'}</span><span class="muted small">${A.date(po.date)}</span></div>
+        title: `${po.id} · ${S.supplierName(po.supplierId)}`, wide: true,
+        body: `<div class="row gap-16 wrap" style="margin-bottom:12px"><span class="badge ${po.status === 'received' ? 'b-ok' : 'b-info'}">${po.status === 'received' ? 'Received in warehouse' : 'Ordered'}</span>${payBadge(po)}<span class="muted small">${A.date(po.date)}</span></div>
           <div class="table-wrap"><table class="wp-table"><thead><tr><th>Fabric</th><th class="right">Quantity</th><th class="right">Rate / yd</th><th class="right">Amount</th></tr></thead><tbody>${po.items.map((i) => { const f = S.fabric(i.fabricId) || { name: i.fabricId, hex: '#999' }; return `<tr><td><div class="row gap-8">${swatch(f)}${esc(f.name)}</div></td><td class="right">${both(i.yards)}</td><td class="right num">${money(i.rate)}</td><td class="right num">${money(i.yards * i.rate)}</td></tr>`; }).join('')}</tbody></table></div>
-          <div class="totals"><div><span>Fabric</span><b class="num">${money(S.poTotal(po) - (po.shipping || 0))}</b></div>${po.shipping ? `<div><span>Transport</span><b class="num">${money(po.shipping)}</b></div>` : ''}<div class="grand"><span>Total</span><b class="num">${money(S.poTotal(po))}</b></div><div><span>Paid</span><b class="num ok">${money(S.poPaid(po))}</b></div></div>
+          <div class="totals"><div><span>Fabric</span><b class="num">${money(S.poTotal(po) - (po.shipping || 0))}</b></div>${po.shipping ? `<div><span>Transport</span><b class="num">${money(po.shipping)}</b></div>` : ''}<div class="grand"><span>Total</span><b class="num">${money(S.poTotal(po))}</b></div><div><span>Paid</span><b class="num ok">${money(S.poPaid(po))}</b></div><div><span>Still to pay</span><b class="num ${S.poTotal(po) - S.poPaid(po) > 0 ? 'err' : ''}">${money(Math.max(0, S.poTotal(po) - S.poPaid(po)))}</b></div></div>
           ${(po.payments || []).length ? `<h4 class="sub-h" style="margin-top:14px">Payments</h4>${po.payments.map((p) => `<div class="draft-row"><span>${A.date(p.date)} · ${esc(S.accountName(p.account))}${p.note ? ' · ' + esc(p.note) : ''}</span><b class="num">${money(p.amount)}</b></div>`).join('')}` : ''}
           ${po.status === 'ordered' ? '<div class="row gap-8 wrap" style="margin-top:16px"><button class="btn btn-violet" data-receive>Receive fabric into warehouse</button></div>' : ''}
+          ${S.poTotal(po) - S.poPaid(po) > 0 ? `<div class="pay-later"><b class="small">Pay the remaining balance</b><div class="row gap-8 wrap"><input id="pp-amt" type="number" min="1" max="${S.poTotal(po) - S.poPaid(po)}" value="${S.poTotal(po) - S.poPaid(po)}" style="width:140px" aria-label="Amount"><select id="pp-acc" style="width:auto" aria-label="Paid from">${Admin.accountOptions('cash')}</select><button class="btn btn-violet" data-pay>Pay now</button></div></div>` : ''}
 `
       });
       m.el.addEventListener('click', (e) => {
         if (e.target.closest('[data-receive]')) { S.receivePO(id); m.close(); api.refresh(); kp(); A.toast(`${S.fmtYd(S.poYards(po))} added to the warehouse`); return; }
+        if (e.target.closest('[data-pay]')) {
+          const amt = Math.round(Number($('#pp-amt', m.el).value));
+          if (!(amt > 0) || amt > S.poTotal(po) - S.poPaid(po)) { A.toast('Enter an amount up to the balance', 'err'); return; }
+          S.payPO(id, $('#pp-acc', m.el).value, amt); m.close(); api.refresh(); kp(); A.toast(`${money(amt)} paid to ${S.supplierName(po.supplierId)}`);
+        }
       });
     };
 
-    const create = (api, fabId) => {
-      const first = S.fabric(fabId) || S.fabrics()[0];
-      const lines = [{ fabricId: first.id, qty: 100, unit: 'yd', rate: first.rate }];
+    const create = (api, fabId, supName) => {
+      const first = S.fabric(fabId) || { name: '', rate: 0 };
+      const lines = [{ fabricName: first.name, qty: 100, unit: 'yd', rate: first.rate || 0 }];
       const m = A.modal({
         title: 'Buy fabric', wide: true,
-        body: `<div class="form-grid2"><div class="field"><label for="po-date">Date</label><input id="po-date" type="date" value="${A.ymd(Date.now())}" max="${A.ymd(Date.now())}"></div></div>
+        body: `<div class="form-grid2"><div class="field"><label for="po-sup">Bought from (shop / seller)</label><input id="po-sup" placeholder="Type a name, or leave empty for a cash purchase" value="${esc(supName || '')}" autocomplete="off"><span class="hint">New names are saved automatically.</span></div><div class="field"><label for="po-date">Date</label><input id="po-date" type="date" value="${A.ymd(Date.now())}" max="${A.ymd(Date.now())}"></div></div>
           <h4 class="sub-h" style="margin:16px 0 8px">Fabric</h4><div class="po-head xs muted"><span>Fabric</span><span>Quantity</span><span>Unit</span><span>Rate per yard (৳)</span><span class="right">Amount</span><span></span></div><div id="po-lines" class="col gap-8"></div>
           <button class="btn btn-glass btn-sm" id="po-add" type="button" style="align-self:flex-start;margin-top:8px">${icon('plus', 14)} Add fabric</button>
           <div class="form-grid2" style="margin-top:16px"><div class="field"><label for="po-ship">Transport / labour (৳)</label><input id="po-ship" type="number" min="0" value="0"><span class="hint">Added to the cost per yard when received.</span></div><div class="field"><label for="po-note">Note</label><input id="po-note" placeholder="Optional"></div></div>
           <div class="row between wrap" style="margin-top:12px"><label class="check small"><input type="checkbox" id="po-recv" checked> Received in the warehouse now</label><b class="big-n" id="po-total"></b></div>
-          <div class="row gap-8 wrap" style="margin-top:10px"><span class="small">Paid:</span><input id="po-pay" type="number" min="0" value="0" style="width:140px" aria-label="Paid now"><select id="po-acc" style="width:auto" aria-label="Paid from">${Admin.accountOptions('bank')}</select></div>`,
+          <div class="row gap-8 wrap" style="margin-top:10px"><span class="small">Pay now:</span><input id="po-pay" type="number" min="0" value="0" style="width:140px" aria-label="Paid now"><select id="po-acc" style="width:auto" aria-label="Paid from">${Admin.accountOptions('cash')}</select><b class="small" id="po-left"></b></div><p class="xs muted">Pay in full, pay part, or pay 0. Whatever is left is saved as an amount you owe, and you can pay it later from Fabric purchases or Suppliers.</p>`,
         footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Save purchase</button>'
       });
       let payTouched = false;
       const yards = (l) => S.toYards(l.qty, l.unit);
-      const total = () => { if (!payTouched) $('#po-pay', m.el).value = Math.round(sum(lines, (l) => yards(l) * l.rate) + (Number($('#po-ship', m.el).value) || 0)); $('#po-total', m.el).textContent = `${S.fmtYd(sum(lines, yards))} · ${money(sum(lines, (l) => yards(l) * l.rate) + (Number($('#po-ship', m.el).value) || 0))}`; };
+      const total = () => { const upd = () => { const t = Math.round(sum(lines, (l) => yards(l) * l.rate) + (Number($('#po-ship', m.el).value) || 0)); const left = t - (Number($('#po-pay', m.el).value) || 0); $('#po-left', m.el).textContent = left > 0 ? `Remaining to pay later: ${money(left)}` : ''; }; if (!payTouched) $('#po-pay', m.el).value = Math.round(sum(lines, (l) => yards(l) * l.rate) + (Number($('#po-ship', m.el).value) || 0)); $('#po-total', m.el).textContent = `${S.fmtYd(sum(lines, yards))} · ${money(sum(lines, (l) => yards(l) * l.rate) + (Number($('#po-ship', m.el).value) || 0))}`; upd(); };
       const paint = () => {
-        $('#po-lines', m.el).innerHTML = lines.map((l, i) => `<div class="po-line fab" data-i="${i}"><select data-k="fabricId" aria-label="Fabric">${S.fabrics().map((f) => `<option value="${f.id}" ${f.id === l.fabricId ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</select><input data-k="qty" type="number" min="0" step="0.25" value="${l.qty}" aria-label="Quantity"><select data-k="unit" aria-label="Unit"><option value="yd" ${l.unit === 'yd' ? 'selected' : ''}>yard</option><option value="in" ${l.unit === 'in' ? 'selected' : ''}>inch</option></select><input data-k="rate" type="number" min="0" value="${l.rate}" aria-label="Rate per yard"><b class="num">${money(yards(l) * l.rate)}<span class="xs muted" style="display:block;font-weight:400">${S.fmtYd(yards(l))}</span></b><button class="btn btn-ghost btn-icon btn-sm" data-rm aria-label="Remove line">${icon('x', 14)}</button></div>`).join('');
+        $('#po-lines', m.el).innerHTML = lines.map((l, i) => `<div class="po-line fab" data-i="${i}"><input data-k="fabricName" value="${esc(l.fabricName)}" placeholder="Type fabric name" autocomplete="off" aria-label="Fabric name"><input data-k="qty" type="number" min="0" step="0.25" value="${l.qty}" aria-label="Quantity"><select data-k="unit" aria-label="Unit"><option value="yd" ${l.unit === 'yd' ? 'selected' : ''}>yard</option><option value="in" ${l.unit === 'in' ? 'selected' : ''}>inch</option></select><input data-k="rate" type="number" min="0" value="${l.rate}" aria-label="Rate per yard"><b class="num">${money(yards(l) * l.rate)}<span class="xs muted" style="display:block;font-weight:400">${S.fmtYd(yards(l))}</span></b><button class="btn btn-ghost btn-icon btn-sm" data-rm aria-label="Remove line">${icon('x', 14)}</button></div>`).join('');
         total();
       };
       paint();
       m.el.addEventListener('change', (e) => {
         const row = e.target.closest('.po-line'); if (!row) return;
         const l = lines[Number(row.dataset.i)]; const k = e.target.dataset.k;
-        if (k === 'fabricId') { l.fabricId = e.target.value; l.rate = (S.fabric(l.fabricId) || {}).rate || 0; } else if (k === 'unit') l.unit = e.target.value; else l[k] = Math.max(0, Number(e.target.value) || 0);
+        if (k === 'fabricName') { l.fabricName = e.target.value; const ex = S.fabrics().find((f) => f.name.toLowerCase() === l.fabricName.trim().toLowerCase()); if (ex && !l.rate) { l.rate = ex.rate; setTimeout(paint, 0); } return; } else if (k === 'unit') l.unit = e.target.value; else l[k] = Math.max(0, Number(e.target.value) || 0);
         setTimeout(paint, 0);
       });
-      m.el.addEventListener('input', (e) => { if (e.target.id === 'po-pay') payTouched = true; if (e.target.id === 'po-ship') total(); });
+      m.el.addEventListener('input', (e) => { if (e.target.dataset.k === 'fabricName') { lines[Number(e.target.closest('.po-line').dataset.i)].fabricName = e.target.value; } if (e.target.id === 'po-pay') { payTouched = true; total(); } if (e.target.id === 'po-ship') total(); });
       m.el.addEventListener('click', (e) => {
-        if (e.target.closest('#po-add')) { const f = S.fabrics()[0]; lines.push({ fabricId: f.id, qty: 50, unit: 'yd', rate: f.rate }); paint(); return; }
+        if (e.target.closest('#po-add')) { lines.push({ fabricName: '', qty: 50, unit: 'yd', rate: 0 }); paint(); return; }
         const rm = e.target.closest('[data-rm]'); if (rm) { if (lines.length > 1) { lines.splice(Number(rm.closest('.po-line').dataset.i), 1); paint(); } return; }
         if (!e.target.closest('[data-save]')) return;
-        if (lines.some((l) => !(yards(l) > 0) || !(l.rate > 0))) { A.toast('Every line needs a quantity and a rate', 'err'); return; }
+        if (lines.some((l) => !String(l.fabricName || '').trim() || !(yards(l) > 0) || !(l.rate > 0))) { A.toast('Every line needs a fabric name, quantity and rate', 'err'); return; }
         const id = S.nextPoId(); const pay = Number($('#po-pay', m.el).value) || 0;
         const date = new Date(($('#po-date', m.el).value || A.ymd(Date.now())) + 'T12:00:00').toISOString();
-        const po = { id, n: Number(id.slice(3)), date, status: 'ordered', items: lines.map((l) => ({ fabricId: l.fabricId, yards: yards(l), rate: l.rate })), shipping: Number($('#po-ship', m.el).value) || 0, payments: pay > 0 ? [{ id: A.uid(), date, account: $('#po-acc', m.el).value, amount: pay, note: 'Paid at purchase' }] : [], note: $('#po-note', m.el).value.trim() };
+        const po = { id, n: Number(id.slice(3)), date, supplierId: S.ensureSupplier($('#po-sup', m.el).value), status: 'ordered', items: lines.map((l) => ({ fabricId: S.ensureFabric(l.fabricName, l.rate), yards: yards(l), rate: l.rate })), shipping: Number($('#po-ship', m.el).value) || 0, payments: pay > 0 ? [{ id: A.uid(), date, account: $('#po-acc', m.el).value, amount: pay, note: 'Paid when bought' }] : [], note: $('#po-note', m.el).value.trim() };
         if (pay > S.poTotal(po)) { A.toast('Payment cannot be more than the total', 'err'); return; }
         const list = S.purchases(); list.unshift(po); S.savePurchases(list);
         if ($('#po-recv', m.el).checked) S.receivePO(id);
@@ -214,16 +222,18 @@
     const api = Admin.listTable({
       id: 'purchases', mount: $('#list'), perPage: 10, empty: 'No fabric purchases yet', searchPlaceholder: 'Search purchases',
       rows: () => S.purchases().slice().sort((a, b) => new Date(b.date) - new Date(a.date)), rowId: (p) => p.id,
-      views: [{ id: 'all', label: 'All' }, { id: 'ordered', label: 'Ordered', filter: (p) => p.status === 'ordered' }, { id: 'received', label: 'Received', filter: (p) => p.status === 'received' }],
+      views: [{ id: 'all', label: 'All' }, { id: 'ordered', label: 'Ordered', filter: (p) => p.status === 'ordered' }, { id: 'received', label: 'Received', filter: (p) => p.status === 'received' }, { id: 'due', label: 'Payment due', filter: (p) => S.poDue(p) > 0 }],
       filters: [{ id: 'fab', label: 'All fabrics', options: S.fabrics().map((f) => [f.id, f.name]), test: (p, v) => p.items.some((i) => i.fabricId === v) }],
-      search: (p, q) => (p.id + ' ' + p.items.map((i) => S.fabricName(i.fabricId)).join(' ')).toLowerCase().includes(q),
+      search: (p, q) => (p.id + ' ' + S.supplierName(p.supplierId) + ' ' + p.items.map((i) => S.fabricName(i.fabricId)).join(' ')).toLowerCase().includes(q),
       columns: [
-        { id: 'id', label: 'Purchase', sort: (a, b) => a.n - b.n, render: (p) => `<a class="row-title" href="#" data-act="view" data-id="${p.id}">${p.id}</a><div class="xs muted">${A.date(p.date)}</div>${Admin.actions([{ label: 'View', act: 'view', id: p.id }, p.status === 'ordered' ? { label: 'Receive', act: 'recv', id: p.id } : null])}` },
+        { id: 'id', label: 'Purchase', sort: (a, b) => a.n - b.n, render: (p) => `<a class="row-title" href="#" data-act="view" data-id="${p.id}">${p.id}</a><div class="xs muted">${A.date(p.date)}</div>${Admin.actions([{ label: 'View', act: 'view', id: p.id }, p.status === 'ordered' ? { label: 'Receive', act: 'recv', id: p.id } : null, S.poTotal(p) - S.poPaid(p) > 0 ? { label: 'Pay', act: 'view', id: p.id } : null])}` },
+        { id: 'sup', label: 'Bought from', render: (p) => esc(S.supplierName(p.supplierId)) },
         { id: 'fab', label: 'Fabric', render: (p) => p.items.map((i) => { const f = S.fabric(i.fabricId) || { hex: '#999', name: i.fabricId }; return `<div class="row gap-4 xs">${swatch(f)}${esc(f.name)} · ${S.fmtYd(i.yards)} @ ${money(i.rate)}</div>`; }).join('') },
         { id: 'yd', label: 'Quantity', cls: 'right', sort: (a, b) => S.poYards(a) - S.poYards(b), render: (p) => both(S.poYards(p)) },
         { id: 'total', label: 'Total', cls: 'right', sort: (a, b) => S.poTotal(a) - S.poTotal(b), render: (p) => `<b class="num">${money(S.poTotal(p))}</b>` },
         { id: 'status', label: 'Status', render: (p) => `<span class="badge ${p.status === 'received' ? 'b-ok' : 'b-info'}">${p.status === 'received' ? 'Received' : 'Ordered'}</span>` },
-        { id: 'pay', label: 'Paid', cls: 'right', render: (p) => `<span class="num">${money(S.poPaid(p))}</span>${(p.payments || [])[0] ? `<div class="xs muted">from ${esc(S.accountName(p.payments[0].account))}</div>` : ''}` }
+        { id: 'due', label: 'Still to pay', cls: 'right', sort: (a, b) => S.poDue(a) - S.poDue(b), render: (p) => { const d = S.poDue(p); return d ? `<b class="num err">${money(d)}</b>` : '<span class="muted">—</span>'; } },
+        { id: 'pay', label: 'Payment', render: payBadge }
       ],
       actions: {
         view: (id, p, a) => detail(id, a),
@@ -232,7 +242,63 @@
     });
     document.addEventListener('click', (e) => { const a = e.target.closest('a[data-act]'); if (a) e.preventDefault(); });
     $('#add-po').addEventListener('click', () => create(api));
-    if (A.qs.get('new')) create(api, A.qs.get('fab') || undefined);
+    if (A.qs.get('new')) create(api, A.qs.get('fab') || undefined, A.qs.get('sup') || '');
+    kp();
+  };
+
+  /* ======================================================================
+     Suppliers: added by typing a name when you buy; see what you owe and pay it
+     ====================================================================== */
+  P.suppliers = () => {
+    const rows = () => S.suppliers().concat(S.purchases().some((p) => !p.supplierId) ? [{ id: '', name: 'Cash purchases (no supplier)', phone: '', address: '', note: '' }] : []);
+    const stats = (id) => { const pos = S.purchases().filter((p) => (p.supplierId || '') === id); return { n: pos.length, total: sum(pos, S.poTotal), paid: sum(pos, S.poPaid), due: sum(pos, S.poDue), last: pos.map((p) => p.date).sort().pop() }; };
+    const edit = (id, api) => {
+      const list = S.suppliers(); const x = id ? list.find((k) => k.id === id) : null;
+      const m = A.modal({
+        title: x ? 'Edit supplier' : 'Add supplier',
+        body: `<form id="sf" class="form-grid2" novalidate><div class="field full"><label>Name *</label><input name="name" value="${esc(x ? x.name : '')}" placeholder="Shop or seller name"><span class="msg">Enter a name.</span></div><div class="field"><label>Phone</label><input name="phone" type="tel" value="${esc(x ? x.phone : '')}"></div><div class="field"><label>Address / market</label><input name="address" value="${esc(x ? x.address : '')}"></div><div class="field full"><label>What you buy from them</label><input name="note" value="${esc(x ? x.note : '')}" placeholder="e.g. Cotton, velvet"></div></form><p class="xs muted">You can also just type a new name when you buy fabric. It is saved automatically.</p>`,
+        footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Save</button>'
+      });
+      const f = $('#sf', m.el).elements;
+      m.el.addEventListener('click', (e) => {
+        if (!e.target.closest('[data-save]')) return;
+        if (!f.name.value.trim()) { f.name.closest('.field').classList.add('err'); return; }
+        const rec = { id: x ? x.id : 'sup' + A.uid().slice(0, 5), name: f.name.value.trim(), phone: f.phone.value.trim(), address: f.address.value.trim(), note: f.note.value.trim() };
+        if (x) list[list.indexOf(x)] = rec; else list.push(rec);
+        S.saveSuppliers(list); m.close(); api.refresh(); kp(); A.toast(x ? 'Supplier updated' : 'Supplier added');
+      });
+    };
+    const pay = (id, api) => {
+      const due = S.supplierDue(id);
+      const m = A.modal({
+        title: `Pay ${S.supplierName(id)}`,
+        body: `<p class="small muted">You owe <b class="err">${money(due)}</b>. A payment settles the oldest purchases first.</p><div class="form-grid2" style="margin-top:10px"><div class="field"><label for="sp-a">Amount (৳)</label><input id="sp-a" type="number" min="1" max="${due}" value="${due}"></div><div class="field"><label for="sp-acc">Paid from</label><select id="sp-acc">${Admin.accountOptions('cash')}</select></div></div>`,
+        footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Record payment</button>'
+      });
+      m.el.addEventListener('click', (e) => {
+        if (!e.target.closest('[data-save]')) return;
+        const amt = Math.round(Number($('#sp-a', m.el).value));
+        if (!(amt > 0) || amt > due) { A.toast(`Enter an amount up to ${money(due)}`, 'err'); return; }
+        S.paySupplier(id, $('#sp-acc', m.el).value, amt, 'Paid later'); m.close(); api.refresh(); kp(); A.toast(`${money(amt)} paid to ${S.supplierName(id)}`);
+      });
+    };
+    const kp = () => { const owe = S.suppliers().filter((x) => S.supplierDue(x.id) > 0); $('#sup-kpis').innerHTML = [kpi('You owe suppliers', money(S.payables()), `${owe.length} supplier${owe.length === 1 ? '' : 's'} waiting for payment`, 'coins'), kpi('Suppliers', S.suppliers().length, 'Added by name when you buy', 'building'), kpi('Bought in 30 days', money(sum(S.purchases().filter((p) => S.within(p.date, ...S.range('30'))), S.poTotal)), 'All fabric purchases', 'package')].join(''); };
+    const api = Admin.listTable({
+      id: 'suppliers', mount: $('#list'), perPage: 10, empty: 'No suppliers yet. Type a name when you buy fabric.', searchPlaceholder: 'Search suppliers',
+      rows, rowId: (x) => x.id || 'none', search: (x, q) => (x.name + x.phone + x.note).toLowerCase().includes(q),
+      views: [{ id: 'all', label: 'All' }, { id: 'due', label: 'We owe', filter: (x) => S.supplierDue(x.id) > 0 }],
+      columns: [
+        { id: 'name', label: 'Supplier', sort: (a, b) => a.name.localeCompare(b.name), render: (x) => `<div class="row gap-8">${Admin.avatar(x.name)}<div><b class="row-title">${esc(x.name)}</b><div class="xs muted">${esc(x.note || '')}</div></div></div>${Admin.actions([S.supplierDue(x.id) > 0 ? { label: 'Pay', act: 'pay', id: x.id || 'none' } : null, { label: 'Buy fabric', href: 'purchases.html?new=1&sup=' + encodeURIComponent(x.name) }, x.id ? { label: 'Edit', act: 'edit', id: x.id } : null])}` },
+        { id: 'contact', label: 'Contact', render: (x) => `<span class="mono">${esc(x.phone || '—')}</span><div class="xs muted">${esc(x.address || '')}</div>` },
+        { id: 'n', label: 'Purchases', cls: 'right', render: (x) => `<span class="num">${stats(x.id).n}</span>` },
+        { id: 'total', label: 'Bought', cls: 'right', sort: (a, b) => stats(a.id).total - stats(b.id).total, render: (x) => `<span class="num">${money(stats(x.id).total)}</span>` },
+        { id: 'paid', label: 'Paid', cls: 'right', render: (x) => `<span class="num ok">${money(stats(x.id).paid)}</span>` },
+        { id: 'due', label: 'We owe', cls: 'right', sort: (a, b) => stats(a.id).due - stats(b.id).due, render: (x) => { const d = stats(x.id).due; return d ? `<b class="num err">${money(d)}</b>` : '<span class="muted">—</span>'; } }
+      ],
+      actions: { edit: (id, x, a) => edit(id, a), pay: (id, x, a) => pay(id === 'none' ? '' : id, a) }
+    });
+    $('#add-supplier').addEventListener('click', () => edit(null, api));
+    if (A.qs.get('new')) edit(null, api);
     kp();
   };
 

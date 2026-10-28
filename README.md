@@ -41,8 +41,10 @@ Fabric (yards / inches)  →  Production  →  Showroom stock  →  Sales  →  
                                                                 WhatsApp
 ```
 
-1. **Buy fabric** (*Fabric purchases*, no supplier needed): enter the quantity in **yards or inches** (1 yd = 36 in). Receiving it adds
-   to *Fabric stock* and re-averages the cost per yard. There are no supplier accounts: a purchase is paid when you buy it.
+1. **Buy fabric** (*Fabric purchases*): type the **seller's name** and the **fabric name** (both plain text, no dropdowns; new names are
+   saved automatically) and the quantity in **yards or inches** (1 yd = 36 in). Pay in full, pay part now, or pay nothing now: whatever
+   is left is recorded as owed to that supplier and can be paid later from *Fabric purchases* or *Suppliers*. Receiving the cloth adds
+   to *Fabric stock* and re-averages the cost per yard.
 2. **Know what you have** (*Fabric stock*): each cloth by name with yards **and** inches, cost, value, a reorder
    level, how many days it lasts at your recent pace, and which designs can be cut from it (and how many).
 3. **One cloth, many designs.** Every design has a **recipe** in the product editor: fabric, yards per piece,

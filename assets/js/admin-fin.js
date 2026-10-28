@@ -87,7 +87,7 @@
       const dues = sum(S.dueList(), (d) => d.due);
       const cod = sum(S.parcels().filter((o) => o.ship.status === 'transit'), (o) => o.ship.cod || 0);
       const stock = S.valuation().cost; const fabric = S.fabricValue();
-      const wip = sum(S.inProduction(), (b) => b.yards * b.rate);
+      const wip = sum(S.inProduction(), (b) => b.yards * b.rate); const owed = S.payables();
       $('#f-pos').innerHTML = `<div class="pl">
         ${S.accounts().map((a) => plRow(esc(a.name), money(bal[a.id] || 0), 'indent')).join('')}
         ${plRow('Money in hand and bank', money(liquid), 'sum')}
@@ -96,7 +96,8 @@
         ${plRow('Fabric in warehouse', '+ ' + money(fabric), '', 'At average cost per yard')}
         ${plRow('Fabric in production', '+ ' + money(wip), '', 'Batches being cut or stitched')}
         ${plRow('Showroom stock at cost', '+ ' + money(stock))}
-        ${plRow('Estimated business value', money(liquid + dues + cod + fabric + wip + stock), 'sum grand')}</div>`;
+        ${plRow('Owed to suppliers', '− ' + money(owed), '', 'Fabric bought, still to be paid')}
+        ${plRow('Estimated business value', money(liquid + dues + cod + fabric + wip + stock - owed), 'sum grand')}</div>`;
 
       const locRows = S.channelRows(r[0], r[1]).map((x) => [x.label, x.revenue]);
       A.charts.hbars($('#f-loc'), locRows.map(([l, v]) => ({ label: l, value: v, display: `${money(v)}${p.revenue ? ` · ${Math.round((v / p.revenue) * 100)}%` : ''}` })));
@@ -180,7 +181,7 @@
      Accounts & ledger
      ====================================================================== */
   P.accounts = () => {
-    const KIND = { cod: ['Cash on delivery', 'b-ok'], 'courier-fee': ['Courier charge', 'b-err'], payout: ['Courier payout', 'b-violet'], production: ['Making cost', 'b-warn'], sale: ['Sale', 'b-ok'], expense: ['Expense', 'b-err'], fabric: ['Fabric purchase', 'b-warn'], transfer: ['Transfer', 'b-violet'], income: ['Income', 'b-info'], due: ['Due collected', 'b-ok'], opening: ['Opening', ''] };
+    const KIND = { cod: ['Cash on delivery', 'b-ok'], 'courier-fee': ['Courier charge', 'b-err'], payout: ['Courier payout', 'b-violet'], production: ['Making cost', 'b-warn'], sale: ['Sale', 'b-ok'], expense: ['Expense', 'b-err'], fabric: ['Fabric purchase', 'b-warn'], supplier: ['Supplier payment', 'b-warn'], transfer: ['Transfer', 'b-violet'], income: ['Income', 'b-info'], due: ['Due collected', 'b-ok'], opening: ['Opening', ''] };
     const ICON = { cash: 'coins', bank: 'bank', mfs: 'phone', courier: 'truck' };
     const cards = () => {
       const bal = S.balances(); const r = S.range('30');
@@ -369,13 +370,15 @@
     },
     dues: () => {
       const dues = S.dueList();
+      const sups = S.suppliers().map((x) => ({ x, due: S.supplierDue(x.id) })).filter((r) => r.due > 0);
       return [
+        sec('Suppliers we owe', ['Supplier', 'Phone', 'Still to pay'], sups.map((r) => [esc(r.x.name), esc(r.x.phone || ''), n(r.due)]), ['Total payable', '', n(sum(sups, (r) => r.due))]),
         sec('Customers who owe us', ['Customer', 'Phone', 'Orders', 'Outstanding'], dues.map((d) => [esc(d.name), esc(d.phone), d.orders.length, n(d.due)]), ['Total receivable', '', sum(dues, (d) => d.orders.length), n(sum(dues, (d) => d.due))])
       ];
     }
   };
   const r2s = (x) => Math.round(x * 100) / 100;
-  const TITLES = { fabric: 'Fabric & production', couriers: 'Couriers & delivery', sales: 'Sales report', pnl: 'Profit & loss statement', expenses: 'Expenses report', stock: 'Stock valuation', vat: 'VAT report', dues: 'Customer dues' };
+  const TITLES = { fabric: 'Fabric & production', couriers: 'Couriers & delivery', sales: 'Sales report', pnl: 'Profit & loss statement', expenses: 'Expenses report', stock: 'Stock valuation', vat: 'VAT report', dues: 'Dues (customers & suppliers)' };
 
   P.reports = () => {
     const st = { tab: DB.get('rep.tab', 'sales'), range: DB.get('rep.range', '30') };

@@ -798,3 +798,4 @@ a.store-row:hover b:first-of-type { color: var(--primary); }
 @media (max-width: 1240px) { .dash-split { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 760px) { .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); } .flow-step::after { display: none; } }
 .hb-label small { display: block; margin-top: 1px; font-size: 11px; color: var(--ink-3); }
+.pay-later { color: var(--err, #dc2626); font-weight: 600; }
