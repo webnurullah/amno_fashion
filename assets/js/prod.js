@@ -40,6 +40,18 @@
   S.fabrics = () => DB.get('fabrics', null) || (DB.set('fabrics', S.seedFabrics), clone(S.seedFabrics));
   S.saveFabrics = (l) => DB.set('fabrics', l);
   S.fabric = (id) => S.fabrics().find((f) => f.id === id);
+  /** find a fabric by typed name (case-insensitive) or create it on the fly; returns its id */
+  S.ensureFabric = (name, rate) => {
+    const nm = String(name || '').trim().replace(/\s+/g, ' ');
+    if (!nm) return '';
+    const l = S.fabrics(); const hit = l.find((f) => f.name.toLowerCase() === nm.toLowerCase());
+    if (hit) return hit.id;
+    let n = l.length + 1; while (l.some((f) => f.id === 'fab' + n)) n++;
+    const hex = '#' + ((Math.abs([...nm].reduce((h, c) => (h * 31 + c.charCodeAt(0)) | 0, 7)) % 0xA0A0A0) + 0x303030).toString(16).slice(0, 6).padStart(6, '3');
+    l.push({ id: 'fab' + n, name: nm, type: 'Other', colors: '', hex, width: 44, rate: Number(rate) || 0, reorder: 30, stock: 0 });
+    S.saveFabrics(l);
+    return 'fab' + n;
+  };
   S.fabricName = (id) => (S.fabric(id) || { name: id || '—' }).name;
   S.fabricValue = () => sum(S.fabrics(), (f) => f.stock * f.rate);
   S.fabricYards = () => sum(S.fabrics(), (f) => f.stock);
@@ -64,7 +76,7 @@
   /** every yard in or out, newest first: purchases received, production issues, counts and wastage */
   S.fabricMoves = () => {
     const out = [];
-    S.purchases().filter((po) => po.status === 'received').forEach((po) => po.items.forEach((i) => out.push({ date: po.receivedAt || po.date, fabricId: i.fabricId, delta: i.yards, reason: 'purchase', ref: po.id, note: 'Bought' })));
+    S.purchases().filter((po) => po.status === 'received').forEach((po) => po.items.forEach((i) => out.push({ date: po.receivedAt || po.date, fabricId: i.fabricId, delta: i.yards, reason: 'purchase', ref: po.id, note: S.supplierName(po.supplierId) })));
     S.batches().forEach((b) => out.push({ date: b.date, fabricId: b.fabricId, delta: -b.yards, reason: 'production', ref: b.id, note: `${(S.product(b.productId) || { name: 'Design #' + b.productId }).name} × ${b.qty}` }));
     S.fabricAdjustments().forEach((a) => out.push({ date: a.date, fabricId: a.fabricId, delta: a.delta, reason: a.reason, ref: '', note: a.note }));
     return out.sort((a, b) => new Date(b.date) - new Date(a.date));
