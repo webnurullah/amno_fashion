@@ -147,28 +147,28 @@
       });
     };
     const api = Admin.listTable({
-      id: 'pages', mount: $('#list'), perPage: 10, empty: 'Nothing here yet', searchPlaceholder: 'Search pages and posts',
-      rows: () => S.pages(), rowId: (p) => p.id, initialQ: A.qs.get('q') || '', initialView: A.qs.get('view') || undefined,
-      views: [{ id: 'all', label: 'All' }, { id: 'page', label: 'Pages', filter: (p) => p.type === 'page' }, { id: 'post', label: 'Posts', filter: (p) => p.type === 'post' }, { id: 'publish', label: 'Published', filter: (p) => p.status === 'publish' }, { id: 'draft', label: 'Drafts', filter: (p) => p.status === 'draft' }],
+      id: 'pages', mount: $('#list'), perPage: 10, empty: 'Nothing here yet', searchPlaceholder: 'Search pages',
+      rows: () => S.pages().concat(S.collections().map((c) => ({ id: 'c' + c.id, cid: c.id, type: 'shop', title: c.title, slug: 'category.html?c=' + c.slug, status: c.status, author: 'Amnu Admin', cats: c.cats, order: c.order, date: null, file: 'category.html?c=' + c.slug }))), rowId: (p) => p.id, initialQ: A.qs.get('q') || '', initialView: A.qs.get('view') || undefined,
+      views: [{ id: 'all', label: 'All' }, { id: 'shop', label: 'Shop pages', filter: (p) => p.type === 'shop' }, { id: 'page', label: 'Content pages', filter: (p) => p.type === 'page' }, { id: 'post', label: 'Posts', filter: (p) => p.type === 'post' }, { id: 'publish', label: 'Published', filter: (p) => p.status === 'publish' }, { id: 'draft', label: 'Drafts', filter: (p) => p.status === 'draft' }],
       search: (p, q) => (p.title + ' ' + p.slug + ' ' + (p.cat || '')).toLowerCase().includes(q),
       columns: [
-        { id: 'title', label: 'Title', sort: (a, b) => a.title.localeCompare(b.title), render: (p) => `<a class="row-title" href="#" data-act="edit" data-id="${p.id}">${esc(p.title)}</a>${p.status === 'draft' ? ' <span class="draft-tag">— Draft</span>' : ''}${Admin.actions([{ label: 'Edit', act: 'edit', id: p.id }, { label: p.status === 'publish' ? 'Unpublish' : 'Publish', act: 'toggle', id: p.id }, p.file ? { label: 'View', href: '../' + p.file, target: '_blank' } : null, { label: 'Trash', act: 'del', id: p.id, danger: true }])}` },
-        { id: 'type', label: 'Type', render: (p) => `<span class="badge ${p.type === 'post' ? 'b-info' : 'b-violet'}">${p.type === 'post' ? 'Post' : 'Page'}</span>` },
+        { id: 'title', label: 'Title', sort: (a, b) => a.title.localeCompare(b.title), render: (p) => (p.type === 'shop' ? `<a class="row-title" href="collection-edit.html?id=${p.cid}">${esc(p.title)}</a>${p.status !== 'publish' ? ' <span class="draft-tag">— Draft</span>' : ''}${Admin.actions([{ label: 'Edit', href: `collection-edit.html?id=${p.cid}` }, { label: p.status === 'publish' ? 'Unpublish' : 'Publish', act: 'toggle', id: p.id }, { label: 'View', href: '../' + p.file, target: '_blank' }, { label: 'Trash', act: 'del', id: p.id, danger: true }])}` : `<a class="row-title" href="#" data-act="edit" data-id="${p.id}">${esc(p.title)}</a>${p.status === 'draft' ? ' <span class="draft-tag">— Draft</span>' : ''}${Admin.actions([{ label: 'Edit', act: 'edit', id: p.id }, { label: p.status === 'publish' ? 'Unpublish' : 'Publish', act: 'toggle', id: p.id }, p.file ? { label: 'View', href: '../' + p.file, target: '_blank' } : null, { label: 'Trash', act: 'del', id: p.id, danger: true }])}`) },
+        { id: 'type', label: 'Type', render: (p) => `<span class="badge ${p.type === 'post' ? 'b-info' : p.type === 'shop' ? 'b-ok' : 'b-violet'}">${p.type === 'post' ? 'Post' : p.type === 'shop' ? 'Shop page' : 'Page'}</span>` },
         { id: 'author', label: 'Author', render: (p) => `<div class="row gap-8">${Admin.avatar(p.author, 'xs')}<span class="small">${esc(p.author)}</span></div>` },
-        { id: 'cat', label: 'Category', render: (p) => (p.type === 'post' ? esc(p.cat || '—') : '—') },
+        { id: 'cat', label: 'Category', render: (p) => (p.type === 'shop' ? `<div class="chip-list">${p.cats.map((slug) => { const k = S.categories().find((x) => x.slug === slug); return k ? `<span class="badge">${esc(k.name)}</span>` : ''; }).join('') || '—'}</div>` : p.type === 'post' ? esc(p.cat || '—') : '—') },
         { id: 'slug', label: 'URL', hidden: true, render: (p) => `<span class="mono xs">${esc(p.slug)}</span>` },
-        { id: 'date', label: 'Date', sort: (a, b) => new Date(a.date) - new Date(b.date), render: (p) => `<span class="muted small">${p.status === 'publish' ? 'Published' : 'Last modified'}<br>${A.date(p.date)}</span>` },
+        { id: 'date', label: 'Date', sort: (a, b) => new Date(a.date) - new Date(b.date), render: (p) => (p.type === 'shop' ? `<span class="muted small">Menu order<br>${p.order || 0}</span>` : `<span class="muted small">${p.status === 'publish' ? 'Published' : 'Last modified'}<br>${A.date(p.date)}</span>`) },
         { id: 'status', label: 'Status', render: (p) => Admin.pageBadge(p.status) }
       ],
       bulk: [
-        { id: 'publish', label: 'Publish', run: (ids) => { const l = S.pages(); l.forEach((p) => { if (ids.includes(String(p.id))) p.status = 'publish'; }); S.savePages(l); A.toast('Published'); } },
-        { id: 'draft', label: 'Move to draft', run: (ids) => { const l = S.pages(); l.forEach((p) => { if (ids.includes(String(p.id))) p.status = 'draft'; }); S.savePages(l); A.toast('Moved to draft'); } },
-        { id: 'del', label: 'Move to trash', confirm: 'Delete the selected items?', run: (ids) => { S.savePages(S.pages().filter((p) => !ids.includes(String(p.id)))); A.toast('Deleted'); } }
+        { id: 'publish', label: 'Publish', run: (ids) => { const l = S.pages(); l.forEach((p) => { if (ids.includes(String(p.id))) p.status = 'publish'; }); S.savePages(l); const cl = S.collections(); cl.forEach((c) => { if (ids.includes('c' + c.id)) c.status = 'publish'; }); S.saveCollections(cl); A.toast('Published'); } },
+        { id: 'draft', label: 'Move to draft', run: (ids) => { const l = S.pages(); l.forEach((p) => { if (ids.includes(String(p.id))) p.status = 'draft'; }); S.savePages(l); const cl = S.collections(); cl.forEach((c) => { if (ids.includes('c' + c.id)) c.status = 'draft'; }); S.saveCollections(cl); A.toast('Moved to draft'); } },
+        { id: 'del', label: 'Move to trash', confirm: 'Delete the selected items?', run: (ids) => { S.savePages(S.pages().filter((p) => !ids.includes(String(p.id)))); S.saveCollections(S.collections().filter((c) => !ids.includes('c' + c.id))); A.toast('Deleted'); } }
       ],
       actions: {
         edit: (id, p, a) => edit(id, a),
-        toggle: (id, p, a) => { const l = S.pages(); const x = l.find((k) => String(k.id) === String(id)); x.status = x.status === 'publish' ? 'draft' : 'publish'; S.savePages(l); a.refresh(); A.toast(x.status === 'publish' ? 'Published' : 'Moved to draft'); },
-        del: (id, p, a) => A.confirm(`Delete “${p.title}”?`, 'Delete').then((ok) => { if (ok) { S.savePages(S.pages().filter((k) => String(k.id) !== String(id))); a.refresh(); A.toast('Deleted'); } })
+        toggle: (id, p, a) => { if (p.type === 'shop') { const cl = S.collections(); const c = cl.find((k) => k.id === p.cid); c.status = c.status === 'publish' ? 'draft' : 'publish'; S.saveCollections(cl); a.refresh(); A.toast(c.status === 'publish' ? 'Published' : 'Moved to draft'); return; } const l = S.pages(); const x = l.find((k) => String(k.id) === String(id)); x.status = x.status === 'publish' ? 'draft' : 'publish'; S.savePages(l); a.refresh(); A.toast(x.status === 'publish' ? 'Published' : 'Moved to draft'); },
+        del: (id, p, a) => A.confirm(`Delete “${p.title}”?`, 'Delete').then((ok) => { if (ok) { if (p.type === 'shop') S.saveCollections(S.collections().filter((k) => k.id !== p.cid)); else S.savePages(S.pages().filter((k) => String(k.id) !== String(id))); a.refresh(); A.toast('Deleted'); } })
       }
     });
     document.addEventListener('click', (e) => { const a = e.target.closest('a[data-act]'); if (a) e.preventDefault(); });
@@ -427,7 +427,7 @@
      Collection pages (WordPress-style list + editor)
      ====================================================================== */
   const catThumbHTML = (c) => `<span class="cat-thumb">${c.image ? `<img src="${c.image}" alt="">` : `<i>${esc((c.name || '?').slice(0, 1).toUpperCase())}</i>`}</span>`;
-  P.collections = () => {
+  P.collections = () => { location.replace('pages.html?view=shop'); return;
     const rows = () => S.collections().map((c) => Object.assign({}, c, { n: S.collectionProducts(c).length }));
     const api = Admin.listTable({
       id: 'collections', mount: $('#list'), perPage: 20, empty: 'No collection pages yet', searchPlaceholder: 'Search pages',
@@ -519,7 +519,7 @@
     };
     $('#cp-save').addEventListener('click', () => save('publish'));
     $('#cp-draft').addEventListener('click', () => save('draft'));
-    $('#cp-del').addEventListener('click', () => A.confirm(`Move “${st.title}” to trash? Its categories and products are kept.`, 'Delete').then((ok) => { if (ok) { S.saveCollections(S.collections().filter((c) => c.id !== st.id)); location.href = 'collections.html'; } }));
+    $('#cp-del').addEventListener('click', () => A.confirm(`Move “${st.title}” to trash? Its categories and products are kept.`, 'Delete').then((ok) => { if (ok) { S.saveCollections(S.collections().filter((c) => c.id !== st.id)); location.href = 'pages.html?view=shop'; } }));
     $$('.metabox-h').forEach((h) => h.addEventListener('click', () => h.parentElement.classList.toggle('closed')));
   };
 
