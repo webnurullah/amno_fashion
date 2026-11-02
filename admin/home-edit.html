@@ -22,31 +22,28 @@
       <header class="topbar glass" id="topbar"></header>
 
       <main class="content" id="content">
-        <div class="page-head">
-          <div><h1>Edit page: Home</h1><p class="muted">Every section of your home page. Turn sections on or off, change their order and text, and add new ones.</p></div>
-          <a class="btn btn-glass" href="pages.html"><i data-icon="chevron-left" data-size="16"></i> All pages</a>
-        </div>
-        <div class="editor-layout">
-          <div class="col gap-16" id="hm-sections"></div>
-          <aside class="col gap-16">
-            <div class="card metabox">
-              <div class="metabox-h"><h3>Update</h3></div>
-              <div class="metabox-b col gap-12">
-                <div class="small muted" id="hm-count"></div>
-                <button class="btn btn-violet btn-block" id="hm-save" type="button">Update</button>
-                <a class="btn btn-glass btn-block" href="../index.html" target="_blank" rel="noopener"><i data-icon="external" data-size="16"></i> Preview home page</a>
-                <button class="btn-link danger small" id="hm-reset" type="button">Reset to original layout</button>
-              </div>
-            </div>
-            <div class="card metabox">
-              <div class="metabox-h"><h3>Add a section</h3></div>
-              <div class="metabox-b col gap-8">
-                <button class="btn btn-glass btn-block" id="hm-add-collection" type="button"><i data-icon="plus" data-size="16"></i> Collection cards</button>
-                <button class="btn btn-glass btn-block" id="hm-add-rail" type="button"><i data-icon="plus" data-size="16"></i> Product row</button>
-                <p class="xs muted">New sections appear at the bottom. Use the arrows to move them.</p>
-              </div>
-            </div>
-          </aside>
+        <div class="hb">
+          <div class="hb-top">
+            <a class="btn btn-ghost btn-icon" href="pages.html" aria-label="Back to pages"><i data-icon="chevron-left" data-size="18"></i></a>
+            <span class="hb-crumb">Pages &rsaquo;</span><b class="hb-title">Home</b><span class="badge b-ok" id="hb-status">Published</span><span class="draft-tag" id="hb-dirty" hidden>&bull; Unsaved changes</span>
+            <div class="grow"></div>
+            <div class="seg" id="hb-dev" role="group" aria-label="Preview size"><button type="button" data-w="100%" aria-pressed="true">Desktop</button><button type="button" data-w="820px" aria-pressed="false">Tablet</button><button type="button" data-w="390px" aria-pressed="false">Mobile</button></div>
+            <button class="btn btn-glass btn-icon" id="hb-undo" type="button" aria-label="Undo" title="Undo"><i data-icon="history" data-size="18"></i></button>
+            <button class="btn btn-glass btn-icon" id="hb-redo" type="button" aria-label="Redo" title="Redo" style="transform:scaleX(-1)"><i data-icon="history" data-size="18"></i></button>
+            <a class="btn btn-glass" href="../index.html" target="_blank" rel="noopener"><i data-icon="external" data-size="16"></i> Preview</a>
+            <button class="btn btn-violet" id="hb-save" type="button">Update</button>
+          </div>
+          <div class="hb-grid">
+            <aside class="hb-left card">
+              <h4>Sections <span class="muted xs">· drag to reorder</span></h4>
+              <div id="hb-list"></div>
+              <div class="hb-addwrap"><button class="hb-add" id="hb-add" type="button"><i data-icon="plus" data-size="16"></i> Add section</button>
+                <div class="hb-addmenu card" id="hb-addmenu" hidden><button type="button" data-new="collection">Collection cards</button><button type="button" data-new="rail">Product row</button></div></div>
+              <button class="btn-link danger small" id="hb-reset" type="button" style="margin-top:14px">Reset to original layout</button>
+            </aside>
+            <section class="hb-mid"><div class="hb-frame" id="hb-frame"><iframe id="hb-iframe" title="Home page preview" src="about:blank"></iframe></div></section>
+            <aside class="hb-right card" id="hb-insp" aria-live="polite"></aside>
+          </div>
         </div>
       </main>
 

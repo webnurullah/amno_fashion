@@ -29,10 +29,11 @@
      Home
      ====================================================================== */
   P.home = () => {
+    const prev = A.qs.get('preview') === '1'; const draft = prev ? DB.get('home.draft', null) : null;
     const pub = S.published();
     const set = (id) => pub.find((p) => p.id === id) || pub[0];
     const ART = { a: [2, 1, 4], c: [13, 14, 16], d: [16, 9] };
-    const heroList = S.heroSlides().filter((x) => x.active !== false);
+    const heroList = ((draft && draft.slides) || S.heroSlides()).filter((x) => x.active !== false);
     $('.hero-slider').hidden = !heroList.length;
     $('#hero-track').innerHTML = heroList.map((x, i) => {
       const copy = `<div class="tile-copy">${x.kicker ? `<span class="kicker">${esc(x.kicker)}</span>` : ''}${i === 0 ? '<h1 id="hero-title">' : '<h2 class="tile-h">'}${esc(x.title || '')}${i === 0 ? '</h1>' : '</h2>'}${x.sub ? `<p>${esc(x.sub)}</p>` : ''}${x.stamp ? `<span class="stamp">${esc(x.stamp)}</span>` : ''}${x.cta ? `<span class="btn ${x.btn === 'glass' ? 'btn-glass' : 'btn-primary'}">${esc(x.cta)}</span>` : ''}</div>`;
@@ -60,18 +61,18 @@
       window.addEventListener('resize', build); build(); play();
     })();
 
-    const layout = S.homeLayout(); const heroSec = layout.find((x) => x.type === 'hero');
+    const layout = (draft && draft.layout) || S.homeLayout(); const heroSec = layout.find((x) => x.type === 'hero');
     if (heroSec && heroSec.enabled === false) $('.hero-slider').hidden = true;
     const byCat = (slug) => pub.find((p) => p.cats[0] === slug) || pub.find((p) => p.cats.includes(slug)) || pub[0];
     const catCards = (slugs) => slugs.map((s) => { const c = S.categories().find((x) => x.slug === s); return c ? collectionCard(c.name, `shop.html?cat=${s}`, byCat(s), A.plural(S.categoryCount(s), 'style')) : ''; }).join('');
     const head = (sec) => `<div class="section-h"><h2>${esc(sec.title || '')}</h2>${sec.link ? `<a class="u-link" href="${esc(sec.link)}">${esc(sec.linkLabel || 'Explore All')}</a>` : ''}</div>`;
     const blocks = layout.filter((x) => x.type !== 'hero' && x.enabled !== false);
     $('#home-sections').innerHTML = blocks.map((sec) => {
-      if (sec.type === 'recent') return `<div id="sec-${sec.id}"></div>`;
-      if (sec.type === 'quality') return `<section class="craft" id="craft"><div class="container"><span class="kicker light">${esc(sec.kicker || '')}</span><h2>${esc(sec.title || '')}</h2>
+      if (sec.type === 'recent') return `<div id="sec-${sec.id}" data-sec="${sec.id}"></div>`;
+      if (sec.type === 'quality') return `<section class="craft" id="craft" data-sec="${sec.id}"><div class="container"><span class="kicker light">${esc(sec.kicker || '')}</span><h2>${esc(sec.title || '')}</h2>
         <div class="cf-stage" id="craft-cards" role="group" aria-roledescription="carousel" aria-label="${esc(sec.title || '')}"></div>
         <div class="cf-controls"><button class="cf-btn" id="cf-prev" type="button" aria-label="Previous">\u2039</button><div class="cf-bar" id="cf-bar" aria-hidden="true"><i></i></div><button class="cf-btn" id="cf-next" type="button" aria-label="Next">\u203a</button></div></div></section>`;
-      return `<section class="section container ">${head(sec)}<div ${sec.type === 'showrooms' ? 'class="store-row" ' : ''}id="sec-${sec.id}"></div></section>`;
+      return `<section class="section container " data-sec="${sec.id}">${head(sec)}<div ${sec.type === 'showrooms' ? 'class="store-row" ' : ''}id="sec-${sec.id}"></div></section>`;
     }).join('');
     blocks.forEach((sec) => {
       const el = $('#sec-' + sec.id);
@@ -88,10 +89,17 @@
         el.innerHTML = recentRail(undefined, sec.title);
       } else if (sec.type === 'quality') {
         $('#craft-cards').innerHTML = (sec.cards || []).map((c) => `<article class="cf-card"><span class="craft-ico">${icon(c.ic || 'gem', 26)}</span><p>${esc(c.d)}</p><h3>${esc(c.t)}</h3></article>`).join('');
-        const cbg = S.banners().craftBg; if (cbg) $('#craft').style.backgroundImage = `linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.45)), url('${cbg}')`;
+        const cbg = draft ? draft.craftBg : S.banners().craftBg; if (cbg) $('#craft').style.backgroundImage = `linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.45)), url('${cbg}')`;
       }
     });
 
+    if (prev) {
+      $('.hero-slider').dataset.sec = 'hero';
+      document.documentElement.classList.add('is-preview');
+      document.addEventListener('click', (e) => { const t = e.target.closest('[data-sec]'); if (t) { e.preventDefault(); e.stopPropagation(); parent.postMessage({ type: 'amnu-select', id: t.dataset.sec }, '*'); } }, true);
+      window.addEventListener('message', (e) => { const d = e.data || {}; if (d.type !== 'amnu-scroll') return; const t = document.querySelector(`[data-sec="${d.id}"]`); if (!t) return; document.querySelectorAll('.sec-on').forEach((x) => x.classList.remove('sec-on')); t.classList.add('sec-on'); t.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+      parent.postMessage({ type: 'amnu-ready' }, '*');
+    }
     (() => {
       if (!$('#craft-cards') || !$('#craft-cards').children.length) return;
       const cards = [...$('#craft-cards').children]; const bar = $('#cf-bar i'); let cur = Math.floor(cards.length / 2); let timer;

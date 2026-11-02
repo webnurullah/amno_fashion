@@ -820,3 +820,8 @@ a.contact-card:hover { transform: translateX(4px); }
 .cat-hero.has-text.t-center .cat-hero-art { opacity: .3; }
 .cat-hero.has-text .banner-text { z-index: 3; }
 @media (max-width: 1000px) { .cat-hero.has-text .cat-hero-art { padding: 0; opacity: .3; } }
+
+/* admin home builder preview */
+.is-preview [data-sec] { cursor: pointer; outline: 2px solid transparent; outline-offset: -2px; transition: outline-color .15s; }
+.is-preview [data-sec]:hover { outline-color: rgba(37, 99, 235, .45); }
+.is-preview .sec-on { outline: 3px solid #2563eb; outline-offset: -3px; }
