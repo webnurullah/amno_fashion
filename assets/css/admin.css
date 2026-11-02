@@ -898,3 +898,9 @@ a.store-row:hover b:first-of-type { color: var(--primary); }
 @media (max-width: 1050px) { .hb-grid { grid-template-columns: 1fr; height: auto; } .hb-left, .hb-right { height: auto; } .hb-mid { height: 520px; } }
 .hb-f .hint { font-size: 12px; color: var(--ink-3); }
 .hb-sec .grow { min-width: 0; } .hb-sec small { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.hb-qc { display: flex; flex-direction: column; gap: 8px; padding: 10px; margin-bottom: 8px; border: 1px solid var(--line); border-radius: 12px; background: var(--glass-soft); }
+.hb-right .cp-row { flex-wrap: wrap; } .hb-right .cp-row .grow { min-width: 90px; }
+.hb-right .hb-ib textarea { min-height: 80px; }
+.hb-top .pill-select { min-height: 40px; }
+.hb-ib .form-grid2 { margin-top: 14px; gap: 12px; } .hb-ib .field > label { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); } .hb-ib .hint { display: block; margin-top: 6px; }

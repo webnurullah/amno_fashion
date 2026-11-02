@@ -192,6 +192,13 @@
       return ok && (u.search !== '' || [...new URLSearchParams(location.search)].every(([k]) => !['cat', 'sort', 'c'].includes(k)));
     } catch (e) { return false; }
   };
+  /** admin builders load the page with ?preview=1: clicking a marked element tells the builder which one to edit */
+  Shop.preview = () => {
+    document.documentElement.classList.add('is-preview');
+    document.addEventListener('click', (e) => { const t = e.target.closest('[data-pv],[data-edit],[data-sec]'); if (!t) return; e.preventDefault(); e.stopPropagation(); parent.postMessage({ type: 'amnu-select', id: t.dataset.pv || t.dataset.edit || t.dataset.sec }, '*'); }, true);
+    window.addEventListener('message', (e) => { const d = e.data || {}; if (d.type !== 'amnu-scroll') return; const t = document.querySelector(`[data-pv="${d.id}"],[data-edit="${d.id}"],[data-sec="${d.id}"]`); document.querySelectorAll('.sec-on').forEach((x) => x.classList.remove('sec-on')); if (!t) return; t.classList.add('sec-on'); t.scrollIntoView({ behavior: 'smooth', block: 'center' }); });
+    parent.postMessage({ type: 'amnu-ready' }, '*');
+  };
   /** banner picture with its optional headline, subtitle and button */
   Shop.bannerText = (b) => (b.title || b.sub || b.cta ? `<div class="banner-text a-${esc(b.align || 'left')}">${b.title ? `<h2>${esc(b.title)}</h2>` : ''}${b.sub ? `<p>${esc(b.sub)}</p>` : ''}${b.cta ? `<a class="btn btn-primary" href="${esc(b.link || 'shop.html')}">${esc(b.cta)}</a>` : ''}</div>` : '');
   Shop.bannerHTML = (b, cls) => `<div class="${cls}${b.image ? '' : ' no-img'}">${b.image ? `<img src="${b.image}" alt="${esc(b.title || '')}">` : ''}${Shop.bannerText(b)}</div>`;

@@ -457,86 +457,6 @@
     });
   };
 
-  P['collection-edit'] = () => {
-    const id = Number(A.qs.get('id')) || 0;
-    const found = id ? S.collections().find((c) => c.id === id) : null;
-    const st = found ? JSON.parse(JSON.stringify(found)) : { id: 0, slug: '', title: '', sub: '', cats: [], status: 'draft', order: S.collections().length + 1 };
-    let slugTouched = !!found; let newImg = '';
-    const catOf = (slug) => S.categories().find((c) => c.slug === slug);
-    const readImg = () => new Promise((res) => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.onchange = async () => { if (!i.files[0]) return res(''); try { res(await Admin.compressImage(i.files[0], 700)); } catch (e) { A.toast('Could not read that image', 'err'); res(''); } }; i.click(); });
-    const paintHead = () => {
-      $('#cp-heading').textContent = st.id ? 'Edit collection page' : 'Add new collection page';
-      $('#cp-permalink').innerHTML = `<b>Permalink:</b> category.html?c=<span id="cp-slug-view">${esc(st.slug || '…')}</span> <button type="button" class="btn-link" id="cp-slug-edit">Edit</button>${st.id && st.status === 'publish' ? ` · <a class="btn-link" target="_blank" rel="noopener" href="../category.html?c=${esc(st.slug)}">View page ↗</a>` : ''}`;
-      $('#cp-save').textContent = st.status === 'publish' ? (st.id ? 'Update' : 'Publish') : 'Publish';
-      $('#cp-draft').hidden = st.status === 'publish' && !!st.id;
-      $('#cp-del').hidden = !st.id;
-    };
-    const paintCats = () => {
-      $('#cp-cats').innerHTML = st.cats.length ? st.cats.map((slug, i) => { const c = catOf(slug); if (!c) return ''; return `<div class="cp-row" data-slug="${esc(slug)}">${catThumbHTML(c)}<div class="grow"><b>${esc(c.name)}</b><div class="xs muted">${A.plural(S.categoryCount(slug), 'product')} · ${esc(slug)}</div></div><button class="btn btn-ghost btn-icon btn-sm" data-mv="-1" ${i === 0 ? 'disabled' : ''} aria-label="Move up">${icon('chevron-up', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-mv="1" ${i === st.cats.length - 1 ? 'disabled' : ''} aria-label="Move down">${icon('chevron-down', 14)}</button><button class="btn btn-glass btn-sm" data-edit type="button">Edit</button><button class="btn btn-ghost btn-sm danger" data-rm type="button">Remove</button></div>`; }).join('') : '<p class="muted small">No categories on this page yet. Add one below.</p>';
-      const free = S.categories().filter((c) => !st.cats.includes(c.slug));
-      $('#cp-existing').innerHTML = free.length ? `<option value="">Choose a category…</option>${free.map((c) => `<option value="${esc(c.slug)}">${esc(c.name)}</option>`).join('')}` : '<option value="">All categories are already on this page</option>';
-      $('#cp-existing').disabled = !free.length; $('#cp-add-existing').disabled = !free.length;
-      const prods = S.collectionProducts(st);
-      $('#cp-count').textContent = A.plural(prods.length, 'product');
-      $('#cp-products').innerHTML = prods.slice(0, 18).map((p) => `<a class="cp-prod" href="product-edit.html?id=${p.id}" title="${esc(p.name)}">${Admin.thumb(p, 'sm')}</a>`).join('') + (prods.length > 18 ? `<span class="muted small">+${prods.length - 18} more</span>` : '') || '<p class="muted small">Products appear here automatically when they belong to one of the categories above.</p>';
-    };
-    const paintNewImg = () => { $('#cp-new-img').innerHTML = newImg ? `<img src="${newImg}" alt=""><button class="btn btn-ghost btn-sm" id="cp-new-rm" type="button">Remove</button>` : '<span class="muted xs">No image yet</span>'; };
-    const cbn = S.banners(); let pageBanner = S.bn((cbn.cats || {})[st.slug]); const oldSlug = st.slug;
-    bannerPicker($('#cp-banner'), 'Banner picture', () => pageBanner, (v) => { pageBanner = Object.assign({}, v); }, 'Shown at the top of this page when visitors open its shop view. Wide pictures (about 1800 x 700) work best.');
-    const fill = () => { $('#cp-title').value = st.title; $('#cp-sub').value = st.sub; $('#cp-status').value = st.status; $('#cp-order').value = st.order; paintHead(); paintCats(); paintNewImg(); };
-    fill();
-    $('#cp-title').addEventListener('input', (e) => { st.title = e.target.value; if (!slugTouched) { st.slug = A.slug(st.title); const v = $('#cp-slug-view'); if (v) v.textContent = st.slug || '…'; } });
-    $('#cp-sub').addEventListener('input', (e) => { st.sub = e.target.value; });
-    $('#cp-status').addEventListener('change', (e) => { st.status = e.target.value; paintHead(); });
-    $('#cp-order').addEventListener('input', (e) => { st.order = Number(e.target.value) || 0; });
-    $('#cp-permalink').addEventListener('click', (e) => { if (!e.target.closest('#cp-slug-edit')) return; const v = prompt('Page slug (used in the address)', st.slug); if (v != null && A.slug(v)) { st.slug = A.slug(v); slugTouched = true; paintHead(); } });
-    $('#cp-cats').addEventListener('click', async (e) => {
-      const row = e.target.closest('.cp-row'); if (!row) return; const slug = row.dataset.slug; const i = st.cats.indexOf(slug);
-      if (e.target.closest('[data-rm]')) { st.cats.splice(i, 1); paintCats(); return; }
-      const mv = e.target.closest('[data-mv]'); if (mv) { const j = i + Number(mv.dataset.mv); [st.cats[i], st.cats[j]] = [st.cats[j], st.cats[i]]; paintCats(); return; }
-      if (e.target.closest('[data-edit]')) {
-        const list = S.categories(); const c = list.find((x) => x.slug === slug); let img = c.image || '';
-        const m = A.modal({ title: 'Edit category', body: `<div class="field"><label for="ec-name">Category name</label><input id="ec-name" value="${esc(c.name)}"></div><div class="field"><label>Category image (round picture)</label><div class="cp-img-pick"><div id="ec-img" class="cp-new-img"></div><button class="btn btn-glass btn-sm" id="ec-up" type="button">${icon('upload', 14)} Upload image</button></div></div><div id="ec-banner"></div>`, footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Save category</button>' });
-        const ebn = S.banners(); let catBanner = S.bn((ebn.cats || {})[slug]); bannerPicker($('#ec-banner', m.el), 'Category page banner', () => catBanner, (v) => { catBanner = Object.assign({}, v); }, 'Shown at the top of this category\'s shop page.');
-        const pi = () => { $('#ec-img', m.el).innerHTML = img ? `<img src="${img}" alt=""><button class="btn btn-ghost btn-sm" id="ec-rm" type="button">Remove</button>` : '<span class="muted xs">No image</span>'; }; pi();
-        m.el.addEventListener('click', async (ev) => {
-          if (ev.target.closest('#ec-up')) { const src = await readImg(); if (src) { img = src; pi(); } return; }
-          if (ev.target.closest('#ec-rm')) { img = ''; pi(); return; }
-          if (!ev.target.closest('[data-save]')) return;
-          const nm = $('#ec-name', m.el).value.trim(); if (!nm) { A.toast('Enter a name', 'err'); return; }
-          c.name = nm; c.image = img; S.saveCategories(list); { const bn = S.banners(); bn.cats = bn.cats || {}; if (S.bnHas(catBanner)) bn.cats[slug] = catBanner; else delete bn.cats[slug]; S.saveBanners(bn); } m.close(); paintCats(); A.toast('Category updated');
-        });
-      }
-    });
-    $('#cp-add-existing').addEventListener('click', () => { const v = $('#cp-existing').value; if (!v) return; st.cats.push(v); paintCats(); });
-    $('#cp-new-up').addEventListener('click', async () => { const src = await readImg(); if (src) { newImg = src; paintNewImg(); } });
-    $('#cp-new-img').addEventListener('click', (e) => { if (e.target.closest('#cp-new-rm')) { newImg = ''; paintNewImg(); } });
-    $('#cp-add-new').addEventListener('click', () => {
-      const name = $('#cp-new-name').value.trim(); if (!name) { A.toast('Enter the category name', 'err'); $('#cp-new-name').focus(); return; }
-      const list = S.categories(); let slug = A.slug(name); const dup = list.find((c) => c.slug === slug);
-      if (dup) { if (!st.cats.includes(slug)) { st.cats.push(slug); if (newImg && !dup.image) { dup.image = newImg; S.saveCategories(list); } paintCats(); A.toast(`“${dup.name}” already existed, so it was added to this page`); } else A.toast('That category is already on this page', 'err'); return; }
-      list.push({ id: list.reduce((m, c) => Math.max(m, c.id), 0) + 1, slug, name, desc: '', image: newImg });
-      S.saveCategories(list); st.cats.push(slug); $('#cp-new-name').value = ''; newImg = ''; paintNewImg(); paintCats(); A.toast(`Category “${name}” created and added`);
-    });
-    const save = (status) => {
-      if (!st.title.trim()) { $('#cp-title').closest('.field').classList.add('err'); $('#cp-title').focus(); return; }
-      $('#cp-title').closest('.field').classList.remove('err');
-      const list = S.collections(); const slug = A.slug(st.slug || st.title);
-      if (list.some((c) => c.slug === slug && c.id !== st.id)) { A.toast('Another page already uses that slug', 'err'); return; }
-      st.slug = slug; st.title = st.title.trim(); st.status = status;
-      { const bn = S.banners(); bn.cats = bn.cats || {}; if (oldSlug && oldSlug !== slug) delete bn.cats[oldSlug]; if (S.bnHas(pageBanner)) bn.cats[slug] = pageBanner; else delete bn.cats[slug]; S.saveBanners(bn); }
-      if (st.id) list[list.findIndex((c) => c.id === st.id)] = JSON.parse(JSON.stringify(st));
-      else { st.id = list.reduce((m, c) => Math.max(m, c.id), 0) + 1; list.push(JSON.parse(JSON.stringify(st))); }
-      S.saveCollections(list); fill(); $('#cp-status').value = st.status;
-      try { history.replaceState(null, '', 'collection-edit.html?id=' + st.id); } catch (e) { /* file:// */ }
-      A.toast(status === 'publish' ? 'Page published' : 'Draft saved');
-    };
-    $('#cp-save').addEventListener('click', () => save('publish'));
-    $('#cp-draft').addEventListener('click', () => save('draft'));
-    $('#cp-del').addEventListener('click', () => A.confirm(`Move “${st.title}” to trash? Its categories and products are kept.`, 'Delete').then((ok) => { if (ok) { S.saveCollections(S.collections().filter((c) => c.id !== st.id)); location.href = 'pages.html?view=shop'; } }));
-    $$('.metabox-h').forEach((h) => h.addEventListener('click', () => h.parentElement.classList.toggle('closed')));
-  };
-
   /* ======================================================================
      Home page builder (Pages -> Home): sections list | live preview | inspector
      ====================================================================== */
@@ -691,56 +611,189 @@
   };
 
   /* ======================================================================
-     Built-in page editor (about, contact, policies...): edit every text of the storefront page
+     Shared three-panel builder (sections | live preview | inspector) for the page editors
      ====================================================================== */
+  const builderCore = (cfg) => {
+    const undo = []; const redo = []; let last = cfg.snap(); let tU; let tP; let dirty = false;
+    const frame = $('#hb-iframe');
+    const pushUndo = () => { const now = cfg.snap(); if (now === last) return; undo.push(last); if (undo.length > 60) undo.shift(); redo.length = 0; last = now; };
+    const btns = () => { $('#hb-undo').disabled = !undo.length; $('#hb-redo').disabled = !redo.length; };
+    const reload = () => { cfg.saveDraft(); frame.src = cfg.url(); };
+    const api = {
+      frame,
+      changed(structural) { dirty = true; $('#hb-dirty').hidden = false; clearTimeout(tU); if (structural) pushUndo(); else tU = setTimeout(() => { pushUndo(); btns(); }, 700); clearTimeout(tP); tP = setTimeout(reload, 650); btns(); },
+      reload,
+      focus(id) { try { frame.contentWindow.postMessage({ type: 'amnu-scroll', id }, '*'); } catch (e) { /* ignore */ } },
+      saved() { dirty = false; $('#hb-dirty').hidden = true; },
+      start() { cfg.saveDraft(); frame.src = cfg.url(); btns(); }
+    };
+    $('#hb-dev').addEventListener('click', (e) => { const b = e.target.closest('[data-w]'); if (!b) return; $$('#hb-dev button').forEach((x) => x.setAttribute('aria-pressed', x === b)); $('#hb-frame').style.setProperty('--fw', b.dataset.w); });
+    const apply = (j) => { cfg.restore(j); last = cfg.snap(); dirty = true; $('#hb-dirty').hidden = false; clearTimeout(tP); tP = setTimeout(reload, 300); btns(); };
+    $('#hb-undo').addEventListener('click', () => { clearTimeout(tU); pushUndo(); if (!undo.length) return; redo.push(cfg.snap()); apply(undo.pop()); });
+    $('#hb-redo').addEventListener('click', () => { if (!redo.length) return; undo.push(cfg.snap()); apply(redo.pop()); });
+    window.addEventListener('message', (e) => { const d = e.data || {}; if (d.type === 'amnu-select') cfg.onPick(d.id); if (d.type === 'amnu-ready') setTimeout(() => cfg.onReady && cfg.onReady(), 250); });
+    window.addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+    return api;
+  };
+  const readPic = (max) => new Promise((res) => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.onchange = async () => { if (!i.files[0]) return res(''); try { res(await Admin.compressImage(i.files[0], max)); } catch (e) { A.toast('Could not read that image', 'err'); res(''); } }; i.click(); });
+  const listHTML = (items, sel) => items.map((x) => `<div class="hb-sec ${x.id === sel ? 'sel' : ''}" data-id="${x.id}"><span class="hb-ic">${icon(x.icon || 'file', 16)}</span><div class="grow"><b>${esc(x.label)}</b><small>${esc(x.sub || '')}</small></div></div>`).join('');
+  const inspHead = (x) => `<div class="hb-ih"><span class="hb-ic lg">${icon(x.icon || 'file', 20)}</span><div class="grow"><b>${esc(x.label)}</b><small>${esc(x.sub || '')}</small></div></div>`;
+
+  /* ---- built-in pages (about, contact, policies, ...) ---- */
   P['page-edit'] = async () => {
     const key = A.qs.get('key'); const rec = S.pageDoc(key);
     if (!rec) { location.href = 'pages.html'; return; }
     if (key === 'home') { location.replace('home-edit.html'); return; }
-    $('#pe-title').textContent = 'Edit page: ' + rec.title;
-    $('#pe-status').value = rec.status;
-    $('#pe-view').href = '../' + (rec.file || 'index.html');
-    const main = $('#pe-main');
-    const saved = S.pageText(key); const isPolicy = key.startsWith('policy-'); const pk = key.replace('policy-', '');
-    let pb = S.bn(key === 'shop' ? (S.banners().cats || {}).all : (S.banners().pages || {})[key]);
-    const bannerHost = $('#pe-banner'); bannerHost.className = 'card';
-    bannerPicker(bannerHost, key === 'shop' ? 'Shop page banner (all products)' : 'Page banner', () => pb, (v) => { pb = Object.assign({}, v); }, key === 'shop' ? 'Shown above the products. Each category can have its own banner under Pages > its shop page.' : 'A wide picture shown at the top of this page. Leave empty for no banner.');
-    const saveBanner = () => { const bn = S.banners(); if (key === 'shop') { bn.cats = bn.cats || {}; if (S.bnHas(pb)) bn.cats.all = pb; else delete bn.cats.all; } else { bn.pages = bn.pages || {}; if (S.bnHas(pb)) bn.pages[key] = pb; else delete bn.pages[key]; } S.saveBanners(bn); };
-    const done = (msg) => { saveBanner(); rec.status = $('#pe-status').value; rec.date = new Date().toISOString(); const l = S.pages(); l[l.findIndex((x) => x.id === rec.id)] = rec; S.savePages(l); A.toast(msg || 'Page updated'); };
-    if (isPolicy) {
-      const cur = S.policy(pk); const st = { title: cur.title, paras: cur.paras.slice() };
-      const paint = () => { main.innerHTML = `<div class="card"><div class="field"><label for="pp-title">Page title</label><input id="pp-title" class="big-input" value="${esc(st.title)}"></div></div>
-        <div class="card metabox"><div class="metabox-h"><h3>Page text</h3></div><div class="metabox-b col gap-12">${st.paras.map((t, i) => t === 'TABLE' ? `<div class="hm-qcard" data-i="${i}"><div class="row between"><b class="small">Size chart table</b><span class="muted xs">Shown automatically</span></div></div>` : `<div class="hm-qcard" data-i="${i}"><textarea data-para rows="3">${esc(t)}</textarea><div class="row gap-8"><button class="btn btn-ghost btn-icon btn-sm" data-mv="-1" ${i === 0 ? 'disabled' : ''} type="button" aria-label="Move up">${icon('chevron-up', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-mv="1" ${i === st.paras.length - 1 ? 'disabled' : ''} type="button" aria-label="Move down">${icon('chevron-down', 14)}</button><button class="btn btn-ghost btn-sm danger" data-rm type="button">Remove paragraph</button></div></div>`).join('')}<button class="btn btn-glass btn-sm" id="pp-add" type="button" style="align-self:flex-start">${icon('plus', 14)} Add paragraph</button></div></div>`; };
-      paint();
-      main.addEventListener('input', (e) => { if (e.target.id === 'pp-title') st.title = e.target.value; const row = e.target.closest('[data-i]'); if (row && e.target.dataset.para != null) st.paras[Number(row.dataset.i)] = e.target.value; });
-      main.addEventListener('click', (e) => {
-        if (e.target.closest('#pp-add')) { st.paras.push(''); paint(); return; }
-        const row = e.target.closest('[data-i]'); if (!row) return; const i = Number(row.dataset.i);
-        if (e.target.closest('[data-rm]')) { st.paras.splice(i, 1); paint(); return; }
-        const mv = e.target.closest('[data-mv]'); if (mv) { const j = i + Number(mv.dataset.mv); [st.paras[i], st.paras[j]] = [st.paras[j], st.paras[i]]; paint(); }
-      });
-      $('#pe-save').addEventListener('click', () => { S.savePageText(key, { title: st.title.trim() || cur.title, paras: st.paras.filter((t) => t === 'TABLE' || t.trim()) }); rec.title = st.title.trim() || rec.title; done(); });
-      return;
+    const isPolicy = key.startsWith('policy-'); const pk = key.replace('policy-', '');
+    $('#hb-title').textContent = rec.title; $('#hb-pub').value = rec.status;
+    const setBadge = () => { $('#hb-status').textContent = $('#hb-pub').value === 'publish' ? 'Published' : 'Draft'; $('#hb-status').className = 'badge ' + ($('#hb-pub').value === 'publish' ? 'b-ok' : 'b-warn'); }; setBadge();
+    $('#hb-open').href = '../' + (rec.file || 'index.html');
+    const saved = S.pageText(key);
+    const st = { vals: {}, banner: S.bn(key === 'shop' ? (S.banners().cats || {}).all : (S.banners().pages || {})[key]), title: '', paras: [] };
+    let fields = []; let groups = [];
+    if (isPolicy) { const cur = S.policy(pk); st.title = cur.title; st.paras = cur.paras.slice(); groups = [{ id: 'banner', label: 'Page banner', sub: 'Picture, headline, button', icon: 'image' }, { id: 'title', label: 'Page title', sub: st.title, icon: 'file' }, { id: 'text', label: 'Page text', sub: A.plural(st.paras.filter((t) => t !== 'TABLE').length, 'paragraph'), icon: 'list' }]; }
+    else if (key === 'shop') groups = [{ id: 'banner', label: 'Shop banner', sub: 'Picture, headline, button', icon: 'image' }];
+    else {
+      try {
+        const html = await (await fetch('../' + rec.file)).text(); const dom = new DOMParser().parseFromString(html, 'text/html');
+        fields = [...dom.querySelectorAll('[data-edit]')].map((el) => ({ k: el.dataset.edit, label: el.dataset.label || el.dataset.edit, group: el.dataset.group || 'Content', type: el.dataset.type || (el.tagName === 'P' ? 'area' : 'text'), def: el.textContent.replace(/\s+/g, ' ').trim() }));
+      } catch (e) { fields = []; }
+      if (!fields.length) { $('#hb-insp').innerHTML = '<p class="muted">This page could not be loaded for editing. Open the admin from your website address (not from a file on your computer) and try again.</p>'; return; }
+      fields.forEach((f) => { st.vals[f.k] = saved[f.k] != null && saved[f.k] !== '' ? saved[f.k] : f.def; });
+      groups = [{ id: 'banner', label: 'Page banner', sub: 'Picture, headline, button', icon: 'image' }].concat([...new Set(fields.map((f) => f.group))].map((g) => ({ id: 'g:' + g, label: g, sub: A.plural(fields.filter((f) => f.group === g).length, 'field'), icon: 'file' })));
     }
-    if (key === 'shop') {
-      main.innerHTML = '<div class="card"><p>Edit the shop page banner in the "Shop page banner" box above: add a picture and/or a headline, subtitle and button. Without a picture your headline sits on the default illustrated banner. The products and categories listed below the banner come from Products.</p><ul class="small muted" style="margin:10px 0 0 18px;list-style:disc"><li>Change products and categories in <a class="btn-link" href="products.html">Products</a>.</li><li>Each category and shop page has its own banner in <a class="btn-link" href="pages.html">Pages</a>.</li></ul></div>';
-      $('#pe-save').addEventListener('click', () => done());
-      return;
-    }
-    main.innerHTML = '<div class="card"><p class="muted">Loading the page…</p></div>';
-    let fields = [];
-    try {
-      const html = await (await fetch('../' + rec.file)).text();
-      const dom = new DOMParser().parseFromString(html, 'text/html');
-      fields = [...dom.querySelectorAll('[data-edit]')].map((el) => ({ k: el.dataset.edit, label: el.dataset.label || el.dataset.edit, group: el.dataset.group || 'Content', type: el.dataset.type || (el.tagName === 'P' ? 'area' : 'text'), def: el.textContent.replace(/\s+/g, ' ').trim() }));
-    } catch (e) { fields = []; }
-    if (!fields.length) { main.innerHTML = '<div class="card"><p>This page could not be loaded for editing. Open the admin from your website address (not from a file on your computer) and try again.</p></div>'; return; }
-    const groups = [...new Set(fields.map((f) => f.group))];
-    const val = {}; fields.forEach((f) => { val[f.k] = saved[f.k] != null && saved[f.k] !== '' ? saved[f.k] : f.def; });
-    main.innerHTML = groups.map((g) => `<div class="card metabox"><div class="metabox-h"><h3>${esc(g)}</h3><span class="mb-toggle">${icon('chevron-up', 18)}</span></div><div class="metabox-b col gap-12">${fields.filter((f) => f.group === g).map((f) => `<div class="field"><label>${esc(f.label)}</label>${f.type === 'area' ? `<textarea data-k="${esc(f.k)}" rows="3">${esc(val[f.k])}</textarea>` : `<input data-k="${esc(f.k)}" value="${esc(val[f.k])}">`}</div>`).join('')}</div></div>`).join('');
-    main.addEventListener('input', (e) => { if (e.target.dataset.k) val[e.target.dataset.k] = e.target.value; });
-    $$('.metabox-h', main).forEach((h) => h.addEventListener('click', () => h.parentElement.classList.toggle('closed')));
-    $('#pe-save').addEventListener('click', () => { const out = {}; fields.forEach((f) => { if (val[f.k].trim() && val[f.k].replace(/\s+/g, ' ').trim() !== f.def) out[f.k] = val[f.k].trim(); }); S.savePageText(key, out); done(); });
+    let sel = groups[0].id;
+    const groupOf = (id) => { if (groups.some((g) => g.id === id)) return id; const f = fields.find((x) => x.k === id); return f ? 'g:' + f.group : null; };
+    const snap = () => JSON.stringify({ v: st.vals, b: st.banner, t: st.title, p: st.paras });
+    const core = builderCore({
+      snap, restore: (j) => { const o = JSON.parse(j); st.vals = o.v; st.banner = o.b; st.title = o.t; st.paras = o.p; paintInsp(); paintList(); },
+      saveDraft: () => { const all = DB.get('page.draft', {}); all[key] = { text: isPolicy ? { title: st.title, paras: st.paras.filter((t) => t === 'TABLE' || t.trim()) } : Object.fromEntries(fields.filter((f) => st.vals[f.k].trim() && st.vals[f.k].replace(/\s+/g, ' ').trim() !== f.def).map((f) => [f.k, st.vals[f.k].trim()])), banner: S.bnHas(st.banner) ? st.banner : null }; DB.set('page.draft', all); },
+      url: () => '../' + (rec.file || 'index.html') + (String(rec.file).includes('?') ? '&' : '?') + 'preview=1',
+      onPick: (id) => { const g = groupOf(id); if (g) { sel = g; paintList(); paintInsp(); } },
+      onReady: () => core.focus(sel === 'banner' ? 'banner' : sel === 'title' ? 'title' : sel === 'text' ? 'text' : (fields.find((f) => 'g:' + f.group === sel) || {}).k)
+    });
+    const paintList = () => { $('#hb-list').innerHTML = listHTML(groups, sel); };
+    const paintInsp = () => {
+      const g = groups.find((x) => x.id === sel) || groups[0]; const insp = $('#hb-insp');
+      insp.innerHTML = inspHead(g) + '<div class="hb-ib" id="hb-ib"></div>';
+      const ib = $('#hb-ib');
+      if (g.id === 'banner') { const host = document.createElement('div'); ib.appendChild(host); bannerPicker(host, key === 'shop' ? 'Shop page banner (all products)' : 'Page banner', () => st.banner, (v) => { st.banner = Object.assign({}, v); core.changed(false); }, 'A wide picture (about 1800 x 700) with an optional headline and button on top. Leave empty for no banner.'); if (key === 'shop') ib.insertAdjacentHTML('beforeend', '<p class="hb-hint">The products and categories below the banner come from Products.</p>'); return; }
+      if (g.id === 'title') { ib.innerHTML = `<div class="hb-f"><label>Page title</label><input data-pt value="${esc(st.title)}"></div>`; return; }
+      if (g.id === 'text') { ib.innerHTML = st.paras.map((t, i) => t === 'TABLE' ? `<div class="hb-qc"><div class="row between"><b class="small">Size chart table</b><span class="muted xs">Shown automatically</span></div></div>` : `<div class="hb-qc" data-i="${i}"><textarea data-para rows="4">${esc(t)}</textarea><div class="row gap-8"><button class="hb-mini" data-mv="-1" ${i === 0 ? 'disabled' : ''} type="button" aria-label="Move up">${icon('chevron-up', 13)}</button><button class="hb-mini" data-mv="1" ${i === st.paras.length - 1 ? 'disabled' : ''} type="button" aria-label="Move down">${icon('chevron-down', 13)}</button><button class="btn btn-ghost btn-sm danger" data-rm type="button">Remove paragraph</button></div></div>`).join('') + `<button class="btn btn-glass btn-sm" id="pp-add" type="button" style="align-self:flex-start">${icon('plus', 14)} Add paragraph</button>`; return; }
+      const gname = g.id.slice(2);
+      ib.innerHTML = fields.filter((f) => f.group === gname).map((f) => `<div class="hb-f"><label>${esc(f.label)}</label>${f.type === 'area' ? `<textarea data-k="${esc(f.k)}" rows="4">${esc(st.vals[f.k])}</textarea>` : `<input data-k="${esc(f.k)}" value="${esc(st.vals[f.k])}">`}${st.vals[f.k].replace(/\s+/g, ' ').trim() !== f.def ? `<button class="btn-link xs" data-reset="${esc(f.k)}" type="button" style="align-self:flex-start">Reset to original</button>` : ''}</div>`).join('');
+    };
+    $('#hb-list').addEventListener('click', (e) => { const r = e.target.closest('.hb-sec'); if (!r) return; sel = r.dataset.id; paintList(); paintInsp(); core.focus(sel === 'banner' ? 'banner' : sel === 'title' ? 'title' : sel === 'text' ? 'text' : (fields.find((f) => 'g:' + f.group === sel) || {}).k); });
+    const insp = $('#hb-insp');
+    insp.addEventListener('input', (e) => {
+      const el = e.target;
+      if (el.dataset.k) { st.vals[el.dataset.k] = el.value; core.changed(false); return; }
+      if (el.dataset.pt != null) { st.title = el.value; const s = groups.find((x) => x.id === 'title'); if (s) { s.sub = st.title; const sm = $('.hb-sec[data-id="title"] small'); if (sm) sm.textContent = st.title; } core.changed(false); return; }
+      if (el.dataset.para != null) { st.paras[Number(el.closest('[data-i]').dataset.i)] = el.value; core.changed(false); }
+    });
+    insp.addEventListener('click', (e) => {
+      const t = e.target; const rs = t.closest('[data-reset]');
+      if (rs) { const f = fields.find((x) => x.k === rs.dataset.reset); st.vals[f.k] = f.def; core.changed(true); paintInsp(); return; }
+      if (t.closest('#pp-add')) { st.paras.push(''); core.changed(true); paintInsp(); return; }
+      const row = t.closest('[data-i]'); if (!row) return; const i = Number(row.dataset.i);
+      if (t.closest('[data-rm]')) { st.paras.splice(i, 1); core.changed(true); paintInsp(); return; }
+      const mv = t.closest('[data-mv]'); if (mv) { const j = i + Number(mv.dataset.mv); [st.paras[i], st.paras[j]] = [st.paras[j], st.paras[i]]; core.changed(true); paintInsp(); }
+    });
+    $('#hb-pub').addEventListener('change', () => { setBadge(); $('#hb-dirty').hidden = false; });
+    $('#hb-save').addEventListener('click', () => {
+      if (isPolicy) { S.savePageText(key, { title: st.title.trim() || S.policy(pk).title, paras: st.paras.filter((t) => t === 'TABLE' || t.trim()) }); rec.title = st.title.trim() || rec.title; }
+      else if (fields.length) { const out = {}; fields.forEach((f) => { const v = st.vals[f.k]; if (v.trim() && v.replace(/\s+/g, ' ').trim() !== f.def) out[f.k] = v.trim(); }); S.savePageText(key, out); }
+      const bn = S.banners(); if (key === 'shop') { bn.cats = bn.cats || {}; if (S.bnHas(st.banner)) bn.cats.all = st.banner; else delete bn.cats.all; } else { bn.pages = bn.pages || {}; if (S.bnHas(st.banner)) bn.pages[key] = st.banner; else delete bn.pages[key]; } S.saveBanners(bn);
+      rec.status = $('#hb-pub').value; rec.date = new Date().toISOString(); const l = S.pages(); l[l.findIndex((x) => x.id === rec.id)] = rec; S.savePages(l);
+      const all = DB.get('page.draft', {}); delete all[key]; DB.set('page.draft', all); core.saved(); A.toast('Page updated'); core.reload();
+    });
+    paintList(); paintInsp(); core.start();
+  };
+
+  /* ---- shop pages (Panjabi, Kids, Sets and your own) ---- */
+  P['collection-edit'] = () => {
+    const id = Number(A.qs.get('id')) || 0;
+    const found = id ? S.collections().find((c) => c.id === id) : null;
+    const st = found ? JSON.parse(JSON.stringify(found)) : { id: 0, slug: '', title: '', sub: '', cats: [], status: 'draft', order: S.collections().length + 1 };
+    let slugTouched = !!found; const oldSlug = st.slug; let banner = S.bn((S.banners().cats || {})[st.slug]); let view = 'category'; let newImg = '';
+    const catOf = (slug) => S.categories().find((c) => c.slug === slug);
+    const groups = () => [{ id: 'details', label: 'Page details', sub: st.title || 'Title, address, intro', icon: 'file' }, { id: 'categories', label: 'Categories', sub: `${A.plural(st.cats.length, 'category', 'categories')} · ${A.plural(S.collectionProducts(st).length, 'product')}`, icon: 'grid' }, { id: 'banner', label: 'Shop banner', sub: 'Picture, headline, button', icon: 'image' }, { id: 'publish', label: 'Status & order', sub: st.status === 'publish' ? 'Published' : 'Draft', icon: 'sliders' }];
+    let sel = 'details';
+    $('#hb-title').textContent = st.title || 'New shop page'; $('#hb-pub').value = st.status;
+    const setBadge = () => { $('#hb-status').textContent = st.status === 'publish' ? 'Published' : 'Draft'; $('#hb-status').className = 'badge ' + (st.status === 'publish' ? 'b-ok' : 'b-warn'); }; setBadge();
+    const url = () => view === 'category' ? `../category.html?c=${encodeURIComponent(st.slug || A.slug(st.title) || 'new')}&preview=1` : `../shop.html?coll=${encodeURIComponent(st.slug || A.slug(st.title) || 'new')}&preview=1`;
+    const core = builderCore({
+      snap: () => JSON.stringify({ s: st, b: banner }), restore: (j) => { const o = JSON.parse(j); Object.keys(st).forEach((k) => delete st[k]); Object.assign(st, o.s); banner = o.b; paintList(); paintInsp(); },
+      saveDraft: () => DB.set('coll.draft', { coll: Object.assign({}, JSON.parse(JSON.stringify(st)), { slug: st.slug || A.slug(st.title) || 'new', status: 'publish' }), banner }),
+      url, onPick: (pid) => { if (groups().some((g) => g.id === pid)) { sel = pid; paintList(); paintInsp(); } }, onReady: () => core.focus(sel === 'categories' ? 'categories' : sel === 'banner' ? 'banner' : 'details')
+    });
+    $('#hb-view').addEventListener('click', (e) => { const b = e.target.closest('[data-view]'); if (!b) return; view = b.dataset.view; $$('#hb-view button').forEach((x) => x.setAttribute('aria-pressed', x === b)); core.reload(); });
+    const paintList = () => { $('#hb-list').innerHTML = listHTML(groups(), sel); };
+    const catsHTML = () => {
+      const free = S.categories().filter((c) => !st.cats.includes(c.slug));
+      return (st.cats.length ? st.cats.map((slug, i) => { const c = catOf(slug); if (!c) return ''; return `<div class="cp-row" data-slug="${esc(slug)}">${catThumbHTML(c)}<div class="grow"><b>${esc(c.name)}</b><div class="xs muted">${A.plural(S.categoryCount(slug), 'product')}</div></div><button class="hb-mini" data-mv="-1" ${i === 0 ? 'disabled' : ''} type="button" aria-label="Move up">${icon('chevron-up', 13)}</button><button class="hb-mini" data-mv="1" ${i === st.cats.length - 1 ? 'disabled' : ''} type="button" aria-label="Move down">${icon('chevron-down', 13)}</button><button class="btn btn-glass btn-sm" data-edit type="button">Edit</button><button class="hb-mini danger" data-rm type="button" aria-label="Remove">${icon('x', 13)}</button></div>`; }).join('') : '<p class="muted small">No categories on this page yet.</p>')
+        + `<div class="hb-f" style="margin-top:14px"><label>Add an existing category</label><div class="row gap-8"><select id="cp-existing" class="grow" ${free.length ? '' : 'disabled'}>${free.length ? `<option value="">Choose…</option>${free.map((c) => `<option value="${esc(c.slug)}">${esc(c.name)}</option>`).join('')}` : '<option>All are on this page</option>'}</select><button class="btn btn-glass" id="cp-add-existing" type="button" ${free.length ? '' : 'disabled'}>Add</button></div></div>
+        <div class="hb-f"><label>Or create a new category</label><input id="cp-new-name" placeholder="Category name" maxlength="40"><div class="cp-img-pick"><div class="cp-new-img">${newImg ? `<img src="${newImg}" alt="">` : '<span class="muted xs">No image yet</span>'}</div><button class="btn btn-glass btn-sm" id="cp-new-up" type="button">${icon('upload', 14)} Image</button><button class="btn btn-violet btn-sm" id="cp-add-new" type="button">${icon('plus', 14)} Create &amp; add</button></div></div>`;
+    };
+    const paintInsp = () => {
+      const g = groups().find((x) => x.id === sel); const insp = $('#hb-insp'); insp.innerHTML = inspHead(g) + '<div class="hb-ib" id="hb-ib"></div>'; const ib = $('#hb-ib');
+      if (sel === 'details') ib.innerHTML = `<div class="hb-f"><label>Page title</label><input data-c="title" value="${esc(st.title)}" placeholder="e.g. Winter Collection"></div><div class="hb-f"><label>Address</label><input data-c="slug" value="${esc(st.slug)}" placeholder="auto from the title"><span class="hint">category.html?c=${esc(st.slug || '…')}</span></div><div class="hb-f"><label>Intro line (shown in the page banner)</label><input data-c="sub" value="${esc(st.sub)}" maxlength="120" placeholder="One short sentence about this page"></div>`;
+      else if (sel === 'categories') ib.innerHTML = catsHTML();
+      else if (sel === 'banner') { const host = document.createElement('div'); ib.appendChild(host); bannerPicker(host, 'Shop banner', () => banner, (v) => { banner = Object.assign({}, v); core.changed(false); }, 'Shown at the top of this page\'s shop view. Switch the preview to "Shop view" to see it.'); }
+      else ib.innerHTML = `<div class="hb-f"><label>Status</label><div class="hb-opt"><button type="button" data-opt="status" data-v="publish" class="${st.status === 'publish' ? 'on' : ''}">Published</button><button type="button" data-opt="status" data-v="draft" class="${st.status === 'publish' ? '' : 'on'}">Draft</button></div></div><div class="hb-f"><label>Menu order</label><input type="number" min="0" data-c="order" value="${st.order}"><span class="hint">Lower numbers come first.</span></div>${st.id ? '<div class="hb-if"><button class="btn danger" id="cp-del" type="button">Move this page to trash</button></div>' : ''}`;
+    };
+    $('#hb-list').addEventListener('click', (e) => { const r = e.target.closest('.hb-sec'); if (!r) return; sel = r.dataset.id; if (sel === 'banner' && view !== 'shop') { view = 'shop'; $$('#hb-view button').forEach((x) => x.setAttribute('aria-pressed', x.dataset.view === 'shop')); core.reload(); } paintList(); paintInsp(); core.focus(sel === 'categories' ? 'categories' : sel === 'banner' ? 'banner' : 'details'); });
+    const insp = $('#hb-insp');
+    insp.addEventListener('input', (e) => {
+      const el = e.target; const k = el.dataset.c; if (!k) return;
+      st[k] = k === 'order' ? Number(el.value) || 0 : el.value;
+      if (k === 'title') { if (!slugTouched) { st.slug = A.slug(st.title); const sl = $('[data-c=slug]', insp); if (sl) { sl.value = st.slug; sl.nextElementSibling.textContent = 'category.html?c=' + (st.slug || '…'); } } $('#hb-title').textContent = st.title || 'New shop page'; const sm = $('.hb-sec[data-id="details"] small'); if (sm) sm.textContent = st.title || 'Title, address, intro'; }
+      if (k === 'slug') { slugTouched = true; st.slug = A.slug(el.value); el.nextElementSibling.textContent = 'category.html?c=' + (st.slug || '…'); }
+      core.changed(false);
+    });
+    insp.addEventListener('click', async (e) => {
+      const t = e.target;
+      const op = t.closest('[data-opt]'); if (op) { st.status = op.dataset.v; $('#hb-pub').value = st.status; setBadge(); core.changed(true); paintInsp(); paintList(); return; }
+      if (t.closest('#cp-del')) { if (await A.confirm(`Move “${st.title}” to trash? Its categories and products are kept.`, 'Delete')) { S.saveCollections(S.collections().filter((c) => c.id !== st.id)); DB.set('coll.draft', null); location.href = 'pages.html?view=shop'; } return; }
+      if (t.closest('#cp-add-existing')) { const v = $('#cp-existing').value; if (v) { st.cats.push(v); core.changed(true); paintInsp(); paintList(); } return; }
+      if (t.closest('#cp-new-up')) { const src = await readPic(700); if (src) { newImg = src; paintInsp(); } return; }
+      if (t.closest('#cp-add-new')) {
+        const name = $('#cp-new-name').value.trim(); if (!name) { A.toast('Enter the category name', 'err'); return; }
+        const list = S.categories(); const slug = A.slug(name); const dup = list.find((c) => c.slug === slug);
+        if (dup) { if (!st.cats.includes(slug)) { st.cats.push(slug); if (newImg && !dup.image) { dup.image = newImg; S.saveCategories(list); } } else { A.toast('That category is already on this page', 'err'); return; } }
+        else { list.push({ id: list.reduce((m, c) => Math.max(m, c.id), 0) + 1, slug, name, desc: '', image: newImg }); S.saveCategories(list); st.cats.push(slug); A.toast(`Category “${name}” created and added`); }
+        newImg = ''; core.changed(true); paintInsp(); paintList(); return;
+      }
+      const row = t.closest('.cp-row'); if (!row) return; const slug = row.dataset.slug; const i = st.cats.indexOf(slug);
+      if (t.closest('[data-rm]')) { st.cats.splice(i, 1); core.changed(true); paintInsp(); paintList(); return; }
+      const mv = t.closest('[data-mv]'); if (mv) { const j = i + Number(mv.dataset.mv); [st.cats[i], st.cats[j]] = [st.cats[j], st.cats[i]]; core.changed(true); paintInsp(); return; }
+      if (t.closest('[data-edit]')) {
+        const list = S.categories(); const c = list.find((x) => x.slug === slug); let img = c.image || '';
+        const m = A.modal({ title: 'Edit category', body: `<div class="field"><label for="ec-name">Category name</label><input id="ec-name" value="${esc(c.name)}"></div><div class="field"><label>Category image (round picture)</label><div class="cp-img-pick"><div id="ec-img" class="cp-new-img"></div><button class="btn btn-glass btn-sm" id="ec-up" type="button">${icon('upload', 14)} Upload image</button></div></div><div id="ec-banner"></div>`, footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Save category</button>' });
+        const ebn = S.banners(); let catBanner = S.bn((ebn.cats || {})[slug]); bannerPicker($('#ec-banner', m.el), 'Category page banner', () => catBanner, (v) => { catBanner = Object.assign({}, v); }, 'Shown at the top of this category\'s shop page.');
+        const pi = () => { $('#ec-img', m.el).innerHTML = img ? `<img src="${img}" alt=""><button class="btn btn-ghost btn-sm" id="ec-rm" type="button">Remove</button>` : '<span class="muted xs">No image</span>'; }; pi();
+        m.el.addEventListener('click', async (ev) => {
+          if (ev.target.closest('#ec-up')) { const src = await readPic(700); if (src) { img = src; pi(); } return; }
+          if (ev.target.closest('#ec-rm')) { img = ''; pi(); return; }
+          if (!ev.target.closest('[data-save]')) return;
+          const nm = $('#ec-name', m.el).value.trim(); if (!nm) { A.toast('Enter a name', 'err'); return; }
+          c.name = nm; c.image = img; S.saveCategories(list); { const bn = S.banners(); bn.cats = bn.cats || {}; if (S.bnHas(catBanner)) bn.cats[slug] = catBanner; else delete bn.cats[slug]; S.saveBanners(bn); } m.close(); paintInsp(); core.reload(); A.toast('Category updated');
+        });
+      }
+    });
+    $('#hb-pub').addEventListener('change', () => { st.status = $('#hb-pub').value; setBadge(); core.changed(true); paintList(); if (sel === 'publish') paintInsp(); });
+    $('#hb-save').addEventListener('click', () => {
+      if (!st.title.trim()) { sel = 'details'; paintList(); paintInsp(); A.toast('Add a page title first', 'err'); return; }
+      const list = S.collections(); const slug = A.slug(st.slug || st.title);
+      if (list.some((c) => c.slug === slug && c.id !== st.id)) { A.toast('Another page already uses that address', 'err'); return; }
+      st.slug = slug; st.title = st.title.trim();
+      { const bn = S.banners(); bn.cats = bn.cats || {}; if (oldSlug && oldSlug !== slug) delete bn.cats[oldSlug]; if (S.bnHas(banner)) bn.cats[slug] = banner; else delete bn.cats[slug]; S.saveBanners(bn); }
+      if (st.id) list[list.findIndex((c) => c.id === st.id)] = JSON.parse(JSON.stringify(st)); else { st.id = list.reduce((m, c) => Math.max(m, c.id), 0) + 1; list.push(JSON.parse(JSON.stringify(st))); }
+      S.saveCollections(list); DB.set('coll.draft', null); core.saved();
+      try { history.replaceState(null, '', 'collection-edit.html?id=' + st.id); } catch (er) { /* file:// */ }
+      paintList(); paintInsp(); A.toast(st.status === 'publish' ? 'Page published' : 'Draft saved'); core.reload();
+    });
+    paintList(); paintInsp(); core.start();
   };
 
   P.login = () => {

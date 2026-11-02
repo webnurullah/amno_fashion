@@ -538,7 +538,7 @@
   };
   store.pageDoc = (key) => store.pages().find((p) => p.key === key);
   /** text edited in Admin -> Pages for the static pages: { 'about.headline': '...' } (policies: { title, paras }) */
-  store.pageText = (key) => (DB.get('pagetext', {})[key] || {});
+  store.pageText = (key) => (store.__pv && store.__pv.key === key && store.__pv.text ? store.__pv.text : (DB.get('pagetext', {})[key] || {}));
   store.savePageText = (key, obj) => { const all = DB.get('pagetext', {}); all[key] = obj; DB.set('pagetext', all); };
   store.POLICIES = {
     shipping: ['Shipping Policy', ['Delivery inside Dhaka takes 1–2 working days and 3–5 working days elsewhere in Bangladesh.', 'Delivery charges are shown at checkout and depend on your location and order value. Orders above the free-delivery threshold ship free.', 'You can also pick your order up from any showroom at no charge.']],
