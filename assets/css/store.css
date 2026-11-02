@@ -758,3 +758,13 @@ a.contact-card:hover { transform: translateX(4px); }
 .cf-bar { width: 110px; height: 3px; border-radius: 3px; background: rgba(255, 255, 255, .3); overflow: hidden; }
 .cf-bar i { display: block; height: 100%; background: #fff; transition: margin .5s, width .5s; }
 @media (max-width: 700px) { .cf-stage { height: 350px; } .cf-card { width: 230px; } }
+
+/* illustrated scene banners */
+.cat-hero.scene { display: block; min-height: 0; aspect-ratio: 4 / 1; background: none; }
+.cat-hero.scene > svg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -2; }
+.cat-hero.scene .cat-hero-art { inset: 0; z-index: 1; padding: 0 0 0; justify-content: center; gap: 4%; align-items: flex-end; }
+.cat-hero.scene .cat-pj { flex: 0 0 auto; width: 15%; height: 82%; max-width: none; }
+.cat-hero.scene .cat-pj.c0, .cat-hero.scene .cat-pj.c2 { height: 74%; }
+.cat-hero.scene .cat-pj .pj { filter: drop-shadow(0 10px 10px rgba(30, 15, 5, .3)); }
+.cat-hero-tag { position: absolute; left: 18px; bottom: 16px; z-index: 2; padding: 7px 16px; border-radius: 99px; font-weight: 700; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: #3b2a22; background: rgba(255, 255, 255, .85); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+@media (max-width: 1000px) { .cat-hero.scene { aspect-ratio: 16 / 9; } .cat-hero.scene .cat-pj { width: 26%; } .cat-hero.scene .cat-hero-art { opacity: 1; padding: 0; } }
