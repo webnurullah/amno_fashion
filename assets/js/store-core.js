@@ -13,6 +13,7 @@
   const Shop = (A.shop = {});
 
   const settings = S.settings();
+  if (A.qs.get('preview') === '1') { const dr = A.DB.get('site.draft', null); if (dr) Object.assign(settings, dr); }
   Shop.settings = settings;
   A.applyLook(S.look());
 
@@ -245,13 +246,13 @@
     const L = (href, label) => `<li><a href="${href}">${label}</a></li>`;
     const ft = s.site || {}; const f = ft.footer || {}; const pay = f.pay || {};
     return `<footer class="site-footer"><div class="container">
-      <div class="footer-brand">${logoHTML(s)}<p>${esc(s.tagline)}<span>${esc(ft.footerNote || '')}</span></p></div>
+      <div class="footer-brand" data-pv="brand">${logoHTML(s)}<p>${esc(s.tagline)}<span>${esc(ft.footerNote || '')}</span></p></div>
       <div class="footer-top glass">
-        ${(f.cols || []).map((c) => `<div><h4>${esc(c.title)}</h4><ul>${(c.links || []).map((l) => L(esc(l.href), esc(l.label))).join('')}</ul></div>`).join('')}
-        ${f.showService === false ? '' : `<div><h4>${esc(f.serviceTitle || 'Service Center')}</h4><ul class="contact"><li>${esc(s.phone)}</li><li>${esc(s.email)}</li><li><a href="${esc(s.facebook)}" target="_blank" rel="noopener">${icon('facebook', 16)} Facebook</a></li><li><a href="${esc(s.messenger)}" target="_blank" rel="noopener">${icon('message', 16)} Messenger</a></li></ul></div>`}
-        ${f.showPay === false ? '' : `<div><h4>${esc(f.payTitle || 'You Can Pay By')}</h4><div class="paylogos">${pay.visa !== false ? '<span class="pl pl-visa">VISA</span>' : ''}${pay.nagad !== false ? '<span class="pl pl-nagad">Nagad</span>' : ''}${pay.bkash !== false ? '<span class="pl pl-bkash">bKash</span>' : ''}${pay.mc !== false ? '<span class="pl pl-mc"><i></i><i></i></span>' : ''}${pay.cod !== false ? '<span class="pl">COD</span>' : ''}</div></div>`}
+        ${(f.cols || []).map((c, ci) => `<div data-pv="col${ci}"><h4>${esc(c.title)}</h4><ul>${(c.links || []).map((l) => L(esc(l.href), esc(l.label))).join('')}</ul></div>`).join('')}
+        ${f.showService === false ? '' : `<div data-pv="service"><h4>${esc(f.serviceTitle || 'Service Center')}</h4><ul class="contact"><li>${esc(s.phone)}</li><li>${esc(s.email)}</li><li><a href="${esc(s.facebook)}" target="_blank" rel="noopener">${icon('facebook', 16)} Facebook</a></li><li><a href="${esc(s.messenger)}" target="_blank" rel="noopener">${icon('message', 16)} Messenger</a></li></ul></div>`}
+        ${f.showPay === false ? '' : `<div data-pv="pay"><h4>${esc(f.payTitle || 'You Can Pay By')}</h4><div class="paylogos">${pay.visa !== false ? '<span class="pl pl-visa">VISA</span>' : ''}${pay.nagad !== false ? '<span class="pl pl-nagad">Nagad</span>' : ''}${pay.bkash !== false ? '<span class="pl pl-bkash">bKash</span>' : ''}${pay.mc !== false ? '<span class="pl pl-mc"><i></i><i></i></span>' : ''}${pay.cod !== false ? '<span class="pl">COD</span>' : ''}</div></div>`}
       </div>
-      <p class="copy">${esc(String(f.copyright || '').replace('{year}', new Date().getFullYear()).replace('{name}', s.storeName))}${f.showAdminLink === false ? '' : ' <a href="admin/login.html" class="admin-link">Admin dashboard</a>'}</p>
+      <p class="copy" data-pv="bottom">${esc(String(f.copyright || '').replace('{year}', new Date().getFullYear()).replace('{name}', s.storeName))}${f.showAdminLink === false ? '' : ' <a href="admin/login.html" class="admin-link">Admin dashboard</a>'}</p>
     </div></footer>`;
   }
 

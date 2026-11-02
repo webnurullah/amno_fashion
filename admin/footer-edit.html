@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en" data-surface="admin">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Edit Footer ‹ AMNU Fashion Admin</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/glass.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <script src="../assets/js/core.js"></script>
+</head>
+<body data-page="footer-edit">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="admin" id="admin">
+    <aside class="sidebar glass" id="sidebar"></aside>
+
+    <div class="admin-main">
+      <header class="topbar glass" id="topbar"></header>
+
+      <main class="content" id="content">
+        <div class="hb">
+          <div class="hb-top">
+            <a class="btn btn-ghost btn-icon" href="pages.html" aria-label="Back to pages"><i data-icon="chevron-left" data-size="18"></i></a>
+            <span class="hb-crumb">Pages &rsaquo;</span><b class="hb-title" id="hb-title">Footer</b><span class="draft-tag" id="hb-dirty" hidden>&bull; Unsaved changes</span>
+            <div class="grow"></div>
+            <div class="seg" id="hb-dev" role="group" aria-label="Preview size"><button type="button" data-w="100%" aria-pressed="true">Desktop</button><button type="button" data-w="820px" aria-pressed="false">Tablet</button><button type="button" data-w="390px" aria-pressed="false">Mobile</button></div>
+            <button class="btn btn-glass btn-icon" id="hb-undo" type="button" aria-label="Undo" title="Undo"><i data-icon="history" data-size="18"></i></button>
+            <button class="btn btn-glass btn-icon" id="hb-redo" type="button" aria-label="Redo" title="Redo" style="transform:scaleX(-1)"><i data-icon="history" data-size="18"></i></button>
+            <button class="btn btn-violet" id="hb-save" type="button">Update</button>
+          </div>
+          <div class="hb-grid">
+            <aside class="hb-left card"><h4>Sections</h4><div id="hb-list"></div><p class="hb-hint" style="margin-top:12px">The footer appears at the bottom of every page. Click any part of the preview to edit it.</p></aside>
+            <section class="hb-mid"><div class="hb-frame" id="hb-frame"><iframe id="hb-iframe" title="Page preview" src="about:blank"></iframe></div></section>
+            <aside class="hb-right card" id="hb-insp" aria-live="polite"></aside>
+          </div>
+        </div>
+      </main>
+
+      <footer class="admin-footer" id="admin-footer"></footer>
+    </div>
+  </div>
+
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/ops.js"></script>
+  <script src="../assets/js/prod.js"></script>
+  <script src="../assets/js/charts.js"></script>
+  <script src="../assets/js/admin-core.js"></script>
+  <script src="../assets/js/admin-pages.js"></script>
+  <script src="../assets/js/admin-pages2.js"></script>
+  <script src="../assets/js/admin-ops.js"></script>
+  <script src="../assets/js/admin-fin.js"></script>
+  <script src="../assets/js/admin-prod.js"></script>
+  <script>Amnu.admin.boot('footer-edit', Amnu.adminPages['footer-edit']);</script>
+</body>
+</html>
