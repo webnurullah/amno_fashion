@@ -799,3 +799,17 @@ a.contact-card:hover { transform: translateX(4px); }
 
 .logo-img { display: block; height: 40px; width: auto; max-width: 200px; object-fit: contain; }
 .footer-brand .logo-img { height: 52px; }
+
+/* banner details (headline, subtitle, button over the picture) */
+.hb, .page-banner { position: relative; }
+.hb img { display: block; width: 100%; height: auto; max-height: 460px; object-fit: cover; border-radius: inherit; }
+.no-img { min-height: 220px; background: radial-gradient(60% 80% at 25% 15%, rgba(255, 255, 255, .5), transparent 70%), linear-gradient(120deg, var(--accent), #1e3a8a); }
+.banner-text { position: absolute; top: 50%; transform: translateY(-50%); max-width: min(46%, 440px); display: flex; flex-direction: column; gap: 10px; padding: 26px 30px; border-radius: 20px; background: rgba(255, 255, 255, .78); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); box-shadow: var(--shadow); }
+.banner-text h2 { font-size: clamp(1.5rem, 2.8vw, 2.4rem); line-height: 1.1; font-weight: 700; letter-spacing: -.02em; color: #16161a; }
+.banner-text p { color: #3f3f48; font-size: 15px; }
+.banner-text .btn { align-self: flex-start; }
+.banner-text.a-left { left: 4%; text-align: left; }
+.banner-text.a-center { left: 50%; transform: translate(-50%, -50%); align-items: center; text-align: center; }
+.banner-text.a-center .btn { align-self: center; }
+.banner-text.a-right { right: 4%; text-align: left; }
+@media (max-width: 700px) { .banner-text { max-width: 78%; padding: 16px 18px; } .banner-text.a-left { left: 4%; } .banner-text.a-right { right: 4%; } .banner-text h2 { font-size: 1.3rem; } }

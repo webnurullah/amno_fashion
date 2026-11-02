@@ -559,6 +559,9 @@
   /** uploaded banners: home slider slides + per-category banner images ('all' = every listing) */
   store.banners = () => Object.assign({ home: [], cats: {}, pages: {}, showDefaults: true }, DB.get('banners', {}));
   store.saveBanners = (b) => DB.set('banners', b);
+  /** a banner is a picture (older ones are just the picture string) plus optional details: title, sub, cta, link, align */
+  store.bn = (v) => (typeof v === 'string' ? { image: v } : Object.assign({}, v || {}));
+  store.bnHas = (b) => !!(b && (b.image || b.title));
 
   store.seedProducts = SEED_PRODUCTS;
   store.seedFabrics = SEED_FABRICS;

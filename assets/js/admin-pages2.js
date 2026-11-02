@@ -421,10 +421,15 @@
   P.banners = () => { location.replace('pages.html'); };
 
   /** one banner picture: preview + upload/remove, saved by the caller */
-  const bannerPicker = (host, label, getSrc, setSrc, hint) => {
+  const bannerPicker = (host, label, get, set, hint) => {
+    const b0 = S.bn(get()); const bn = { image: '', title: '', sub: '', cta: '', link: '', align: 'left' }; Object.assign(bn, b0);
     const read = () => new Promise((res) => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.onchange = async () => { if (!i.files[0]) return res(''); try { res(await Admin.compressImage(i.files[0], 1800)); } catch (e) { A.toast('Could not read that image', 'err'); res(''); } }; i.click(); });
-    const paint = () => { const src = getSrc(); host.innerHTML = `<div class="field"><label>${esc(label)}</label><div class="cp-img-pick"><div class="bn-thumb wide" style="width:240px">${src ? `<img src="${src}" alt="">` : '<span class="muted xs">No banner (default look)</span>'}</div><button class="btn btn-glass btn-sm" data-bn-up type="button">${icon('upload', 14)} ${src ? 'Replace' : 'Upload'}</button>${src ? '<button class="btn btn-ghost btn-sm danger" data-bn-rm type="button">Remove</button>' : ''}</div>${hint ? `<span class="hint">${esc(hint)}</span>` : ''}</div>`; };
-    host.addEventListener('click', async (e) => { if (e.target.closest('[data-bn-up]')) { const v = await read(); if (v) { setSrc(v); paint(); } } if (e.target.closest('[data-bn-rm]')) { setSrc(''); paint(); } });
+    const push = () => set(bn);
+    const paint = () => { host.innerHTML = `<div class="field"><label>${esc(label)}</label><div class="cp-img-pick"><div class="bn-thumb wide" style="width:240px">${bn.image ? `<img src="${bn.image}" alt="">` : '<span class="muted xs">No picture</span>'}</div><button class="btn btn-glass btn-sm" data-bn-up type="button">${icon('upload', 14)} ${bn.image ? 'Replace' : 'Upload'}</button>${bn.image ? '<button class="btn btn-ghost btn-sm danger" data-bn-rm type="button">Remove picture</button>' : ''}</div>${hint ? `<span class="hint">${esc(hint)}</span>` : ''}</div>
+      <div class="form-grid2"><div class="field"><label>Banner headline (optional)</label><input data-bn="title" value="${esc(bn.title)}" maxlength="60"></div><div class="field"><label>Banner subtitle (optional)</label><input data-bn="sub" value="${esc(bn.sub)}" maxlength="120"></div><div class="field"><label>Button text (optional)</label><input data-bn="cta" value="${esc(bn.cta)}" maxlength="24" placeholder="Shop now"></div><div class="field"><label>Button link</label><input data-bn="link" value="${esc(bn.link)}" placeholder="shop.html?cat=eid"></div>
+      <div class="field"><label>Text position</label><select data-bn="align"><option value="left" ${bn.align === 'left' ? 'selected' : ''}>Left</option><option value="center" ${bn.align === 'center' ? 'selected' : ''}>Center</option><option value="right" ${bn.align === 'right' ? 'selected' : ''}>Right</option></select></div></div>`; };
+    host.addEventListener('input', (e) => { const k = e.target.dataset.bn; if (k) { bn[k] = e.target.value; push(); } });
+    host.addEventListener('click', async (e) => { if (e.target.closest('[data-bn-up]')) { const v = await read(); if (v) { bn.image = v; push(); paint(); } } if (e.target.closest('[data-bn-rm]')) { bn.image = ''; push(); paint(); } });
     paint();
   };
 
@@ -476,8 +481,8 @@
       $('#cp-products').innerHTML = prods.slice(0, 18).map((p) => `<a class="cp-prod" href="product-edit.html?id=${p.id}" title="${esc(p.name)}">${Admin.thumb(p, 'sm')}</a>`).join('') + (prods.length > 18 ? `<span class="muted small">+${prods.length - 18} more</span>` : '') || '<p class="muted small">Products appear here automatically when they belong to one of the categories above.</p>';
     };
     const paintNewImg = () => { $('#cp-new-img').innerHTML = newImg ? `<img src="${newImg}" alt=""><button class="btn btn-ghost btn-sm" id="cp-new-rm" type="button">Remove</button>` : '<span class="muted xs">No image yet</span>'; };
-    const cbn = S.banners(); let pageBanner = (cbn.cats || {})[st.slug] || ''; const oldSlug = st.slug;
-    bannerPicker($('#cp-banner'), 'Banner picture', () => pageBanner, (v) => { pageBanner = v; }, 'Shown at the top of this page when visitors open its shop view. Wide pictures (about 1800 x 700) work best.');
+    const cbn = S.banners(); let pageBanner = S.bn((cbn.cats || {})[st.slug]); const oldSlug = st.slug;
+    bannerPicker($('#cp-banner'), 'Banner picture', () => pageBanner, (v) => { pageBanner = Object.assign({}, v); }, 'Shown at the top of this page when visitors open its shop view. Wide pictures (about 1800 x 700) work best.');
     const fill = () => { $('#cp-title').value = st.title; $('#cp-sub').value = st.sub; $('#cp-status').value = st.status; $('#cp-order').value = st.order; paintHead(); paintCats(); paintNewImg(); };
     fill();
     $('#cp-title').addEventListener('input', (e) => { st.title = e.target.value; if (!slugTouched) { st.slug = A.slug(st.title); const v = $('#cp-slug-view'); if (v) v.textContent = st.slug || '…'; } });
@@ -492,14 +497,14 @@
       if (e.target.closest('[data-edit]')) {
         const list = S.categories(); const c = list.find((x) => x.slug === slug); let img = c.image || '';
         const m = A.modal({ title: 'Edit category', body: `<div class="field"><label for="ec-name">Category name</label><input id="ec-name" value="${esc(c.name)}"></div><div class="field"><label>Category image (round picture)</label><div class="cp-img-pick"><div id="ec-img" class="cp-new-img"></div><button class="btn btn-glass btn-sm" id="ec-up" type="button">${icon('upload', 14)} Upload image</button></div></div><div id="ec-banner"></div>`, footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Save category</button>' });
-        const ebn = S.banners(); let catBanner = (ebn.cats || {})[slug] || ''; bannerPicker($('#ec-banner', m.el), 'Category page banner', () => catBanner, (v) => { catBanner = v; }, 'Shown at the top of this category\'s shop page.');
+        const ebn = S.banners(); let catBanner = S.bn((ebn.cats || {})[slug]); bannerPicker($('#ec-banner', m.el), 'Category page banner', () => catBanner, (v) => { catBanner = Object.assign({}, v); }, 'Shown at the top of this category\'s shop page.');
         const pi = () => { $('#ec-img', m.el).innerHTML = img ? `<img src="${img}" alt=""><button class="btn btn-ghost btn-sm" id="ec-rm" type="button">Remove</button>` : '<span class="muted xs">No image</span>'; }; pi();
         m.el.addEventListener('click', async (ev) => {
           if (ev.target.closest('#ec-up')) { const src = await readImg(); if (src) { img = src; pi(); } return; }
           if (ev.target.closest('#ec-rm')) { img = ''; pi(); return; }
           if (!ev.target.closest('[data-save]')) return;
           const nm = $('#ec-name', m.el).value.trim(); if (!nm) { A.toast('Enter a name', 'err'); return; }
-          c.name = nm; c.image = img; S.saveCategories(list); { const bn = S.banners(); bn.cats = bn.cats || {}; if (catBanner) bn.cats[slug] = catBanner; else delete bn.cats[slug]; S.saveBanners(bn); } m.close(); paintCats(); A.toast('Category updated');
+          c.name = nm; c.image = img; S.saveCategories(list); { const bn = S.banners(); bn.cats = bn.cats || {}; if (S.bnHas(catBanner)) bn.cats[slug] = catBanner; else delete bn.cats[slug]; S.saveBanners(bn); } m.close(); paintCats(); A.toast('Category updated');
         });
       }
     });
@@ -519,7 +524,7 @@
       const list = S.collections(); const slug = A.slug(st.slug || st.title);
       if (list.some((c) => c.slug === slug && c.id !== st.id)) { A.toast('Another page already uses that slug', 'err'); return; }
       st.slug = slug; st.title = st.title.trim(); st.status = status;
-      { const bn = S.banners(); bn.cats = bn.cats || {}; if (oldSlug && oldSlug !== slug) delete bn.cats[oldSlug]; if (pageBanner) bn.cats[slug] = pageBanner; else delete bn.cats[slug]; S.saveBanners(bn); }
+      { const bn = S.banners(); bn.cats = bn.cats || {}; if (oldSlug && oldSlug !== slug) delete bn.cats[oldSlug]; if (S.bnHas(pageBanner)) bn.cats[slug] = pageBanner; else delete bn.cats[slug]; S.saveBanners(bn); }
       if (st.id) list[list.findIndex((c) => c.id === st.id)] = JSON.parse(JSON.stringify(st));
       else { st.id = list.reduce((m, c) => Math.max(m, c.id), 0) + 1; list.push(JSON.parse(JSON.stringify(st))); }
       S.saveCollections(list); fill(); $('#cp-status').value = st.status;
@@ -646,10 +651,10 @@
     $('#pe-view').href = '../' + (rec.file || 'index.html');
     const main = $('#pe-main');
     const saved = S.pageText(key); const isPolicy = key.startsWith('policy-'); const pk = key.replace('policy-', '');
-    let pb = key === 'shop' ? (S.banners().cats || {}).all || '' : (S.banners().pages || {})[key] || '';
+    let pb = S.bn(key === 'shop' ? (S.banners().cats || {}).all : (S.banners().pages || {})[key]);
     const bannerHost = $('#pe-banner'); bannerHost.className = 'card';
-    bannerPicker(bannerHost, key === 'shop' ? 'Shop page banner (all products)' : 'Page banner', () => pb, (v) => { pb = v; }, key === 'shop' ? 'Shown above the products. Each category can have its own banner under Pages > its shop page.' : 'A wide picture shown at the top of this page. Leave empty for no banner.');
-    const saveBanner = () => { const bn = S.banners(); if (key === 'shop') { bn.cats = bn.cats || {}; if (pb) bn.cats.all = pb; else delete bn.cats.all; } else { bn.pages = bn.pages || {}; if (pb) bn.pages[key] = pb; else delete bn.pages[key]; } S.saveBanners(bn); };
+    bannerPicker(bannerHost, key === 'shop' ? 'Shop page banner (all products)' : 'Page banner', () => pb, (v) => { pb = Object.assign({}, v); }, key === 'shop' ? 'Shown above the products. Each category can have its own banner under Pages > its shop page.' : 'A wide picture shown at the top of this page. Leave empty for no banner.');
+    const saveBanner = () => { const bn = S.banners(); if (key === 'shop') { bn.cats = bn.cats || {}; if (S.bnHas(pb)) bn.cats.all = pb; else delete bn.cats.all; } else { bn.pages = bn.pages || {}; if (S.bnHas(pb)) bn.pages[key] = pb; else delete bn.pages[key]; } S.saveBanners(bn); };
     const done = (msg) => { saveBanner(); rec.status = $('#pe-status').value; rec.date = new Date().toISOString(); const l = S.pages(); l[l.findIndex((x) => x.id === rec.id)] = rec; S.savePages(l); A.toast(msg || 'Page updated'); };
     if (isPolicy) {
       const cur = S.policy(pk); const st = { title: cur.title, paras: cur.paras.slice() };
