@@ -321,8 +321,6 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
 .pop-opt { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; border: 0; border-radius: 10px; background: none; font-size: 14.5px; text-align: left; color: var(--ink-2); }
 .pop-opt:hover { background: var(--glass-soft); }
 .pop-opt.on { color: var(--ink); font-weight: 600; }
-.promo-strip { display: grid; place-items: center; min-height: 44px; margin: 10px 0 22px; border-radius: 10px; background: linear-gradient(180deg, var(--accent-2), var(--accent)); color: #fff; font-size: 14.5px; font-weight: 600; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2); }
-[data-theme=dark] .promo-strip { color: #111; }
 .list-meta { margin-bottom: 18px; }
 .active-filters { display: flex; gap: 8px; flex-wrap: wrap; }
 .active-filters:empty { display: none; }
