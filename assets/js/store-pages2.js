@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AMNO Fashion — storefront pages (2/2)
+   AMNU Fashion — storefront pages (2/2)
    login · account · stores · policy · about · contact · track
    ========================================================================== */
 (function () {

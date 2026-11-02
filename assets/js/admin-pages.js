@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AMNO Fashion — admin page controllers (part 1)
+   AMNU Fashion — admin page controllers (part 1)
    dashboard · products · product-edit · categories · orders · order-view · customers
    ========================================================================== */
 (function () {
@@ -253,7 +253,7 @@
     const val = (sel) => $(sel).value;
 
     $('#pe-heading').textContent = isNew ? 'Add new product' : 'Edit product';
-    document.title = (isNew ? 'Add New Product' : 'Edit Product') + ' ‹ AMNO Fashion Admin';
+    document.title = (isNew ? 'Add New Product' : 'Edit Product') + ' ‹ AMNU Fashion Admin';
     if (!isNew) { $('#view-link').href = '../product.html?id=' + draft.id; $('#view-link').hidden = false; }
 
     /* fill */
@@ -490,7 +490,7 @@
     const render = () => {
       const o = S.order(A.qs.get('id'));
       if (!o) { root.innerHTML = `<div class="card empty-card">${icon('search', 34)}<h3>Order not found</h3><a class="btn btn-violet" href="orders.html">Back to orders</a></div>`; return; }
-      document.title = `Order #${o.id} ‹ AMNO Fashion Admin`;
+      document.title = `Order #${o.id} ‹ AMNU Fashion Admin`;
       const sub = o.items.reduce((s, i) => s + i.price * i.qty, 0);
       const cust = o.customer.phone ? S.customers().find((c) => c.phone === o.customer.phone) : null;
       const isStore = S.channelOf(o) === 'store';

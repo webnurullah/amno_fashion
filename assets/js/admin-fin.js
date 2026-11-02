@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AMNO Fashion — admin controllers: finance & revenue
+   AMNU Fashion — admin controllers: finance & revenue
    finance · expenses · accounts · reports
    ========================================================================== */
 (function () {

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AMNO Fashion — warehouse, production & delivery layer (extends Amnu.store)
+   AMNU Fashion — warehouse, production & delivery layer (extends Amnu.store)
    Fabric stock in yards (1 yd = 36 in) · design recipes and costing ·
    production batches (fabric → finished panjabi in the showroom) ·
    courier parcels (Pathao, Steadfast, own rider) · COD merchant payouts.

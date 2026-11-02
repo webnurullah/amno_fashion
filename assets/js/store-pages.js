@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AMNO Fashion — storefront pages (1/2)
+   AMNU Fashion — storefront pages (1/2)
    home · category · shop (listing) · product · bag · checkout · thanks
    ========================================================================== */
 (function () {

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AMNO Fashion — admin controllers: store operations
+   AMNU Fashion — admin controllers: store operations
    pos · showroom stock · day-close (fabric purchases: admin-prod.js)
    ========================================================================== */
 (function () {

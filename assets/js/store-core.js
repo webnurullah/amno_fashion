@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AMNO Fashion — storefront core
+   AMNU Fashion — storefront core
    Header / footer / account menu / search / quick-add drawer, the bag and its
    totals, demo sign-in, "Find in store" and shared product-card markup.
    Page renderers live in store-pages.js and store-pages2.js.
@@ -201,7 +201,7 @@
       <div class="util-r"><span class="deliver">${icon('truck', 16)} Deliver to: <i class="flag-bd"></i> <b>Bangladesh</b></span><a href="stores.html">Store Locations</a><a href="track-order.html">Track Order</a></div>
     </div></div>
     <header class="site-header"><div class="container nav-in">
-      <a class="logo" href="index.html" aria-label="${esc(s.storeName)} home"><span class="logo-name">AMNO <b>Fashion</b></span></a>
+      <a class="logo" href="index.html" aria-label="${esc(s.storeName)} home"><span class="logo-name">AMNU <b>Fashion</b></span></a>
       <nav class="menu" id="menu" aria-label="Main">${NAV.map(([l, h, on]) => `<a href="${h}" class="${on(cat, page, sort) ? 'active' : ''}">${l}</a>`).join('')}<a class="menu-extra" href="stores.html">Store Locations</a><a class="menu-extra" href="track-order.html">Track Order</a></nav>
       <div class="nav-actions">
         <button class="icon-btn" data-search aria-label="Search">${icon('search', 21)}</button>
@@ -223,7 +223,7 @@
     const L = (href, label) => `<li><a href="${href}">${label}</a></li>`;
     const cats = S.categories();
     return `<footer class="site-footer"><div class="container">
-      <div class="footer-brand"><span class="logo-name">AMNO <b>Fashion</b></span><p>${esc(s.tagline)}<span>Panjabi for Eid, weddings and every day.</span></p></div>
+      <div class="footer-brand"><span class="logo-name">AMNU <b>Fashion</b></span><p>${esc(s.tagline)}<span>Panjabi for Eid, weddings and every day.</span></p></div>
       <div class="footer-top glass">
         <div><h4>Legal</h4><ul>${L('policy.html?p=shipping', 'Shipping Policy')}${L('policy.html?p=terms', 'Terms and Conditions')}${L('policy.html?p=privacy', 'Privacy Policy')}${L('policy.html?p=payment', 'Payment Policy')}</ul></div>
         <div><h4>Information</h4><ul>${L('policy.html?p=exchange', 'Exchange &amp; Refund')}${L('policy.html?p=size', 'Size Guide')}${L('stores.html', 'Store Locations')}${L('track-order.html', 'Track Your Order')}</ul></div>
@@ -232,7 +232,7 @@
         <div><h4>You Can Pay By</h4><div class="paylogos"><span class="pl pl-visa">VISA</span><span class="pl pl-nagad">Nagad</span><span class="pl pl-bkash">bKash</span><span class="pl pl-mc"><i></i><i></i></span><span class="pl">COD</span></div></div>
       </div>
       <p class="copy">© ${new Date().getFullYear()} ${esc(s.storeName)}. All rights reserved. <a href="admin/login.html" class="admin-link">Admin dashboard</a></p>
-      <div class="mega"><h3>Shop AMNO</h3><div class="mega-grid">
+      <div class="mega"><h3>Shop AMNU</h3><div class="mega-grid">
         <ul><li class="mh">Panjabi</li>${cats.filter((c) => !['kids', 'sets'].includes(c.slug)).map((c) => `<li><a href="shop.html?cat=${c.slug}">${esc(c.name)}</a></li>`).join('')}</ul>
         <ul><li class="mh">Kids &amp; Sets</li><li><a href="shop.html?cat=kids">Kids Panjabi</a></li><li><a href="shop.html?cat=sets">Panjabi Sets</a></li></ul>
         <ul><li class="mh">Offers</li><li><a href="shop.html?sale=1">Promo items</a></li><li><a href="shop.html?sort=new">New Arrivals</a></li></ul>

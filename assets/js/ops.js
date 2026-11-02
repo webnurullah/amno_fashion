@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AMNO Fashion — store operations layer (extends Amnu.store)
+   AMNU Fashion — store operations layer (extends Amnu.store)
    Showroom stock (per size) · accounts & ledger · expenses ·
    suppliers & fabric purchases · day close · P&L.
    Fabric warehouse, production and courier parcels live in prod.js.
@@ -31,7 +31,7 @@
      One store location: it holds the stock and fulfils online orders.
      ====================================================================== */
   const SEED_LOCATIONS = [
-    { id: 's1', name: 'AMNO Store', type: 'showroom', address: 'House 00, Road 00, Dhanmondi, Dhaka', district: 'Dhaka', phone: '+880 1700-000011', hours: 'Sat – Thu · 10:00 am – 9:00 pm', manager: 'Rafi Hossain', active: true }
+    { id: 's1', name: 'AMNU Store', type: 'showroom', address: 'House 00, Road 00, Dhanmondi, Dhaka', district: 'Dhaka', phone: '+880 1700-000011', hours: 'Sat – Thu · 10:00 am – 9:00 pm', manager: 'Rafi Hossain', active: true }
   ];
   S.locations = () => DB.get('locations', null) || (DB.set('locations', SEED_LOCATIONS), clone(SEED_LOCATIONS));
   S.saveLocations = (l) => DB.set('locations', l);
