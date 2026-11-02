@@ -249,15 +249,13 @@
       if (st.q) chips.push(['q', `“${st.q}”`]); if (st.max < maxPrice) chips.push(['max', 'Up to ' + money(st.max)]); if (st.sale) chips.push(['sale', 'Promo only']);
       $('#active-filters').innerHTML = chips.map(([k, l]) => `<button class="chip small-chip" data-clear="${esc(k)}" type="button">${esc(l)} ${icon('x', 13)}</button>`).join('');
       $('#fb-color').dataset.n = st.colors.length || ''; $('#fb-size').dataset.n = st.sizes.length || ''; $('#fb-price').dataset.n = st.max < maxPrice ? 1 : '';
-      $('#fb-sort span').textContent = 'Sort: ' + (SORTS.find((x) => x[0] === st.sort) || SORTS[0])[1];
       sync();
     };
 
     const pops = {
       color: () => `<div class="pop-swatches">${[...colorMap].map(([hex, name]) => `<button type="button" class="swatch ${st.colors.includes(hex.slice(1)) ? 'on' : ''}" data-color-f="${hex.slice(1)}" style="--c:${hex}" title="${esc(name)}" aria-label="${esc(name)}" aria-pressed="${st.colors.includes(hex.slice(1))}"></button>`).join('')}</div>`,
       size: () => `<div class="pop-pills">${sizeList.map((s) => `<button type="button" class="size ${st.sizes.includes(s) ? 'on' : ''}" data-size-f="${s}" aria-pressed="${st.sizes.includes(s)}">${esc(S.sizeLabel(s))}</button>`).join('')}</div>`,
-      price: () => `<div class="pop-price"><div class="row between small"><span>${money(minPrice)}</span><b id="pp-val">Up to ${money(st.max)}</b></div><input type="range" id="pp-range" min="${minPrice}" max="${maxPrice}" step="50" value="${st.max}" aria-label="Maximum price"><label class="check small"><input type="checkbox" id="pp-sale" ${st.sale ? 'checked' : ''}> Promo items only</label></div>`,
-      sort: () => `<div class="pop-list">${SORTS.map(([k, l]) => `<button type="button" class="pop-opt ${st.sort === k ? 'on' : ''}" data-sort-f="${k}">${l}${st.sort === k ? icon('check', 16) : ''}</button>`).join('')}</div>`
+      price: () => `<div class="pop-price"><div class="row between small"><span>${money(minPrice)}</span><b id="pp-val">Up to ${money(st.max)}</b></div><input type="range" id="pp-range" min="${minPrice}" max="${maxPrice}" step="50" value="${st.max}" aria-label="Maximum price"><label class="check small"><input type="checkbox" id="pp-sale" ${st.sale ? 'checked' : ''}> Promo items only</label></div>`
     };
     const closePops = () => $$('.fb-wrap.open').forEach((w) => w.classList.remove('open'));
     $('#filter-bar').addEventListener('click', (e) => {
@@ -269,7 +267,6 @@
       }
       const c = e.target.closest('[data-color-f]'); if (c) { const h = c.dataset.colorF; st.colors = st.colors.includes(h) ? st.colors.filter((x) => x !== h) : [...st.colors, h]; c.classList.toggle('on'); st.n = 8; render(); return; }
       const s = e.target.closest('[data-size-f]'); if (s) { const z = s.dataset.sizeF; st.sizes = st.sizes.includes(z) ? st.sizes.filter((x) => x !== z) : [...st.sizes, z]; s.classList.toggle('on'); st.n = 8; render(); return; }
-      const o = e.target.closest('[data-sort-f]'); if (o) { st.sort = o.dataset.sortF; closePops(); render(); }
     });
     $('#filter-bar').addEventListener('input', (e) => {
       if (e.target.id === 'pp-range') { st.max = Number(e.target.value); $('#pp-val').textContent = 'Up to ' + money(st.max); st.n = 8; render(); }
