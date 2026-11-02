@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AMNO Fashion — admin controllers: warehouse, production & delivery
+   AMNU Fashion — admin controllers: warehouse, production & delivery
    fabrics · purchases (fabric) · production · order-new (social media) · couriers
    ========================================================================== */
 (function () {

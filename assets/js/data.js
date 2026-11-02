@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AMNO Fashion — sample data + store API
+   AMNU Fashion — sample data + store API
    Everything here is DEMO content.  Replace the seed arrays, or swap the
    Amnu.store methods for fetch() calls to your backend / WordPress REST API.
    ========================================================================== */
@@ -21,7 +21,7 @@
 
   /* ---------- settings ---------- */
   const DEFAULT_SETTINGS = {
-    storeName: 'AMNO Fashion',
+    storeName: 'AMNU Fashion',
     tagline: 'The Style You Love!',
     email: 'hello@example.com',
     phone: '+880 1700-000000',

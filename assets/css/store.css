@@ -693,7 +693,7 @@ a.contact-card:hover { transform: translateX(4px); }
 [data-surface=store] .tile-copy { background: rgba(255, 255, 255, .88); }
 [data-surface=store] .tile-copy .btn-glass { color: #1b2437; background: #fff; border-color: #dfe6f2; }
 
-/* text logo: AMNO Fashion */
+/* text logo: AMNU Fashion */
 .logo-name { font-size: 24px; font-weight: 800; letter-spacing: -.02em; color: var(--ink); line-height: 1; white-space: nowrap; }
 .logo-name b { font-weight: 500; color: var(--accent); }
 .footer-brand .logo-name { font-size: 30px; }

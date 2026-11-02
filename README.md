@@ -1,4 +1,4 @@
-# AMNO Fashion — Panjabi store: online shop + store counter + finance, one HTML template
+# AMNU Fashion — Panjabi store: online shop + store counter + finance, one HTML template
 
 A complete, dependency-free HTML/CSS/JS template for a Panjabi brand that sells **online and in its
 own store** and wants both managed from one place:
@@ -99,7 +99,7 @@ sessions and funnel stages are **simulated**; revenue and profit come from the o
 Sample setup: **one store** (it also fulfils online orders), twelve fabrics, Pathao and Steadfast merchant accounts, six accounts in total, and staff users
 including a cashier and an accountant. There is deliberately no multi-branch feature.
 
-**Brand:** the site shows the text name **AMNO Fashion** as its logo for now. When your logo file is ready, replace
+**Brand:** the site shows the text name **AMNU Fashion** as its logo for now. When your logo file is ready, replace
 the `.logo-name` text in `assets/js/store-core.js` (storefront header and footer) and `admin-core.js` (admin
 sidebar) with an `<img>`.
 

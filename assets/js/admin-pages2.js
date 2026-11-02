@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AMNO Fashion — admin page controllers (part 2)
+   AMNU Fashion — admin page controllers (part 2)
    coupons · media · pages · appearance · analytics · users · plugins · settings
    ========================================================================== */
 (function () {

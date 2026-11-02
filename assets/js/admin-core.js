@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AMNO Fashion — admin core
+   AMNU Fashion — admin core
    Shell (sidebar / top bar / footer), dropdowns, command palette and the
    WordPress-style list table used by Products, Orders, Customers, etc.
    ========================================================================== */
@@ -100,7 +100,7 @@
       const sub = n.sub && on ? `<ul class="subnav">${n.sub.map(([l, h, id]) => `<li><a href="${h}" class="${id === page ? 'on' : ''}">${l}</a></li>`).join('')}</ul>` : '';
       return `<a class="nav-item ${on ? 'on' : ''}" href="${n.href}" ${on ? 'aria-current="page"' : ''} title="${esc(n.label)}">${icon(n.icon, 20)}<span class="nav-label">${n.label}</span>${n.badge ? `<span class="nav-count">${n.badge}</span>` : ''}</a>${sub}`;
     }).join('');
-    return `<div class="side-top"><a class="side-brand" href="index.html" title="AMNO Fashion"><span class="nav-label"><b>AMNO Fashion</b><small>Admin</small></span></a></div>
+    return `<div class="side-top"><a class="side-brand" href="index.html" title="AMNU Fashion"><span class="nav-label"><b>AMNU Fashion</b><small>Admin</small></span></a></div>
       <nav class="side-nav" aria-label="Admin">${items}
         <div class="nav-heading">Channels</div>
         <a class="nav-item" href="../index.html" target="_blank" rel="noopener" title="Online store">${icon('store', 20)}<span class="nav-label">Online Store</span><span class="nav-ext">${icon('external', 14)}</span></a>

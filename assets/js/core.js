@@ -1,5 +1,5 @@
 /* ==========================================================================
-   AMNO Fashion — core helpers
+   AMNU Fashion — core helpers
    Icons, storage, formatting, colour maths, Panjabi illustration generator,
    modal / toast primitives and theme handling.  Plain script, no build step.
    ========================================================================== */
