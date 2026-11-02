@@ -86,7 +86,7 @@ new collection or product-row sections. **Update** saves it. The slider pictures
 *Admin → Customize* holds everything that is shared across the whole website, with a live preview: **Site identity** (site title, tagline, logo
 picture or logo text), **Contact & social** (phone, email, address, Facebook and Messenger links), **Header** (top bar on/off, "Deliver to" text,
 top bar links and the main menu, each link with text, address, reorder and remove), **Footer** (text under the logo, the three link columns, service center,
-payment logos, copyright line, Admin dashboard link), plus the brand colour, glass effect and home headline from before. **Publish** saves and refreshes the preview.
+payment logos, copyright line, Admin dashboard link), plus the brand colour and glass effect (the home headline is edited in the Home page builder). **Publish** saves and refreshes the preview.
 
 ## Editing the other pages (admin)
 
