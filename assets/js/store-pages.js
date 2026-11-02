@@ -202,7 +202,6 @@
     const SORTS = [['default', 'Default'], ['new', 'Newest'], ['price-asc', 'Price: low to high'], ['price-desc', 'Price: high to low'], ['popular', 'Best selling']];
 
     const pct = settings.digitalDiscountPct;
-    if (pct) $('#promo-strip').textContent = `Save ${pct}% On Entire Order With Digital Payment`; else $('#promo-strip').hidden = true;
     $('#sub-chips').innerHTML = `<a class="chip ${!st.cat ? 'active' : ''}" href="shop.html">All</a>` + S.categories().map((c) => `<a class="chip ${st.cat === c.slug ? 'active' : ''}" href="shop.html?cat=${c.slug}">${esc(c.name)}</a>`).join('');
     $('#crumb-cat').textContent = st.cat ? catName(st.cat) : 'All Panjabi';
     (() => {
