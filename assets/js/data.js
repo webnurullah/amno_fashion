@@ -300,19 +300,15 @@
     { id: 5, type: 'page', title: 'Track Your Order', slug: '/track-order', author: 'Amnu Admin', status: 'publish', date: daysAgo(100), file: 'track-order.html' },
     { id: 6, type: 'page', title: 'Return & Exchange Policy', slug: '/returns', author: 'Shop Manager', status: 'publish', date: daysAgo(90) },
     { id: 7, type: 'page', title: 'Privacy Policy', slug: '/privacy', author: 'Shop Manager', status: 'draft', date: daysAgo(30) },
-    { id: 8, type: 'post', title: 'Eid Panjabi Style Guide: What to Wear This Season', slug: '/blog/eid-style-guide', author: 'Content Editor', status: 'publish', date: daysAgo(14), cat: 'Style Guide' },
-    { id: 9, type: 'post', title: 'How to Measure Your Panjabi Size at Home', slug: '/blog/measure-size', author: 'Content Editor', status: 'publish', date: daysAgo(32), cat: 'Guides' },
-    { id: 10, type: 'post', title: 'Cotton vs Silk: Choosing the Right Fabric', slug: '/blog/cotton-vs-silk', author: 'Content Editor', status: 'publish', date: daysAgo(58), cat: 'Guides' },
-    { id: 11, type: 'post', title: 'Wedding Season Lookbook (Draft)', slug: '/blog/wedding-lookbook', author: 'Amnu Admin', status: 'draft', date: daysAgo(3), cat: 'Lookbook' }
   ];
 
   const SEED_USERS = [
-    { id: 1, name: 'Amnu Admin', username: 'admin', email: 'admin@example.com', role: 'Administrator', date: daysAgo(400), posts: 6 },
-    { id: 2, name: 'Shop Manager', username: 'manager', email: 'manager@example.com', role: 'Shop Manager', date: daysAgo(300), posts: 2 },
-    { id: 3, name: 'Content Editor', username: 'editor', email: 'editor@example.com', role: 'Editor', date: daysAgo(210), posts: 3 },
-    { id: 4, name: 'Support Agent', username: 'support', email: 'support@example.com', role: 'Customer Support', date: daysAgo(90), posts: 0 },
-    { id: 5, name: 'Rafi Hossain', username: 'rafi', email: 'rafi@example.com', role: 'Cashier', date: daysAgo(180), posts: 0, loc: 's1' },
-    { id: 7, name: 'Accounts Officer', username: 'accounts', email: 'accounts@example.com', role: 'Accountant', date: daysAgo(120), posts: 0 }
+    { id: 1, name: 'Amnu Admin', username: 'admin', email: 'admin@example.com', role: 'Administrator', date: daysAgo(400) },
+    { id: 2, name: 'Shop Manager', username: 'manager', email: 'manager@example.com', role: 'Shop Manager', date: daysAgo(300) },
+    { id: 3, name: 'Content Editor', username: 'editor', email: 'editor@example.com', role: 'Editor', date: daysAgo(210) },
+    { id: 4, name: 'Support Agent', username: 'support', email: 'support@example.com', role: 'Customer Support', date: daysAgo(90) },
+    { id: 5, name: 'Rafi Hossain', username: 'rafi', email: 'rafi@example.com', role: 'Cashier', date: daysAgo(180), loc: 's1' },
+    { id: 7, name: 'Accounts Officer', username: 'accounts', email: 'accounts@example.com', role: 'Accountant', date: daysAgo(120) }
   ];
 
   const SEED_PLUGINS = [
@@ -485,7 +481,7 @@
   };
 
   /* pages, users, plugins, media */
-  store.pages = () => DB.get('pages', null) || (DB.set('pages', SEED_PAGES), SEED_PAGES.map((p) => Object.assign({}, p)));
+  store.pages = () => (DB.get('pages', null) || (DB.set('pages', SEED_PAGES), SEED_PAGES.map((p) => Object.assign({}, p)))).filter((p) => p.type !== 'post');
   store.savePages = (l) => DB.set('pages', l);
   store.users = () => DB.get('users', null) || (DB.set('users', SEED_USERS), SEED_USERS.map((u) => Object.assign({}, u)));
   store.saveUsers = (l) => DB.set('users', l);

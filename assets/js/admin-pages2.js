@@ -120,28 +120,28 @@
   };
 
   /* ======================================================================
-     Pages & posts
+     Pages
      ====================================================================== */
   P.pages = () => {
-    const edit = (id, api, presetType) => {
+    const edit = (id, api) => {
       const list = S.pages(); const p = id ? list.find((x) => String(x.id) === String(id)) : null;
       const m = A.modal({
-        title: p ? 'Edit ' + p.type : 'Add new ' + (presetType || 'post'), wide: true,
+        title: p ? 'Edit page' : 'Add new page', wide: true,
         body: `<form id="pf" novalidate class="col"><div class="field"><label for="pf-title">Title</label><input id="pf-title" name="title" class="big-input" value="${esc(p ? p.title : '')}" placeholder="Enter title here"><span class="msg">Please add a title.</span></div>
-          <div class="form-grid2"><div class="field"><label>Type</label><select name="type"><option value="page">Page</option><option value="post">Post</option></select></div><div class="field"><label>Status</label><select name="status"><option value="draft">Draft</option><option value="publish">Published</option></select></div>
-          <div class="field"><label>Category (posts)</label><input name="cat" value="${esc(p && p.cat ? p.cat : 'Uncategorised')}"></div><div class="field"><label>Slug</label><input name="slug" value="${esc(p ? p.slug : '')}" placeholder="auto"></div></div>
+          <div class="form-grid2"><div class="field"><label>Status</label><select name="status"><option value="draft">Draft</option><option value="publish">Published</option></select></div>
+          <div class="field"><label>Slug</label><input name="slug" value="${esc(p ? p.slug : '')}" placeholder="auto"></div></div>
           <div class="field"><label>Content</label><textarea name="body" rows="8" placeholder="Start writing…">${esc(p && p.body ? p.body : '')}</textarea></div></form>`,
         footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-glass" data-save="draft">Save draft</button><button class="btn btn-violet" data-save="publish">Publish</button>'
       });
       const f = $('#pf', m.el).elements;
-      f.type.value = p ? p.type : (presetType || 'post'); f.status.value = p ? p.status : 'draft';
+      f.status.value = p ? p.status : 'draft';
       m.el.addEventListener('click', (e) => {
         const b = e.target.closest('[data-save]'); if (!b) return;
         const title = f.title.value.trim();
         if (!title) { f.title.closest('.field').classList.add('err'); f.title.focus(); return; }
         const status = b.dataset.save === 'publish' ? 'publish' : (f.status.value === 'publish' && p ? 'publish' : 'draft');
-        const slug = f.slug.value.trim() || (f.type.value === 'post' ? '/blog/' : '/') + A.slug(title);
-        const rec = { id: p ? p.id : list.reduce((n, x) => Math.max(n, x.id), 0) + 1, type: f.type.value, title, slug, author: p ? p.author : 'Amnu Admin', status, date: p ? p.date : new Date().toISOString(), cat: f.cat.value.trim(), body: f.body.value, file: p && p.file };
+        const slug = f.slug.value.trim() || '/' + A.slug(title);
+        const rec = { id: p ? p.id : list.reduce((n, x) => Math.max(n, x.id), 0) + 1, type: 'page', title, slug, author: p ? p.author : 'Amnu Admin', status, date: p ? p.date : new Date().toISOString(), body: f.body.value, file: p && p.file };
         if (p) list[list.indexOf(p)] = rec; else list.unshift(rec);
         S.savePages(list); m.close(); api.refresh(); A.toast(status === 'publish' ? 'Published' : 'Draft saved');
       });
@@ -149,13 +149,13 @@
     const api = Admin.listTable({
       id: 'pages', mount: $('#list'), perPage: 10, empty: 'Nothing here yet', searchPlaceholder: 'Search pages',
       rows: () => S.pages().concat(S.collections().map((c) => ({ id: 'c' + c.id, cid: c.id, type: 'shop', title: c.title, slug: 'category.html?c=' + c.slug, status: c.status, author: 'Amnu Admin', cats: c.cats, order: c.order, date: null, file: 'category.html?c=' + c.slug }))), rowId: (p) => p.id, initialQ: A.qs.get('q') || '', initialView: A.qs.get('view') || undefined,
-      views: [{ id: 'all', label: 'All' }, { id: 'shop', label: 'Shop pages', filter: (p) => p.type === 'shop' }, { id: 'page', label: 'Content pages', filter: (p) => p.type === 'page' }, { id: 'post', label: 'Posts', filter: (p) => p.type === 'post' }, { id: 'publish', label: 'Published', filter: (p) => p.status === 'publish' }, { id: 'draft', label: 'Drafts', filter: (p) => p.status === 'draft' }],
+      views: [{ id: 'all', label: 'All' }, { id: 'shop', label: 'Shop pages', filter: (p) => p.type === 'shop' }, { id: 'page', label: 'Content pages', filter: (p) => p.type === 'page' }, { id: 'publish', label: 'Published', filter: (p) => p.status === 'publish' }, { id: 'draft', label: 'Drafts', filter: (p) => p.status === 'draft' }],
       search: (p, q) => (p.title + ' ' + p.slug + ' ' + (p.cat || '')).toLowerCase().includes(q),
       columns: [
         { id: 'title', label: 'Title', sort: (a, b) => a.title.localeCompare(b.title), render: (p) => (p.type === 'shop' ? `<a class="row-title" href="collection-edit.html?id=${p.cid}">${esc(p.title)}</a>${p.status !== 'publish' ? ' <span class="draft-tag">— Draft</span>' : ''}${Admin.actions([{ label: 'Edit', href: `collection-edit.html?id=${p.cid}` }, { label: p.status === 'publish' ? 'Unpublish' : 'Publish', act: 'toggle', id: p.id }, { label: 'View', href: '../' + p.file, target: '_blank' }, { label: 'Trash', act: 'del', id: p.id, danger: true }])}` : `<a class="row-title" href="#" data-act="edit" data-id="${p.id}">${esc(p.title)}</a>${p.status === 'draft' ? ' <span class="draft-tag">— Draft</span>' : ''}${Admin.actions([{ label: 'Edit', act: 'edit', id: p.id }, { label: p.status === 'publish' ? 'Unpublish' : 'Publish', act: 'toggle', id: p.id }, p.file ? { label: 'View', href: '../' + p.file, target: '_blank' } : null, { label: 'Trash', act: 'del', id: p.id, danger: true }])}`) },
-        { id: 'type', label: 'Type', render: (p) => `<span class="badge ${p.type === 'post' ? 'b-info' : p.type === 'shop' ? 'b-ok' : 'b-violet'}">${p.type === 'post' ? 'Post' : p.type === 'shop' ? 'Shop page' : 'Page'}</span>` },
+        { id: 'type', label: 'Type', render: (p) => `<span class="badge ${p.type === 'shop' ? 'b-ok' : 'b-violet'}">${p.type === 'shop' ? 'Shop page' : 'Page'}</span>` },
         { id: 'author', label: 'Author', render: (p) => `<div class="row gap-8">${Admin.avatar(p.author, 'xs')}<span class="small">${esc(p.author)}</span></div>` },
-        { id: 'cat', label: 'Category', render: (p) => (p.type === 'shop' ? `<div class="chip-list">${p.cats.map((slug) => { const k = S.categories().find((x) => x.slug === slug); return k ? `<span class="badge">${esc(k.name)}</span>` : ''; }).join('') || '—'}</div>` : p.type === 'post' ? esc(p.cat || '—') : '—') },
+        { id: 'cat', label: 'Categories', render: (p) => (p.type === 'shop' ? `<div class="chip-list">${p.cats.map((slug) => { const k = S.categories().find((x) => x.slug === slug); return k ? `<span class="badge">${esc(k.name)}</span>` : ''; }).join('') || '—'}</div>` : '—') },
         { id: 'slug', label: 'URL', hidden: true, render: (p) => `<span class="mono xs">${esc(p.slug)}</span>` },
         { id: 'date', label: 'Date', sort: (a, b) => new Date(a.date) - new Date(b.date), render: (p) => (p.type === 'shop' ? `<span class="muted small">Menu order<br>${p.order || 0}</span>` : `<span class="muted small">${p.status === 'publish' ? 'Published' : 'Last modified'}<br>${A.date(p.date)}</span>`) },
         { id: 'status', label: 'Status', render: (p) => Admin.pageBadge(p.status) }
@@ -172,7 +172,7 @@
       }
     });
     document.addEventListener('click', (e) => { const a = e.target.closest('a[data-act]'); if (a) e.preventDefault(); });
-    $$('[data-new]').forEach((b) => b.addEventListener('click', () => edit(null, api, b.dataset.new)));
+    $$('[data-new]').forEach((b) => b.addEventListener('click', () => edit(null, api)));
     if (A.qs.get('new')) edit(null, api, A.qs.get('new'));
   };
 
@@ -280,7 +280,7 @@
   /* ======================================================================
      Users
      ====================================================================== */
-  const ROLES = { Administrator: 'Full access to every setting', 'Shop Manager': 'Products, orders, coupons, customers and stock', Cashier: 'POS register and day close for one showroom', Accountant: 'Finance, expenses, accounts and reports', Editor: 'Pages, posts and media', 'Customer Support': 'View orders and customers' };
+  const ROLES = { Administrator: 'Full access to every setting', 'Shop Manager': 'Products, orders, coupons, customers and stock', Cashier: 'POS register and day close for one showroom', Accountant: 'Finance, expenses, accounts and reports', Editor: 'Pages and media', 'Customer Support': 'View orders and customers' };
   P.users = () => {
     const edit = (id, api) => {
       const list = S.users(); const u = id ? list.find((x) => String(x.id) === String(id)) : null;
@@ -299,7 +299,7 @@
         const checks = { name: (v) => v.trim().length > 1, username: (v) => /^[a-z0-9_.-]{3,}$/i.test(v.trim()), email: (v) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v.trim()) };
         const bad = Object.keys(checks).filter((k) => { const ok = checks[k](f[k].value); f[k].closest('.field').classList.toggle('err', !ok); return !ok; });
         if (bad.length) { f[bad[0]].focus(); return; }
-        const rec = { id: u ? u.id : list.reduce((n, x) => Math.max(n, x.id), 0) + 1, name: f.name.value.trim(), username: f.username.value.trim(), email: f.email.value.trim(), role: f.role.value, date: u ? u.date : new Date().toISOString(), posts: u ? u.posts : 0 };
+        const rec = { id: u ? u.id : list.reduce((n, x) => Math.max(n, x.id), 0) + 1, name: f.name.value.trim(), username: f.username.value.trim(), email: f.email.value.trim(), role: f.role.value, date: u ? u.date : new Date().toISOString()};
         if (u) list[list.indexOf(u)] = rec; else list.push(rec);
         S.saveUsers(list); m.close(); api.refresh(); A.toast(u ? 'User updated' : 'User added');
       });
@@ -313,7 +313,6 @@
         { id: 'name', label: 'Name', sort: (a, b) => a.name.localeCompare(b.name), render: (u) => `<div class="row gap-8">${Admin.avatar(u.name)}<div><b class="row-title">${esc(u.name)}</b><div class="xs muted">@${esc(u.username)}</div></div></div>${Admin.actions([{ label: 'Edit', act: 'edit', id: u.id }, u.id === 1 ? null : { label: 'Delete', act: 'del', id: u.id, danger: true }])}` },
         { id: 'email', label: 'Email', render: (u) => `<a class="u" href="mailto:${esc(u.email)}">${esc(u.email)}</a>` },
         { id: 'role', label: 'Role', render: (u) => `<span class="badge b-violet">${esc(u.role)}</span>` },
-        { id: 'posts', label: 'Posts', cls: 'right', render: (u) => `<span class="num">${u.posts}</span>` },
         { id: 'date', label: 'Registered', render: (u) => `<span class="muted small">${A.date(u.date)}</span>` }
       ],
       actions: { edit: (id, u, a) => edit(id, a), del: (id, u, a) => A.confirm(`Delete user ${u.name}?`, 'Delete').then((ok) => { if (ok) { S.saveUsers(S.users().filter((k) => String(k.id) !== String(id))); a.refresh(); A.toast('User deleted'); } }) }
