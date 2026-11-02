@@ -224,7 +224,7 @@
       <div class="util-r">${tb.deliverTo ? `<span class="deliver">${icon('truck', 16)} Deliver to: <i class="flag-bd"></i> <b>${esc(tb.deliverTo)}</b></span>` : ''}${(tb.links || []).map((l) => `<a href="${esc(l.href)}">${esc(l.label)}</a>`).join('')}</div>
     </div></div>`}
     <header class="site-header"><div class="container nav-in">
-      <a class="logo" href="index.html" aria-label="${esc(s.storeName)} home">${logoHTML(s)}</a>
+      <a class="logo" data-pv="brand" href="index.html" aria-label="${esc(s.storeName)} home">${logoHTML(s)}</a>
       <nav class="menu" id="menu" aria-label="Main">${(site.menu || []).map((x) => `<a href="${esc(x.href)}" class="${linkOn(x.href) ? 'active' : ''}">${esc(x.label)}</a>`).join('')}${S.livePages().filter((c) => !['panjabi', 'kids', 'sets'].includes(c.slug) && !(site.menu || []).some((x) => x.href === 'category.html?c=' + c.slug)).map((c) => `<a href="category.html?c=${esc(c.slug)}" class="${page === 'category' && A.qs.get('c') === c.slug ? 'active' : ''}">${esc(c.title)}</a>`).join('')}<a class="menu-extra" href="stores.html">Store Locations</a><a class="menu-extra" href="track-order.html">Track Order</a></nav>
       <div class="nav-actions">
         <button class="icon-btn" data-search aria-label="Search">${icon('search', 21)}</button>
