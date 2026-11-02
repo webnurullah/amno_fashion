@@ -214,9 +214,10 @@
     $('#store-list').innerHTML = rooms.map((l, i) => {
       const closed = fri && /Sat\s*–\s*Thu/.test(l.hours || '');
       const dir = l.map || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((l.name || '') + ' ' + (l.address || ''))}`;
-      return `<article class="store-card2"><div class="sc-top"><span class="sc-ico">${icon('store', 22)}</span><div class="grow"><h3>${esc(l.name)}</h3></div><span class="badge ${closed ? 'b-err' : 'b-ok'}">${closed ? 'Closed today' : 'Open today'}</span></div>
-        <ul class="sc-list"><li>${icon('pin', 17)}<span>${esc(l.address)}</span></li>${l.hours ? `<li>${icon('clock', 17)}<span>${esc(l.hours)}</span></li>` : ''}${l.phone ? `<li>${icon('phone', 17)}<a href="tel:${esc(tel(l.phone))}">${esc(l.phone)}</a></li>` : ''}</ul>
-        <div class="sc-actions"><a class="btn btn-primary" target="_blank" rel="noopener" href="${esc(dir)}">${icon('mapnav', 16)} Get directions</a>${l.phone ? `<a class="btn btn-outline" href="tel:${esc(tel(l.phone))}">Call</a>` : ''}</div></article>`;
+      return `<article class="store-card2"><div class="sc-cover"><span class="sc-ico">${icon('store', 26)}</span><span class="sc-badge ${closed ? 'off' : ''}"><i></i>${closed ? 'Closed today' : 'Open today'}</span></div>
+        <div class="sc-body"><h3>${esc(l.name)}</h3>
+        <ul class="sc-list"><li><span class="sc-chip">${icon('pin', 16)}</span><div><small>Address</small><span>${esc(l.address)}</span></div></li>${l.hours ? `<li><span class="sc-chip">${icon('clock', 16)}</span><div><small>Opening hours</small><span>${esc(l.hours)}</span></div></li>` : ''}${l.phone ? `<li><span class="sc-chip">${icon('phone', 16)}</span><div><small>Phone</small><a href="tel:${esc(tel(l.phone))}">${esc(l.phone)}</a></div></li>` : ''}</ul>
+        <div class="sc-actions"><a class="btn btn-primary" target="_blank" rel="noopener" href="${esc(dir)}">${icon('mapnav', 16)} Get directions</a>${l.phone ? `<a class="btn btn-outline" href="tel:${esc(tel(l.phone))}">${icon('phone', 16)} Call</a>` : ''}</div></div></article>`;
     }).join('') || '<p class="muted">No stores listed yet.</p>';
   };
   P.track = () => {
