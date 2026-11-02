@@ -233,13 +233,6 @@
         <div><h4>You Can Pay By</h4><div class="paylogos"><span class="pl pl-visa">VISA</span><span class="pl pl-nagad">Nagad</span><span class="pl pl-bkash">bKash</span><span class="pl pl-mc"><i></i><i></i></span><span class="pl">COD</span></div></div>
       </div>
       <p class="copy">© ${new Date().getFullYear()} ${esc(s.storeName)}. All rights reserved. <a href="admin/login.html" class="admin-link">Admin dashboard</a></p>
-      <div class="mega"><h3>Shop AMNU</h3><div class="mega-grid">
-        <ul><li class="mh">Panjabi</li>${cats.filter((c) => !['kids', 'sets'].includes(c.slug)).map((c) => `<li><a href="shop.html?cat=${c.slug}">${esc(c.name)}</a></li>`).join('')}</ul>
-        <ul><li class="mh">Kids &amp; Sets</li><li><a href="shop.html?cat=kids">Kids Panjabi</a></li><li><a href="shop.html?cat=sets">Panjabi Sets</a></li></ul>
-        <ul><li class="mh">Offers</li><li><a href="shop.html?sale=1">Promo items</a></li><li><a href="shop.html?sort=new">New Arrivals</a></li></ul>
-        <ul><li class="mh">Visit</li>${S.showrooms().map((l) => `<li><a href="stores.html">${esc(l.name)}</a></li>`).join('')}</ul>
-        <ul><li class="mh">Help</li><li><a href="policy.html?p=size">Size guide</a></li><li><a href="track-order.html">Track order</a></li><li><a href="contact.html">Contact</a></li></ul>
-      </div></div>
     </div></footer>`;
   }
 
