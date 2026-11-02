@@ -194,7 +194,8 @@
     const cat = A.qs.get('cat'); const sort = A.qs.get('sort');
     const s = settings;
     const user = Auth.user();
-    return `${s.announcement ? `<div class="announce"><span id="announce-text">${esc(s.announcement)}</span></div>` : '<div class="announce" hidden><span id="announce-text"></span></div>'}
+    const ann = /^Free delivery on orders over/.test(s.announcement || '') ? '' : s.announcement;
+    return `${ann ? `<div class="announce"><span id="announce-text">${esc(ann)}</span></div>` : '<div class="announce" hidden><span id="announce-text"></span></div>'}
     <div class="util"><div class="container util-in">
       <div class="util-l"><label class="lang"><span class="sr-only">Language</span><select aria-label="Language"><option>English</option><option disabled>বাংলা (coming soon)</option></select></label>
         <a href="mailto:${esc(s.email)}">${icon('mail', 16)}<span>${esc(s.email)}</span></a><a href="contact.html">${icon('phone', 16)}<span>Contact</span></a></div>

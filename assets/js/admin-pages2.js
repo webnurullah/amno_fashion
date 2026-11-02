@@ -223,7 +223,7 @@
     });
     const DEF_TITLE = 'Choose Your Best Panjabi';
     $('#c-reset').addEventListener('click', () => {
-      st.look = Object.assign({}, DEF); st.heroTitle = DEF_TITLE; st.heroSub = "They're all so nice"; st.announcement = 'Free delivery on orders over ৳5,000  ·  Cash on Delivery available all over Bangladesh';
+      st.look = Object.assign({}, DEF); st.heroTitle = DEF_TITLE; st.heroSub = "They're all so nice"; st.announcement = '';
       fill(); send(); A.toast('Reset to defaults. Click Publish to save.');
     });
   };
