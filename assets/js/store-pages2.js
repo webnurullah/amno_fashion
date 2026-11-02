@@ -258,6 +258,12 @@
     if (S.bnHas(pbn) && page !== 'home' && page !== 'shop') { const c = $('#main .container'); if (c) { const html = Shop.bannerHTML(pbn, 'page-banner'); const cr = c.querySelector('.crumbs'); if (cr) cr.insertAdjacentHTML('afterend', html); else c.insertAdjacentHTML('afterbegin', html); } }
     const txt = S.pageText(pageKey || page);
     $$('[data-edit]').forEach((el) => { const v = txt[el.dataset.edit]; if (v != null && v !== '') el.textContent = v; });
+    if (page === 'contact') {
+      const lk = (id, v) => { if (v) $(id).href = v; };
+      if (txt['contact.phone']) lk('#cc-phone', 'tel:' + txt['contact.phone'].replace(/[^\d+]/g, ''));
+      if (txt['contact.email']) lk('#cc-mail', 'mailto:' + txt['contact.email']);
+      lk('#cc-msgr', txt['contact.msgr']); lk('#cc-stores', txt['contact.storesLink']);
+    }
     if (previewMode) {
       if (page === 'policy') { const h = $('#policy-body h1'); if (h) h.dataset.pv = 'title'; $$('#policy-body p, #policy-body .table-wrap').forEach((x) => { x.dataset.pv = 'text'; }); }
       const bn = $('.page-banner'); if (bn) bn.dataset.pv = 'banner';
