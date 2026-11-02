@@ -904,3 +904,8 @@ a.store-row:hover b:first-of-type { color: var(--primary); }
 .hb-right .hb-ib textarea { min-height: 80px; }
 .hb-top .pill-select { min-height: 40px; }
 .hb-ib .form-grid2 { margin-top: 14px; gap: 12px; } .hb-ib .field > label { font-size: 12px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); } .hb-ib .hint { display: block; margin-top: 6px; }
+.hb-lh { margin: 16px 2px 8px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted, #6b7280); font-weight: 700; }
+.hb-sec .hb-mini { flex: none; }
+.hb-sec .grow { min-width: 0; }
+.hb-sec .grow b, .hb-sec .grow small { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hb-sec .hb-mini { padding: 2px; width: 22px; height: 22px; }

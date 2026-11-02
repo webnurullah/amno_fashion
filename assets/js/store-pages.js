@@ -147,16 +147,32 @@
     const shopAll = d.cats.length === 1 ? `shop.html?cat=${d.cats[0]}` : `shop.html?coll=${d.slug}`;
     const hero = (inDept.length ? inDept : pub).slice(0, 3);
     $('#cat-banner').innerHTML = `<div class="banner glass"><div class="banner-copy"><span class="kicker">${esc(d.title)}</span><h1>${esc(d.sub || d.title)}</h1><a class="btn btn-primary btn-lg" href="${shopAll}">Shop all ${esc(d.title.toLowerCase())}</a></div><div class="banner-art">${hero.map((p, i) => `<div class="tile-pj p${i}">${S.thumb(p)}</div>`).join('')}</div></div>`;
-    $('#cat-title').textContent = `${d.title}: Shop By Category`;
-    const circles = d.cats.map((slug) => S.categories().find((c) => c.slug === slug)).filter(Boolean).map((c) => catTile(c, `shop.html?cat=${c.slug}`, false)).join('');
-    $('#cat-circles').innerHTML = rail(circles, 'circles');
-    $('#cat-new').innerHTML = rail(newest(inDept).slice(0, 8).map(card).join(''), 'products');
-    $('#cat-trend').innerHTML = rail(popular(inDept).slice(0, 8).map(card).join(''), 'products');
-    $('#new-link').href = `shop.html?sort=new${d.cats.length === 1 ? '&cat=' + d.cats[0] : '&coll=' + d.slug}`;
-    $('#trend-link').href = shopAll;
-    $('#recent-host').innerHTML = recentRail();
+    const shopLink = (src) => src === 'new' ? `shop.html?sort=new${d.cats.length === 1 ? '&cat=' + d.cats[0] : '&coll=' + d.slug}` : shopAll;
+    const blocks = S.pageSections(d).filter((x) => x.enabled !== false);
+    $('#cat-sections').innerHTML = blocks.map((x) => {
+      if (x.type === 'recent') return `<div id="ps-${x.id}" data-sec="${esc(x.id)}"></div>`;
+      const title = String(x.title || '').replace('{page}', d.title);
+      let link = x.link; if (!link) link = x.type === 'products' ? (x.source === 'cat' && x.cat ? `shop.html?cat=${x.cat}` : x.source === 'pick' ? 'shop.html' : x.scope === 'all' ? 'shop.html' + (x.source === 'new' ? '?sort=new' : '') : shopLink(x.source)) : '';
+      return `<section class="section container" data-sec="${esc(x.id)}"><div class="section-h"><h2>${esc(title)}</h2>${link ? `<a class="u-link" href="${esc(link)}">${esc(x.linkLabel || 'Explore All')}</a>` : ''}</div><div id="ps-${x.id}"></div></section>`;
+    }).join('');
+    blocks.forEach((x) => {
+      const el = $('#ps-' + x.id); if (!el) return;
+      if (x.type === 'recent') { el.innerHTML = recentRail(undefined, x.title); return; }
+      if (x.type === 'categories') {
+        const slugs = x.mode === 'pick' ? (x.cats || []) : d.cats;
+        el.innerHTML = rail(slugs.map((slug) => S.categories().find((c) => c.slug === slug)).filter(Boolean).map((c) => catTile(c, `shop.html?cat=${c.slug}`, false)).join(''), 'circles'); return;
+      }
+      let pool = x.scope === 'all' ? pub : inDept;
+      let list;
+      if (x.source === 'pick') list = (x.pids || []).map((id) => pub.find((p) => p.id === id)).filter(Boolean);
+      else if (x.source === 'cat') list = newest(pub.filter((p) => p.cats.includes(x.cat)));
+      else if (x.source === 'popular') list = popular(pool);
+      else if (x.source === 'featured') list = pool.filter((p) => p.featured);
+      else list = newest(pool);
+      el.innerHTML = rail(list.slice(0, Math.max(2, Number(x.count) || 8)).map(card).join(''), 'products');
+    });
     Shop.syncRails();
-    if (pvC) { const b = $('#cat-banner .banner'); if (b) b.dataset.pv = 'details'; const cc = $('#cat-circles'); if (cc) cc.dataset.pv = 'categories'; }
+    if (pvC) { const b = $('#cat-banner .banner'); if (b) b.dataset.pv = 'details'; }
   };
 
   /* ======================================================================

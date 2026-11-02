@@ -31,10 +31,10 @@
         <form class="glass pad" id="contact-form" data-demo-form="Message received (demo: connect this form to your backend)." novalidate>
           <h2 class="h2s" data-edit="contact.form" data-label="Form title" data-group="Message form">Send us a message</h2>
           <div class="form-grid">
-            <div class="field"><label for="m-name">Your name</label><input id="m-name" type="text" required placeholder="Full name"></div>
-            <div class="field"><label for="m-phone">Mobile or email</label><input id="m-phone" type="text" required placeholder="01XXXXXXXXX"></div>
-            <div class="field full"><label for="m-topic">Topic</label><select id="m-topic"><option>Order status</option><option>Size &amp; fit help</option><option>Exchange or return</option><option>Bulk / wedding orders</option><option>Something else</option></select></div>
-            <div class="field full"><label for="m-msg">Message</label><textarea id="m-msg" rows="5" required placeholder="How can we help?"></textarea></div>
+            <div class="field"><label for="m-name" data-edit="contact.l1" data-label="Name field label" data-group="Message form">Your name</label><input id="m-name" type="text" required placeholder="Full name"></div>
+            <div class="field"><label for="m-phone" data-edit="contact.l2" data-label="Mobile field label" data-group="Message form">Mobile or email</label><input id="m-phone" type="text" required placeholder="01XXXXXXXXX"></div>
+            <div class="field full"><label for="m-topic" data-edit="contact.l3" data-label="Topic field label" data-group="Message form">Topic</label><select id="m-topic"><option>Order status</option><option>Size &amp; fit help</option><option>Exchange or return</option><option>Bulk / wedding orders</option><option>Something else</option></select></div>
+            <div class="field full"><label for="m-msg" data-edit="contact.l4" data-label="Message field label" data-group="Message form">Message</label><textarea id="m-msg" rows="5" required placeholder="How can we help?"></textarea></div>
           </div>
           <button class="btn btn-primary btn-lg" type="submit" data-edit="contact.send" data-label="Send button text" data-group="Message form">Send message</button>
         </form>
