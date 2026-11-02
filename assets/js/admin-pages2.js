@@ -216,9 +216,47 @@
       $$('#devices button').forEach((x) => x.setAttribute('aria-pressed', x === b));
       $('#frame-wrap').style.setProperty('--fw', b.dataset.w);
     });
+    /* ---- site-wide settings: identity, contact, header, footer ---- */
+    const base = S.settings();
+    const sv = JSON.parse(JSON.stringify({ storeName: base.storeName, tagline: base.tagline, email: base.email, phone: base.phone, address: base.address, facebook: base.facebook, messenger: base.messenger, site: base.site }));
+    const getp = (path) => path.split('.').reduce((o, k) => (o == null ? o : o[k]), sv);
+    const setp = (path, v) => { const ks = path.split('.'); const last = ks.pop(); const o = ks.reduce((a, k) => a[k], sv); o[last] = v; };
+    const tx = (label, path, ph = '') => `<div class="field"><label>${label}</label><input data-p="${path}" value="${esc(getp(path) || '')}" placeholder="${esc(ph)}"></div>`;
+    const ck = (label, path) => `<label class="check small"><input type="checkbox" data-p="${path}" ${getp(path) !== false ? 'checked' : ''}> ${label}</label>`;
+    const links = (title, path) => `<div class="field"><label>${title}</label>${(getp(path) || []).map((l, i) => `<div class="lk-row" data-list="${path}" data-i="${i}"><input data-lf="label" value="${esc(l.label)}" placeholder="Text"><input data-lf="href" value="${esc(l.href)}" placeholder="Link"><span class="lk-btns"><button type="button" data-mv="-1" ${i === 0 ? 'disabled' : ''} aria-label="Up">${icon('chevron-up', 13)}</button><button type="button" data-mv="1" ${i === getp(path).length - 1 ? 'disabled' : ''} aria-label="Down">${icon('chevron-down', 13)}</button><button type="button" data-rm aria-label="Remove">${icon('x', 13)}</button></span></div>`).join('')}<button class="btn btn-glass btn-sm" type="button" data-add="${path}" style="align-self:flex-start">${icon('plus', 13)} Add link</button></div>`;
+    const logoBox = () => `<div class="field"><label>Logo picture</label><div class="cp-img-pick"><div class="cp-new-img">${sv.site.logoImage ? `<img src="${sv.site.logoImage}" alt="" style="border-radius:8px;width:auto;max-width:150px;height:46px;object-fit:contain">` : '<span class="muted xs">Text logo (no picture)</span>'}</div><button class="btn btn-glass btn-sm" data-logo-up type="button">${icon('upload', 14)} Upload</button>${sv.site.logoImage ? '<button class="btn btn-ghost btn-sm danger" data-logo-rm type="button">Remove</button>' : ''}</div><span class="hint">Used in the header and the footer. Without a picture the site title is shown as the logo.</span></div>`;
+    const siteHTML = () => `
+      <details class="c-det" open><summary>Site identity</summary>${tx('Site title', 'storeName')}${tx('Tagline', 'tagline')}${logoBox()}${tx('Logo text (optional)', 'site.logoText', 'Defaults to the site title')}</details>
+      <details class="c-det"><summary>Contact &amp; social</summary>${tx('Phone', 'phone')}${tx('Email', 'email')}${tx('Address', 'address')}${tx('Facebook page link', 'facebook')}${tx('Messenger link', 'messenger')}</details>
+      <details class="c-det"><summary>Header</summary>${ck('Show the top bar', 'site.topbar.show')}${ck('Show the email in the top bar', 'site.topbar.showEmail')}${tx('Deliver to (text)', 'site.topbar.deliverTo')}${links('Top bar links', 'site.topbar.links')}${links('Main menu', 'site.menu')}<p class="xs muted">New shop pages you publish are added to the menu automatically.</p></details>
+      <details class="c-det"><summary>Footer</summary>${tx('Text under the logo', 'site.footerNote')}
+        ${[0, 1, 2].map((i) => `<div class="field"><label>Column ${i + 1} title</label><input data-p="site.footer.cols.${i}.title" value="${esc(sv.site.footer.cols[i].title)}"></div>${links('Column ' + (i + 1) + ' links', 'site.footer.cols.' + i + '.links')}`).join('')}
+        ${ck('Show the service center column', 'site.footer.showService')}${tx('Service center title', 'site.footer.serviceTitle')}
+        ${ck('Show the payment logos', 'site.footer.showPay')}${tx('Payment title', 'site.footer.payTitle')}
+        <div class="row gap-8 wrap">${[['visa', 'VISA'], ['nagad', 'Nagad'], ['bkash', 'bKash'], ['mc', 'Mastercard'], ['cod', 'COD']].map(([k, l]) => ck(l, 'site.footer.pay.' + k)).join('')}</div>
+        ${tx('Copyright line', 'site.footer.copyright', '© {year} {name}. All rights reserved.')}<span class="hint">{year} and {name} are filled in for you.</span>
+        ${ck('Show the "Admin dashboard" link', 'site.footer.showAdminLink')}</details>`;
+    const paintSite = () => { const open = [...$$('#site-groups details')].map((d) => d.open); $('#site-groups').innerHTML = siteHTML(); $$('#site-groups details').forEach((d, i) => { if (open[i] != null) d.open = open[i]; }); };
+    paintSite();
+    const sg = $('#site-groups');
+    sg.addEventListener('input', (e) => {
+      const t = e.target;
+      if (t.dataset.p) { setp(t.dataset.p, t.type === 'checkbox' ? t.checked : t.value); return; }
+      const row = t.closest('[data-list]'); if (row && t.dataset.lf) getp(row.dataset.list)[Number(row.dataset.i)][t.dataset.lf] = t.value;
+    });
+    sg.addEventListener('click', (e) => {
+      const t = e.target; const row = t.closest('[data-list]');
+      const add = t.closest('[data-add]'); if (add) { getp(add.dataset.add).push({ label: 'New link', href: 'index.html' }); paintSite(); return; }
+      if (row) { const arr = getp(row.dataset.list); const i = Number(row.dataset.i);
+        if (t.closest('[data-rm]')) { arr.splice(i, 1); paintSite(); return; }
+        const mv = t.closest('[data-mv]'); if (mv) { const j = i + Number(mv.dataset.mv); [arr[i], arr[j]] = [arr[j], arr[i]]; paintSite(); return; } }
+      if (t.closest('[data-logo-up]')) { const f = document.createElement('input'); f.type = 'file'; f.accept = 'image/*'; f.onchange = async () => { if (!f.files[0]) return; try { sv.site.logoImage = await Admin.compressImage(f.files[0], 600); paintSite(); } catch (er) { A.toast('Could not read that image', 'err'); } }; f.click(); return; }
+      if (t.closest('[data-logo-rm]')) { sv.site.logoImage = ''; paintSite(); }
+    });
     $('#c-publish').addEventListener('click', () => {
       DB.set('look', st.look);
-      S.saveSettings({ heroTitle: st.heroTitle.trim() || DEF_TITLE, heroSub: st.heroSub, announcement: st.announcement });
+      S.saveSettings({ heroTitle: st.heroTitle.trim() || DEF_TITLE, heroSub: st.heroSub, announcement: st.announcement, storeName: sv.storeName.trim() || base.storeName, tagline: sv.tagline, email: sv.email, phone: sv.phone, address: sv.address, facebook: sv.facebook, messenger: sv.messenger, site: sv.site });
+      try { frame.contentWindow.location.reload(); } catch (er) { /* cross-origin */ }
       A.toast('Changes published to your storefront');
     });
     const DEF_TITLE = 'Choose Your Best Panjabi';

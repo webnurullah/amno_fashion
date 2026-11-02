@@ -830,3 +830,16 @@ a.store-row:hover b:first-of-type { color: var(--primary); }
 .hm-qcard { display: flex; flex-direction: column; gap: 8px; padding: 12px; margin-bottom: 8px; border: 1px solid var(--line); border-radius: 14px; background: var(--glass-soft); }
 .hm-qcard select { width: auto; min-width: 120px; }
 @media (max-width: 760px) { .hm-card { grid-template-columns: 1fr; } }
+
+/* customizer: site settings groups */
+.c-det { border-top: 1px solid var(--line); padding: 4px 0 10px; }
+.c-det > summary { cursor: pointer; font-weight: 600; font-size: 15px; padding: 10px 0; list-style: none; display: flex; justify-content: space-between; }
+.c-det > summary::after { content: '\203a'; transition: transform .2s; font-size: 20px; line-height: 1; color: var(--ink-3); }
+.c-det[open] > summary::after { transform: rotate(90deg); }
+.c-det > .field, .c-det > .check, .c-det > .row, .c-det > .hint, .c-det > p { margin-top: 10px; }
+.lk-row { display: grid; grid-template-columns: 1fr 1fr auto; gap: 6px; margin-bottom: 6px; align-items: center; }
+.lk-row input { min-height: 36px; padding: 0 10px; font-size: 13px; min-width: 0; }
+.lk-btns { display: inline-flex; gap: 2px; }
+.lk-btns button { width: 26px; height: 30px; border: 0; border-radius: 8px; background: none; color: var(--ink-3); display: grid; place-items: center; }
+.lk-btns button:hover:not(:disabled) { background: var(--glass-strong); color: var(--ink); }
+.lk-btns button:disabled { opacity: .3; }

@@ -28,6 +28,21 @@
     address: 'House 00, Road 00, Dhaka, Bangladesh',
     facebook: 'https://www.facebook.com/amnufashionbd/',
     messenger: 'https://m.me/amnufashionbd',
+    /* site-wide look & content edited in Admin -> Customize */
+    site: {
+      logoImage: '', logoText: '', footerNote: 'Panjabi for Eid, weddings and every day.',
+      topbar: { show: true, showEmail: true, deliverTo: 'Bangladesh', links: [{ label: 'Store Locations', href: 'stores.html' }, { label: 'Track Order', href: 'track-order.html' }] },
+      menu: [{ label: 'Eid Special', href: 'shop.html?cat=eid' }, { label: 'New Arrivals', href: 'shop.html?sort=new' }, { label: 'Panjabi', href: 'category.html?c=panjabi' }, { label: 'Wedding', href: 'shop.html?cat=wedding' }, { label: 'Kids', href: 'shop.html?cat=kids' }, { label: 'Sets', href: 'shop.html?cat=sets' }, { label: 'Inside Story', href: 'about.html' }],
+      footer: {
+        cols: [
+          { title: 'Legal', links: [{ label: 'Shipping Policy', href: 'policy.html?p=shipping' }, { label: 'Terms and Conditions', href: 'policy.html?p=terms' }, { label: 'Privacy Policy', href: 'policy.html?p=privacy' }, { label: 'Payment Policy', href: 'policy.html?p=payment' }] },
+          { title: 'Information', links: [{ label: 'Exchange & Refund', href: 'policy.html?p=exchange' }, { label: 'Size Guide', href: 'policy.html?p=size' }, { label: 'Store Locations', href: 'stores.html' }, { label: 'Track Your Order', href: 'track-order.html' }] },
+          { title: 'Company', links: [{ label: 'About Us', href: 'about.html' }, { label: 'Contact Us', href: 'contact.html' }, { label: 'Our Craft', href: 'about.html#craft' }, { label: 'Inside Story', href: 'about.html' }, { label: 'Sign in', href: 'login.html' }] }
+        ],
+        showService: true, serviceTitle: 'Service Center', showPay: true, payTitle: 'You Can Pay By', pay: { visa: true, nagad: true, bkash: true, mc: true, cod: true },
+        copyright: '\u00a9 {year} {name}. All rights reserved.', showAdminLink: true
+      }
+    },
     currency: 'BDT',
     shipping: { dhaka: 70, outside: 130, pickup: 100, freeOver: 5000 },
     /* what each courier charges you per parcel (BDT); COD % is taken from the cash they collect */
@@ -361,6 +376,7 @@
     const saved = DB.get('settings', {}) || {};
     const out = Object.assign({}, DEFAULT_SETTINGS, saved);
     ['shipping', 'payments', 'couriers'].forEach((k) => { out[k] = Object.assign({}, DEFAULT_SETTINGS[k], saved[k]); });
+    out.site = Object.assign({}, DEFAULT_SETTINGS.site, saved.site || {});
     return out;
   };
   store.saveSettings = (patch) => DB.set('settings', Object.assign({}, DB.get('settings', {}), patch));
