@@ -59,11 +59,10 @@
   Admin.SITE_ONLY = true;
   const NAV_SITE = () => [
     { heading: 'Site and Product' },
-    { id: 'collections', label: 'Collection pages', icon: 'layout', href: 'collections.html', sub: [['All Pages', 'collections.html', 'collections'], ['Add New', 'collection-edit.html', 'collection-edit']] },
+    { id: 'pages', label: 'Pages', icon: 'file', href: 'pages.html', sub: [['All Pages', 'pages.html', 'pages'], ['Add Shop Page', 'collection-edit.html', 'collection-edit'], ['Add Page', 'pages.html?new=page', ''], ['Add Post', 'pages.html?new=post', '']] },
     { id: 'products', label: 'Products', icon: 'tag', href: 'products.html', sub: [['All Products', 'products.html', 'products'], ['Add New', 'product-edit.html', 'product-edit'], ['Categories', 'categories.html', 'categories']] },
     { id: 'banners', label: 'Banners', icon: 'image', href: 'banners.html' },
     { id: 'media', label: 'Media', icon: 'image', href: 'media.html' },
-    { id: 'pages', label: 'Pages & Posts', icon: 'file', href: 'pages.html' },
     { id: 'appearance', label: 'Customize', icon: 'sliders', href: 'appearance.html' }
   ];
   const NAV = () => {
@@ -105,7 +104,7 @@
       { id: 'settings', label: 'Settings', icon: 'sliders', href: 'settings.html' }
     ];
   };
-  const PARENT = { 'product-edit': 'products', categories: 'products', 'order-view': 'orders', 'collection-edit': 'collections' };
+  const PARENT = { 'product-edit': 'products', categories: 'products', 'order-view': 'orders', 'collection-edit': 'pages', collections: 'pages' };
 
   function sidebarHTML(page) {
     const active = PARENT[page] || page;

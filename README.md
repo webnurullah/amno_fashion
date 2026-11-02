@@ -76,8 +76,8 @@ also be edited under *Products → Categories*. The storefront design itself doe
 
 ## Admin menu: Site and Product
 
-The admin menu currently shows one module, **Site and Product**, with everything for editing and updating the website: Collection
-Pages, Products, Categories, Banners, Pages & Posts, Media and Customize. The business modules (orders, POS, couriers,
+The admin menu currently shows one group, **Site and Product**: **Pages** (all storefront pages in one WordPress-style list: shop pages
+like Panjabi/Kids/Sets, content pages like About and policies, and blog posts), Products (with Categories), Banners, Media and Customize. The business modules (orders, POS, couriers,
 warehouse, finance, reports, settings) are hidden from the menu but their pages and data are untouched. To show the full
 menu again set `Admin.SITE_ONLY = false` in `assets/js/admin-core.js`.
 
