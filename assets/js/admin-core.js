@@ -74,6 +74,7 @@
       { heading: 'Showroom & catalog' },
       { id: 'products', label: 'Designs & products', icon: 'tag', href: 'products.html', sub: [['All Products', 'products.html', 'products'], ['Add New', 'product-edit.html', 'product-edit'], ['Categories', 'categories.html', 'categories']] },
       { id: 'inventory', label: 'Showroom stock', icon: 'barcode', href: 'inventory.html' },
+      { id: 'banners', label: 'Banners', icon: 'layout', href: 'banners.html' },
       { id: 'media', label: 'Media', icon: 'image', href: 'media.html' },
       { id: 'pages', label: 'Pages & Posts', icon: 'file', href: 'pages.html' },
       { heading: 'Finance' },

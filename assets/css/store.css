@@ -734,3 +734,10 @@ a.contact-card:hover { transform: translateX(4px); }
 .cat-hero-card .kicker { color: #8a5a3a; }
 .cat-hero-card p { color: #6b4a33; font-size: 14px; }
 @media (max-width: 1000px) { .cat-hero { min-height: 300px; align-items: flex-end; } .cat-hero-art { padding: 14px 8px 0; opacity: .55; } .cat-hero-card { margin: 0 auto 18px; align-self: flex-end; min-width: 0; max-width: 86%; padding: 18px 22px; } .cat-pj:nth-child(n+4) { display: none; } }
+
+.tile-img .tile-art { background-size: cover; background-position: center; z-index: 0; }
+.tile-img .tile-copy { position: relative; z-index: 1; }
+.tile-img { min-height: 520px; }
+.tile-h { }
+.cat-hero.has-img { display: block; min-height: 0; background: none; }
+.cat-hero.has-img img { display: block; width: 100%; height: auto; max-height: 460px; object-fit: cover; border-radius: inherit; }

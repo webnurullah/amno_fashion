@@ -480,6 +480,9 @@
   store.savePlugins = (l) => DB.set('plugins', l);
   store.media = () => DB.get('media', []);
   store.saveMedia = (l) => DB.set('media', l);
+  /** uploaded banners: home slider slides + per-category banner images ('all' = every listing) */
+  store.banners = () => Object.assign({ home: [], cats: {}, showDefaults: true }, DB.get('banners', {}));
+  store.saveBanners = (b) => DB.set('banners', b);
 
   store.seedProducts = SEED_PRODUCTS;
   store.seedFabrics = SEED_FABRICS;
