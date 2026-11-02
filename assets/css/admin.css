@@ -824,3 +824,9 @@ a.store-row:hover b:first-of-type { color: var(--primary); }
 .cp-new-img img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; border: 1px solid var(--line); }
 .cp-products { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .cp-prod { display: block; }
+
+/* home page builder */
+.hm-card { display: grid; grid-template-columns: 1fr 1fr 1.4fr auto; gap: 8px; align-items: center; margin-bottom: 8px; }
+.hm-qcard { display: flex; flex-direction: column; gap: 8px; padding: 12px; margin-bottom: 8px; border: 1px solid var(--line); border-radius: 14px; background: var(--glass-soft); }
+.hm-qcard select { width: auto; min-width: 120px; }
+@media (max-width: 760px) { .hm-card { grid-template-columns: 1fr; } }

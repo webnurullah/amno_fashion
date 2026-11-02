@@ -166,7 +166,7 @@
         { id: 'del', label: 'Move to trash', confirm: 'Delete the selected items?', run: (ids) => { S.savePages(S.pages().filter((p) => !ids.includes(String(p.id)))); S.saveCollections(S.collections().filter((c) => !ids.includes('c' + c.id))); A.toast('Deleted'); } }
       ],
       actions: {
-        edit: (id, p, a) => edit(id, a),
+        edit: (id, p, a) => { if (p.slug === '/') { location.href = 'home-edit.html'; return; } edit(id, a); },
         toggle: (id, p, a) => { if (p.type === 'shop') { const cl = S.collections(); const c = cl.find((k) => k.id === p.cid); c.status = c.status === 'publish' ? 'draft' : 'publish'; S.saveCollections(cl); a.refresh(); A.toast(c.status === 'publish' ? 'Published' : 'Moved to draft'); return; } const l = S.pages(); const x = l.find((k) => String(k.id) === String(id)); x.status = x.status === 'publish' ? 'draft' : 'publish'; S.savePages(l); a.refresh(); A.toast(x.status === 'publish' ? 'Published' : 'Moved to draft'); },
         del: (id, p, a) => A.confirm(`Delete “${p.title}”?`, 'Delete').then((ok) => { if (ok) { if (p.type === 'shop') S.saveCollections(S.collections().filter((k) => k.id !== p.cid)); else S.savePages(S.pages().filter((k) => String(k.id) !== String(id))); a.refresh(); A.toast('Deleted'); } })
       }
@@ -520,6 +520,97 @@
     $('#cp-draft').addEventListener('click', () => save('draft'));
     $('#cp-del').addEventListener('click', () => A.confirm(`Move “${st.title}” to trash? Its categories and products are kept.`, 'Delete').then((ok) => { if (ok) { S.saveCollections(S.collections().filter((c) => c.id !== st.id)); location.href = 'pages.html?view=shop'; } }));
     $$('.metabox-h').forEach((h) => h.addEventListener('click', () => h.parentElement.classList.toggle('closed')));
+  };
+
+  /* ======================================================================
+     Home page builder (Pages -> Home): sections of the storefront home page
+     ====================================================================== */
+  P['home-edit'] = () => {
+    const ICONS = ['gem', 'ruler', 'sparkle', 'zap', 'scissors', 'shield', 'refresh', 'check', 'heart', 'star', 'truck', 'package', 'tag', 'lock', 'globe', 'clock', 'scale', 'coins'];
+    const LABEL = { hero: 'Hero slider', collection: 'Collection cards', rail: 'Product row', showrooms: 'Showrooms', recent: 'Recently viewed', quality: 'Quality slider' };
+    const SIC = { hero: 'image', collection: 'grid', rail: 'tag', showrooms: 'store', recent: 'clock', quality: 'shield' };
+    const settings = S.settings();
+    const st = { layout: JSON.parse(JSON.stringify(S.homeLayout())), heroTitle: settings.heroTitle || '', heroSub: settings.heroSub || '', showDefaults: S.banners().showDefaults !== false, craftBg: S.banners().craftBg || '' };
+    if (!st.layout.some((x) => x.type === 'hero')) st.layout.unshift({ id: 'hero', type: 'hero', enabled: true });
+    const closed = new Set(); let dirty = false;
+    const pages = () => S.collections();
+    const sec = (id) => st.layout.find((x) => x.id === id);
+    const field = (label, inner, hint) => `<div class="field"><label>${label}</label>${inner}${hint ? `<span class="hint">${hint}</span>` : ''}</div>`;
+    const inp = (id, k, v, ph = '', extra = '') => `<input data-sec="${id}" data-k="${k}" value="${esc(v == null ? '' : v)}" placeholder="${esc(ph)}" ${extra}>`;
+    const body = (x) => {
+      const id = x.id;
+      if (x.type === 'hero') return `<div class="form-grid2">${field('Headline (first slide)', `<input data-top="heroTitle" value="${esc(st.heroTitle)}" maxlength="60">`)}${field('Subtitle (first slide)', `<input data-top="heroSub" value="${esc(st.heroSub)}" maxlength="90">`)}</div>
+        <label class="check small" style="margin-top:6px"><input type="checkbox" data-top="showDefaults" ${st.showDefaults ? 'checked' : ''}> Also show the built-in slides (New Arrivals, Kids, Sets)</label>
+        <p class="small muted" style="margin-top:10px">Upload, reorder or hide your own slider pictures in <a class="btn-link" href="banners.html">Banners</a>.</p>`;
+      if (x.type === 'collection') return `<div class="form-grid2">${field('Section title', inp(id, 'title', x.title))}${field('Link text', inp(id, 'linkLabel', x.linkLabel, 'Explore All'))}</div>
+        ${field('Link address', inp(id, 'link', x.link, 'category.html?c=panjabi'))}
+        <div class="field"><label>Shop pages to show here</label><div class="cat-checks">${pages().map((c) => `<label class="check small"><input type="checkbox" data-sec="${id}" data-page="${esc(c.slug)}" ${(x.pages || []).includes(c.slug) ? 'checked' : ''}> ${esc(c.title)} <span class="muted xs">(${c.cats.length} categories)</span></label>`).join('')}</div><span class="hint">Each category of the chosen pages becomes a card.</span></div>
+        <div class="field"><label>Extra cards</label>${(x.extra || []).map((c, i) => `<div class="hm-card" data-sec="${id}" data-i="${i}"><input data-extra="title" value="${esc(c.title)}" placeholder="Title"><input data-extra="sub" value="${esc(c.sub || '')}" placeholder="Small text"><input data-extra="link" value="${esc(c.link || '')}" placeholder="shop.html?cat=sets"><button class="btn btn-ghost btn-sm danger" data-extra-rm type="button">Remove</button></div>`).join('')}<button class="btn btn-glass btn-sm" data-extra-add="${id}" type="button" style="align-self:flex-start">${icon('plus', 14)} Add card</button></div>`;
+      if (x.type === 'rail') return `<div class="form-grid2">${field('Section title', inp(id, 'title', x.title))}${field('Link text', inp(id, 'linkLabel', x.linkLabel, 'Explore All'))}</div>
+        <div class="form-grid2">${field('Link address', inp(id, 'link', x.link, 'shop.html'))}${field('Number of products', `<input type="number" min="2" max="12" data-sec="${id}" data-k="count" value="${x.count || 8}">`)}</div>
+        <div class="form-grid2">${field('Show', `<select data-sec="${id}" data-k="source"><option value="new" ${x.source === 'new' ? 'selected' : ''}>Newest products</option><option value="popular" ${x.source === 'popular' ? 'selected' : ''}>Best selling</option><option value="featured" ${x.source === 'featured' ? 'selected' : ''}>Featured products</option><option value="cat" ${x.source === 'cat' ? 'selected' : ''}>One category</option></select>`)}${x.source === 'cat' ? field('Category', `<select data-sec="${id}" data-k="cat">${S.categories().map((c) => `<option value="${esc(c.slug)}" ${x.cat === c.slug ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select>`) : ''}</div>`;
+      if (x.type === 'showrooms') return `<div class="form-grid2">${field('Section title', inp(id, 'title', x.title))}${field('Link text', inp(id, 'linkLabel', x.linkLabel, 'All locations'))}</div><p class="small muted">Your showrooms come from the store details.</p>`;
+      if (x.type === 'recent') return field('Section title', inp(id, 'title', x.title)) + '<p class="small muted">Shows the products the visitor looked at recently. It stays empty until they have viewed some.</p>';
+      if (x.type === 'quality') return `<div class="form-grid2">${field('Small heading', inp(id, 'kicker', x.kicker))}${field('Section title', inp(id, 'title', x.title))}</div>
+        <div class="field"><label>Background picture</label><div class="cp-img-pick"><div class="cp-new-img">${st.craftBg ? `<img src="${st.craftBg}" alt="">` : '<span class="muted xs">Dark marble (default)</span>'}</div><button class="btn btn-glass btn-sm" data-bg-up type="button">${icon('upload', 14)} Upload</button>${st.craftBg ? '<button class="btn btn-ghost btn-sm danger" data-bg-rm type="button">Remove</button>' : ''}</div></div>
+        <div class="field"><label>Cards</label>${(x.cards || []).map((c, i) => `<div class="hm-qcard" data-sec="${id}" data-i="${i}"><div class="row gap-8"><select data-card="ic" aria-label="Icon">${ICONS.map((n) => `<option ${c.ic === n ? 'selected' : ''}>${n}</option>`).join('')}</select><input class="grow" data-card="t" value="${esc(c.t)}" placeholder="Card title"><button class="btn btn-ghost btn-icon btn-sm" data-card-mv="-1" ${i === 0 ? 'disabled' : ''} type="button" aria-label="Move up">${icon('chevron-up', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-card-mv="1" ${i === x.cards.length - 1 ? 'disabled' : ''} type="button" aria-label="Move down">${icon('chevron-down', 14)}</button><button class="btn btn-ghost btn-sm danger" data-card-rm type="button">Remove</button></div><textarea data-card="d" rows="2" placeholder="Short description">${esc(c.d)}</textarea></div>`).join('')}<button class="btn btn-glass btn-sm" data-card-add="${id}" type="button" style="align-self:flex-start">${icon('plus', 14)} Add card</button></div>`;
+      return '';
+    };
+    const box = (x, i) => {
+      const fixed = x.type === 'hero'; const removable = x.type === 'collection' || x.type === 'rail';
+      const last = st.layout.length - 1;
+      return `<div class="card metabox ${closed.has(x.id) ? 'closed' : ''}" data-box="${x.id}">
+        <div class="metabox-h" data-head><h3>${icon(SIC[x.type] || 'grid', 18)} ${LABEL[x.type]}${x.title ? ` <span class="muted small">· ${esc(x.title)}</span>` : ''}</h3>
+          <div class="row gap-8"><label class="check small"><input type="checkbox" data-sec="${x.id}" data-k="enabled" ${x.enabled !== false ? 'checked' : ''}> Visible</label>
+            ${fixed ? '' : `<button class="btn btn-ghost btn-icon btn-sm" data-mv="-1" ${i <= 1 ? 'disabled' : ''} type="button" aria-label="Move up">${icon('chevron-up', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-mv="1" ${i === last ? 'disabled' : ''} type="button" aria-label="Move down">${icon('chevron-down', 14)}</button>`}
+            ${removable ? `<button class="btn btn-ghost btn-icon btn-sm danger" data-rm type="button" aria-label="Remove section">${icon('trash', 14)}</button>` : ''}
+            <span class="mb-toggle">${icon('chevron-up', 18)}</span></div></div>
+        <div class="metabox-b col gap-12">${body(x)}</div></div>`;
+    };
+    const paint = () => { $('#hm-sections').innerHTML = st.layout.map(box).join(''); $('#hm-count').textContent = A.plural(st.layout.filter((x) => x.enabled !== false).length, 'visible section'); };
+    paint();
+    const root = $('#hm-sections');
+    root.addEventListener('input', (e) => {
+      dirty = true; const t = e.target;
+      if (t.dataset.top) { st[t.dataset.top] = t.type === 'checkbox' ? t.checked : t.value; return; }
+      const holder = t.closest('[data-sec]') || t; const x = sec(holder.dataset.sec || t.dataset.sec); if (!x) return;
+      if (t.dataset.page) { x.pages = x.pages || []; const i = x.pages.indexOf(t.dataset.page); if (t.checked && i < 0) x.pages.push(t.dataset.page); if (!t.checked && i >= 0) x.pages.splice(i, 1); return; }
+      const row = t.closest('[data-i]'); const i = row ? Number(row.dataset.i) : -1;
+      if (t.dataset.extra && i >= 0) { x.extra[i][t.dataset.extra] = t.value; return; }
+      if (t.dataset.card && i >= 0) { x.cards[i][t.dataset.card] = t.value; return; }
+      if (t.dataset.k) {
+        x[t.dataset.k] = t.type === 'checkbox' ? t.checked : t.type === 'number' ? Math.min(12, Math.max(2, Number(t.value) || 8)) : t.value;
+        if (t.dataset.k === 'source') paint();
+        if (t.dataset.k === 'title') { const h = t.closest('.metabox').querySelector('.metabox-h h3'); if (h) { const sp = h.querySelector('span'); if (sp) sp.textContent = '· ' + t.value; } }
+      }
+    });
+    root.addEventListener('click', async (e) => {
+      const t = e.target; const boxEl = t.closest('[data-box]'); if (!boxEl) return; const id = boxEl.dataset.box; const x = sec(id); const i = st.layout.indexOf(x);
+      const mv = t.closest('[data-mv]'); if (mv) { const j = i + Number(mv.dataset.mv); if (j >= 1 && j < st.layout.length) { [st.layout[i], st.layout[j]] = [st.layout[j], st.layout[i]]; dirty = true; paint(); } return; }
+      if (t.closest('[data-rm]')) { if (await A.confirm(`Remove the section “${x.title || LABEL[x.type]}”?`, 'Remove')) { st.layout.splice(i, 1); dirty = true; paint(); } return; }
+      const ea = t.closest('[data-extra-add]'); if (ea) { x.extra = x.extra || []; x.extra.push({ title: '', sub: '', link: 'shop.html', pid: 1 }); dirty = true; paint(); return; }
+      if (t.closest('[data-extra-rm]')) { x.extra.splice(Number(t.closest('[data-i]').dataset.i), 1); dirty = true; paint(); return; }
+      const ca = t.closest('[data-card-add]'); if (ca) { x.cards = x.cards || []; x.cards.push({ t: '', d: '', ic: 'check' }); dirty = true; paint(); return; }
+      if (t.closest('[data-card-rm]')) { x.cards.splice(Number(t.closest('[data-i]').dataset.i), 1); dirty = true; paint(); return; }
+      const cm = t.closest('[data-card-mv]'); if (cm) { const k = Number(t.closest('[data-i]').dataset.i); const j = k + Number(cm.dataset.cardMv); [x.cards[k], x.cards[j]] = [x.cards[j], x.cards[k]]; dirty = true; paint(); return; }
+      if (t.closest('[data-bg-up]')) { const f = document.createElement('input'); f.type = 'file'; f.accept = 'image/*'; f.onchange = async () => { if (!f.files[0]) return; try { st.craftBg = await Admin.compressImage(f.files[0], 1800); dirty = true; paint(); } catch (er) { A.toast('Could not read that image', 'err'); } }; f.click(); return; }
+      if (t.closest('[data-bg-rm]')) { st.craftBg = ''; dirty = true; paint(); return; }
+      if (t.closest('[data-head]') && !t.closest('button, label, input')) { closed.has(id) ? closed.delete(id) : closed.add(id); boxEl.classList.toggle('closed'); }
+    });
+    const add = (type) => {
+      const id = 's-' + A.uid().slice(0, 5);
+      st.layout.push(type === 'rail' ? { id, type, enabled: true, title: 'New products', link: 'shop.html', linkLabel: 'Explore All', source: 'new', cat: '', count: 8 } : { id, type, enabled: true, title: 'New collection', link: 'shop.html', linkLabel: 'Explore All', pages: [], extra: [] });
+      dirty = true; paint(); A.toast('Section added at the bottom');
+    };
+    $('#hm-add-collection').addEventListener('click', () => add('collection'));
+    $('#hm-add-rail').addEventListener('click', () => add('rail'));
+    $('#hm-save').addEventListener('click', () => {
+      S.saveHomeLayout(st.layout); S.saveSettings({ heroTitle: st.heroTitle.trim() || settings.heroTitle, heroSub: st.heroSub });
+      const bn = S.banners(); bn.showDefaults = st.showDefaults; if (st.craftBg) bn.craftBg = st.craftBg; else delete bn.craftBg; S.saveBanners(bn);
+      dirty = false; A.toast('Home page updated');
+    });
+    $('#hm-reset').addEventListener('click', () => A.confirm('Put the home page back to its original layout and text?', 'Reset').then((ok) => { if (ok) { S.saveHomeLayout(S.homeDefault()); location.reload(); } }));
+    window.addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
   };
 
   P.login = () => {
