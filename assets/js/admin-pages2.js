@@ -650,10 +650,10 @@
     else {
       try {
         const html = await (await fetch('../' + rec.file)).text(); const dom = new DOMParser().parseFromString(html, 'text/html');
-        fields = [...dom.querySelectorAll('[data-edit]')].map((el) => ({ k: el.dataset.edit, label: el.dataset.label || el.dataset.edit, group: el.dataset.group || 'Content', type: el.dataset.type || (el.tagName === 'P' ? 'area' : 'text'), def: el.textContent.replace(/\s+/g, ' ').trim() }));
+        fields = [...dom.querySelectorAll('[data-edit],[data-edit-link]')].map((el) => { const lnk = el.dataset.editLink != null; const src = el.dataset.src; return { k: lnk ? el.dataset.editLink : el.dataset.edit, label: el.dataset.label || el.dataset.edit, group: el.dataset.group || 'Content', type: lnk || src ? 'text' : (el.dataset.type || (el.tagName === 'P' ? 'area' : 'text')), src, def: src ? String(S.settings()[src] || '') : lnk ? (el.getAttribute('href') || '') : el.textContent.replace(/\s+/g, ' ').trim() }; });
       } catch (e) { fields = []; }
       if (!fields.length) { $('#hb-insp').innerHTML = '<p class="muted">This page could not be loaded for editing. Open the admin from your website address (not from a file on your computer) and try again.</p>'; return; }
-      fields.forEach((f) => { st.vals[f.k] = saved[f.k] != null && saved[f.k] !== '' ? saved[f.k] : f.def; });
+      fields.forEach((f) => { st.vals[f.k] = !f.src && saved[f.k] != null && saved[f.k] !== '' ? saved[f.k] : f.def; });
       groups = [{ id: 'banner', label: 'Page banner', sub: 'Picture, headline, button', icon: 'image' }].concat([...new Set(fields.map((f) => f.group))].map((g) => ({ id: 'g:' + g, label: g, sub: A.plural(fields.filter((f) => f.group === g).length, 'field'), icon: 'file' })));
     }
     let sel = groups[0].id;
@@ -696,7 +696,7 @@
     $('#hb-pub').addEventListener('change', () => { setBadge(); $('#hb-dirty').hidden = false; });
     $('#hb-save').addEventListener('click', () => {
       if (isPolicy) { S.savePageText(key, { title: st.title.trim() || S.policy(pk).title, paras: st.paras.filter((t) => t === 'TABLE' || t.trim()) }); rec.title = st.title.trim() || rec.title; }
-      else if (fields.length) { const out = {}; fields.forEach((f) => { const v = st.vals[f.k]; if (v.trim() && v.replace(/\s+/g, ' ').trim() !== f.def) out[f.k] = v.trim(); }); S.savePageText(key, out); }
+      else if (fields.length) { const out = {}; const ss = {}; fields.forEach((f) => { const v = st.vals[f.k]; if (f.src) { if (v.trim()) ss[f.src] = v.trim(); f.def = String(v.trim() || f.def); return; } if (v.trim() && v.replace(/\s+/g, ' ').trim() !== f.def) out[f.k] = v.trim(); }); S.savePageText(key, out); if (Object.keys(ss).length) S.saveSettings(ss); }
       const bn = S.banners(); if (key === 'shop') { bn.cats = bn.cats || {}; if (S.bnHas(st.banner)) bn.cats.all = st.banner; else delete bn.cats.all; } else { bn.pages = bn.pages || {}; if (S.bnHas(st.banner)) bn.pages[key] = st.banner; else delete bn.pages[key]; } S.saveBanners(bn);
       rec.status = $('#hb-pub').value; rec.date = new Date().toISOString(); const l = S.pages(); l[l.findIndex((x) => x.id === rec.id)] = rec; S.savePages(l);
       const all = DB.get('page.draft', {}); delete all[key]; DB.set('page.draft', all); core.saved(); A.toast('Page updated'); core.reload();
