@@ -41,7 +41,7 @@
     $('#tile-art-d').innerHTML = [set(16), set(9)].map((p, i) => `<div class="tile-pj p${i}">${S.thumb(p)}</div>`).join('');
     (() => {
       const track = $('#hero-track'); const slides = [...track.children].filter((t) => !t.hidden); const dots = $('#hero-dots');
-      const per = () => (window.matchMedia('(max-width: 900px)').matches ? 1 : 2);
+      const per = () => 1;
       let idx = 0; let timer;
       const step = () => slides[0].getBoundingClientRect().width + 20;
       const max = () => Math.max(0, slides.length - per());
