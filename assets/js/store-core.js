@@ -197,7 +197,7 @@
     const ann = /^Free delivery on orders over/.test(s.announcement || '') ? '' : s.announcement;
     return `${ann ? `<div class="announce"><span id="announce-text">${esc(ann)}</span></div>` : '<div class="announce" hidden><span id="announce-text"></span></div>'}
     <div class="util"><div class="container util-in">
-      <div class="util-l"><label class="lang"><span class="sr-only">Language</span><select aria-label="Language"><option>English</option><option disabled>বাংলা (coming soon)</option></select></label>
+      <div class="util-l">
         <a href="mailto:${esc(s.email)}">${icon('mail', 16)}<span>${esc(s.email)}</span></a><a href="contact.html">${icon('phone', 16)}<span>Contact</span></a></div>
       <div class="util-r"><span class="deliver">${icon('truck', 16)} Deliver to: <i class="flag-bd"></i> <b>Bangladesh</b></span><a href="stores.html">Store Locations</a><a href="track-order.html">Track Order</a></div>
     </div></div>
