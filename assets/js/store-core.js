@@ -203,7 +203,7 @@
     </div></div>
     <header class="site-header"><div class="container nav-in">
       <a class="logo" href="index.html" aria-label="${esc(s.storeName)} home"><span class="logo-name">AMNU <b>Fashion</b></span></a>
-      <nav class="menu" id="menu" aria-label="Main">${NAV.map(([l, h, on]) => `<a href="${h}" class="${on(cat, page, sort) ? 'active' : ''}">${l}</a>`).join('')}<a class="menu-extra" href="stores.html">Store Locations</a><a class="menu-extra" href="track-order.html">Track Order</a></nav>
+      <nav class="menu" id="menu" aria-label="Main">${NAV.map(([l, h, on]) => `<a href="${h}" class="${on(cat, page, sort) ? 'active' : ''}">${l}</a>`).join('')}${S.livePages().filter((c) => !['panjabi', 'kids', 'sets'].includes(c.slug)).map((c) => `<a href="category.html?c=${esc(c.slug)}" class="${page === 'category' && A.qs.get('c') === c.slug ? 'active' : ''}">${esc(c.title)}</a>`).join('')}<a class="menu-extra" href="stores.html">Store Locations</a><a class="menu-extra" href="track-order.html">Track Order</a></nav>
       <div class="nav-actions">
         <button class="icon-btn" data-search aria-label="Search">${icon('search', 21)}</button>
         <div class="dd" id="acc-dd"><button class="icon-btn" data-dd aria-label="Account" aria-haspopup="true">${icon('user', 21)}</button><div class="dd-menu acc-menu glass-strong">${accountMenu(user)}</div></div>

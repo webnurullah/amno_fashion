@@ -423,6 +423,106 @@
     paint();
   };
 
+  /* ======================================================================
+     Collection pages (WordPress-style list + editor)
+     ====================================================================== */
+  const catThumbHTML = (c) => `<span class="cat-thumb">${c.image ? `<img src="${c.image}" alt="">` : `<i>${esc((c.name || '?').slice(0, 1).toUpperCase())}</i>`}</span>`;
+  P.collections = () => {
+    const rows = () => S.collections().map((c) => Object.assign({}, c, { n: S.collectionProducts(c).length }));
+    const api = Admin.listTable({
+      id: 'collections', mount: $('#list'), perPage: 20, empty: 'No collection pages yet', searchPlaceholder: 'Search pages',
+      rows, rowId: (c) => c.id,
+      views: [{ id: 'all', label: 'All' }, { id: 'publish', label: 'Published', filter: (c) => c.status === 'publish' }, { id: 'draft', label: 'Drafts', filter: (c) => c.status !== 'publish' }],
+      search: (c, q) => (c.title + ' ' + c.slug + ' ' + c.cats.join(' ')).toLowerCase().includes(q),
+      columns: [
+        { id: 'title', label: 'Title', sort: (a, b) => a.title.localeCompare(b.title), render: (c) => `<a class="row-title" href="collection-edit.html?id=${c.id}">${esc(c.title)}</a>${c.status !== 'publish' ? ' <span class="muted">— Draft</span>' : ''}${Admin.actions([{ label: 'Edit', href: `collection-edit.html?id=${c.id}` }, { label: 'View', href: `../category.html?c=${esc(c.slug)}`, target: '_blank' }, { label: 'Delete', act: 'del', id: c.id, danger: true }])}` },
+        { id: 'cats', label: 'Categories', render: (c) => `<div class="chip-list">${c.cats.map((slug) => { const k = S.categories().find((x) => x.slug === slug); return k ? `<span class="badge">${esc(k.name)}</span>` : ''; }).join('') || '<span class="muted">—</span>'}</div>` },
+        { id: 'n', label: 'Products', cls: 'right', sort: (a, b) => a.n - b.n, render: (c) => `<span class="num">${c.n}</span>` },
+        { id: 'slug', label: 'URL', render: (c) => `<span class="mono xs">category.html?c=${esc(c.slug)}</span>` },
+        { id: 'order', label: 'Order', cls: 'right', sort: (a, b) => (a.order || 0) - (b.order || 0), render: (c) => `<span class="num">${c.order || 0}</span>` },
+        { id: 'status', label: 'Status', render: (c) => Admin.pageBadge(c.status) }
+      ],
+      bulk: [{ id: 'del', label: 'Delete', confirm: 'Delete the selected pages? Categories and products are not deleted.', run: (ids) => { S.saveCollections(S.collections().filter((c) => !ids.includes(String(c.id)))); A.toast('Pages deleted'); } }],
+      actions: { del: (id, c, a) => A.confirm(`Delete the page “${c.title}”? Its categories and products are kept.`, 'Delete').then((ok) => { if (ok) { S.saveCollections(S.collections().filter((x) => x.id !== c.id)); a.refresh(); A.toast('Page deleted'); } }) }
+    });
+  };
+
+  P['collection-edit'] = () => {
+    const id = Number(A.qs.get('id')) || 0;
+    const found = id ? S.collections().find((c) => c.id === id) : null;
+    const st = found ? JSON.parse(JSON.stringify(found)) : { id: 0, slug: '', title: '', sub: '', cats: [], status: 'draft', order: S.collections().length + 1 };
+    let slugTouched = !!found; let newImg = '';
+    const catOf = (slug) => S.categories().find((c) => c.slug === slug);
+    const readImg = () => new Promise((res) => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.onchange = async () => { if (!i.files[0]) return res(''); try { res(await Admin.compressImage(i.files[0], 700)); } catch (e) { A.toast('Could not read that image', 'err'); res(''); } }; i.click(); });
+    const paintHead = () => {
+      $('#cp-heading').textContent = st.id ? 'Edit collection page' : 'Add new collection page';
+      $('#cp-permalink').innerHTML = `<b>Permalink:</b> category.html?c=<span id="cp-slug-view">${esc(st.slug || '…')}</span> <button type="button" class="btn-link" id="cp-slug-edit">Edit</button>${st.id && st.status === 'publish' ? ` · <a class="btn-link" target="_blank" rel="noopener" href="../category.html?c=${esc(st.slug)}">View page ↗</a>` : ''}`;
+      $('#cp-save').textContent = st.status === 'publish' ? (st.id ? 'Update' : 'Publish') : 'Publish';
+      $('#cp-draft').hidden = st.status === 'publish' && !!st.id;
+      $('#cp-del').hidden = !st.id;
+    };
+    const paintCats = () => {
+      $('#cp-cats').innerHTML = st.cats.length ? st.cats.map((slug, i) => { const c = catOf(slug); if (!c) return ''; return `<div class="cp-row" data-slug="${esc(slug)}">${catThumbHTML(c)}<div class="grow"><b>${esc(c.name)}</b><div class="xs muted">${A.plural(S.categoryCount(slug), 'product')} · ${esc(slug)}</div></div><button class="btn btn-ghost btn-icon btn-sm" data-mv="-1" ${i === 0 ? 'disabled' : ''} aria-label="Move up">${icon('chevron-up', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-mv="1" ${i === st.cats.length - 1 ? 'disabled' : ''} aria-label="Move down">${icon('chevron-down', 14)}</button><button class="btn btn-glass btn-sm" data-edit type="button">Edit</button><button class="btn btn-ghost btn-sm danger" data-rm type="button">Remove</button></div>`; }).join('') : '<p class="muted small">No categories on this page yet. Add one below.</p>';
+      const free = S.categories().filter((c) => !st.cats.includes(c.slug));
+      $('#cp-existing').innerHTML = free.length ? `<option value="">Choose a category…</option>${free.map((c) => `<option value="${esc(c.slug)}">${esc(c.name)}</option>`).join('')}` : '<option value="">All categories are already on this page</option>';
+      $('#cp-existing').disabled = !free.length; $('#cp-add-existing').disabled = !free.length;
+      const prods = S.collectionProducts(st);
+      $('#cp-count').textContent = A.plural(prods.length, 'product');
+      $('#cp-products').innerHTML = prods.slice(0, 18).map((p) => `<a class="cp-prod" href="product-edit.html?id=${p.id}" title="${esc(p.name)}">${Admin.thumb(p, 'sm')}</a>`).join('') + (prods.length > 18 ? `<span class="muted small">+${prods.length - 18} more</span>` : '') || '<p class="muted small">Products appear here automatically when they belong to one of the categories above.</p>';
+    };
+    const paintNewImg = () => { $('#cp-new-img').innerHTML = newImg ? `<img src="${newImg}" alt=""><button class="btn btn-ghost btn-sm" id="cp-new-rm" type="button">Remove</button>` : '<span class="muted xs">No image yet</span>'; };
+    const fill = () => { $('#cp-title').value = st.title; $('#cp-sub').value = st.sub; $('#cp-status').value = st.status; $('#cp-order').value = st.order; paintHead(); paintCats(); paintNewImg(); };
+    fill();
+    $('#cp-title').addEventListener('input', (e) => { st.title = e.target.value; if (!slugTouched) { st.slug = A.slug(st.title); const v = $('#cp-slug-view'); if (v) v.textContent = st.slug || '…'; } });
+    $('#cp-sub').addEventListener('input', (e) => { st.sub = e.target.value; });
+    $('#cp-status').addEventListener('change', (e) => { st.status = e.target.value; paintHead(); });
+    $('#cp-order').addEventListener('input', (e) => { st.order = Number(e.target.value) || 0; });
+    $('#cp-permalink').addEventListener('click', (e) => { if (!e.target.closest('#cp-slug-edit')) return; const v = prompt('Page slug (used in the address)', st.slug); if (v != null && A.slug(v)) { st.slug = A.slug(v); slugTouched = true; paintHead(); } });
+    $('#cp-cats').addEventListener('click', async (e) => {
+      const row = e.target.closest('.cp-row'); if (!row) return; const slug = row.dataset.slug; const i = st.cats.indexOf(slug);
+      if (e.target.closest('[data-rm]')) { st.cats.splice(i, 1); paintCats(); return; }
+      const mv = e.target.closest('[data-mv]'); if (mv) { const j = i + Number(mv.dataset.mv); [st.cats[i], st.cats[j]] = [st.cats[j], st.cats[i]]; paintCats(); return; }
+      if (e.target.closest('[data-edit]')) {
+        const list = S.categories(); const c = list.find((x) => x.slug === slug); let img = c.image || '';
+        const m = A.modal({ title: 'Edit category', body: `<div class="field"><label for="ec-name">Category name</label><input id="ec-name" value="${esc(c.name)}"></div><div class="field"><label>Category image</label><div class="cp-img-pick"><div id="ec-img" class="cp-new-img"></div><button class="btn btn-glass btn-sm" id="ec-up" type="button">${icon('upload', 14)} Upload image</button></div></div>`, footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Save category</button>' });
+        const pi = () => { $('#ec-img', m.el).innerHTML = img ? `<img src="${img}" alt=""><button class="btn btn-ghost btn-sm" id="ec-rm" type="button">Remove</button>` : '<span class="muted xs">No image</span>'; }; pi();
+        m.el.addEventListener('click', async (ev) => {
+          if (ev.target.closest('#ec-up')) { const src = await readImg(); if (src) { img = src; pi(); } return; }
+          if (ev.target.closest('#ec-rm')) { img = ''; pi(); return; }
+          if (!ev.target.closest('[data-save]')) return;
+          const nm = $('#ec-name', m.el).value.trim(); if (!nm) { A.toast('Enter a name', 'err'); return; }
+          c.name = nm; c.image = img; S.saveCategories(list); m.close(); paintCats(); A.toast('Category updated');
+        });
+      }
+    });
+    $('#cp-add-existing').addEventListener('click', () => { const v = $('#cp-existing').value; if (!v) return; st.cats.push(v); paintCats(); });
+    $('#cp-new-up').addEventListener('click', async () => { const src = await readImg(); if (src) { newImg = src; paintNewImg(); } });
+    $('#cp-new-img').addEventListener('click', (e) => { if (e.target.closest('#cp-new-rm')) { newImg = ''; paintNewImg(); } });
+    $('#cp-add-new').addEventListener('click', () => {
+      const name = $('#cp-new-name').value.trim(); if (!name) { A.toast('Enter the category name', 'err'); $('#cp-new-name').focus(); return; }
+      const list = S.categories(); let slug = A.slug(name); const dup = list.find((c) => c.slug === slug);
+      if (dup) { if (!st.cats.includes(slug)) { st.cats.push(slug); if (newImg && !dup.image) { dup.image = newImg; S.saveCategories(list); } paintCats(); A.toast(`“${dup.name}” already existed, so it was added to this page`); } else A.toast('That category is already on this page', 'err'); return; }
+      list.push({ id: list.reduce((m, c) => Math.max(m, c.id), 0) + 1, slug, name, desc: '', image: newImg });
+      S.saveCategories(list); st.cats.push(slug); $('#cp-new-name').value = ''; newImg = ''; paintNewImg(); paintCats(); A.toast(`Category “${name}” created and added`);
+    });
+    const save = (status) => {
+      if (!st.title.trim()) { $('#cp-title').closest('.field').classList.add('err'); $('#cp-title').focus(); return; }
+      $('#cp-title').closest('.field').classList.remove('err');
+      const list = S.collections(); const slug = A.slug(st.slug || st.title);
+      if (list.some((c) => c.slug === slug && c.id !== st.id)) { A.toast('Another page already uses that slug', 'err'); return; }
+      st.slug = slug; st.title = st.title.trim(); st.status = status;
+      if (st.id) list[list.findIndex((c) => c.id === st.id)] = JSON.parse(JSON.stringify(st));
+      else { st.id = list.reduce((m, c) => Math.max(m, c.id), 0) + 1; list.push(JSON.parse(JSON.stringify(st))); }
+      S.saveCollections(list); fill(); $('#cp-status').value = st.status;
+      try { history.replaceState(null, '', 'collection-edit.html?id=' + st.id); } catch (e) { /* file:// */ }
+      A.toast(status === 'publish' ? 'Page published' : 'Draft saved');
+    };
+    $('#cp-save').addEventListener('click', () => save('publish'));
+    $('#cp-draft').addEventListener('click', () => save('draft'));
+    $('#cp-del').addEventListener('click', () => A.confirm(`Move “${st.title}” to trash? Its categories and products are kept.`, 'Delete').then((ok) => { if (ok) { S.saveCollections(S.collections().filter((c) => c.id !== st.id)); location.href = 'collections.html'; } }));
+    $$('.metabox-h').forEach((h) => h.addEventListener('click', () => h.parentElement.classList.toggle('closed')));
+  };
+
   P.login = () => {
     const f = $('#login-form');
     f.addEventListener('submit', (e) => {

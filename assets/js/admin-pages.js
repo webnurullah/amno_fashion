@@ -409,20 +409,22 @@
   P.categories = () => {
     let editing = null;
     const form = $('#cat-form');
-    const reset = () => { editing = null; form.reset(); $('#cat-form-title').textContent = 'Add new category'; $('#cat-save').textContent = 'Add category'; $('#cat-cancel').hidden = true; };
+    let img = ''; const paintImg = () => { $('#cat-img-box').innerHTML = img ? `<img src="${img}" alt=""><button class="btn btn-ghost btn-sm" id="cat-img-rm" type="button">Remove image</button>` : '<span class="muted xs">No image</span>'; };
+    const reset = () => { editing = null; img = ''; paintImg(); form.reset(); $('#cat-form-title').textContent = 'Add new category'; $('#cat-save').textContent = 'Add category'; $('#cat-cancel').hidden = true; };
     const api = Admin.listTable({
       id: 'categories', mount: $('#list'), perPage: 20, empty: 'No categories yet',
       rows: () => S.categories().map((c) => Object.assign({ count: S.products().filter((p) => p.cats.includes(c.slug)).length }, c)), rowId: (c) => c.id,
       search: (c, q) => (c.name + c.slug + c.desc).toLowerCase().includes(q), searchPlaceholder: 'Search categories',
       columns: [
         { id: 'name', label: 'Name', sort: (a, b) => a.name.localeCompare(b.name), render: (c) => `<b class="row-title">${esc(c.name)}</b>${Admin.actions([{ label: 'Edit', act: 'edit', id: c.id }, { label: 'Delete', act: 'del', id: c.id, danger: true }, { label: 'View', href: '../shop.html?cat=' + c.slug, target: '_blank' }])}` },
+        { id: 'img', label: 'Image', render: (c) => `<span class="cat-thumb">${c.image ? `<img src="${c.image}" alt="">` : '<i>—</i>'}</span>` },
         { id: 'desc', label: 'Description', render: (c) => `<span class="muted">${esc(c.desc || '—')}</span>` },
         { id: 'slug', label: 'Slug', render: (c) => `<span class="mono">${esc(c.slug)}</span>` },
         { id: 'count', label: 'Count', cls: 'right', sort: (a, b) => a.count - b.count, render: (c) => `<span class="num">${c.count}</span>` }
       ],
       bulk: [{ id: 'del', label: 'Delete', confirm: 'Delete selected categories? Products keep working but lose this label.', run: (ids) => { S.saveCategories(S.categories().filter((c) => !ids.includes(String(c.id)))); A.toast('Categories deleted'); } }],
       actions: {
-        edit: (id, c) => { editing = c.id; form.elements.name.value = c.name; form.elements.slug.value = c.slug; form.elements.desc.value = c.desc || ''; $('#cat-form-title').textContent = 'Edit category'; $('#cat-save').textContent = 'Update category'; $('#cat-cancel').hidden = false; form.elements.name.focus(); },
+        edit: (id, c) => { editing = c.id; form.elements.name.value = c.name; form.elements.slug.value = c.slug; form.elements.desc.value = c.desc || ''; img = c.image || ''; paintImg(); $('#cat-form-title').textContent = 'Edit category'; $('#cat-save').textContent = 'Update category'; $('#cat-cancel').hidden = false; form.elements.name.focus(); },
         del: (id, c, a) => A.confirm(`Delete “${c.name}”?`, 'Delete').then((ok) => { if (ok) { S.saveCategories(S.categories().filter((x) => x.id !== c.id)); a.refresh(); A.toast('Category deleted'); } })
       }
     });
@@ -437,11 +439,14 @@
       if (editing) {
         const c = list.find((x) => x.id === editing);
         if (c.slug !== slug) { const ps = S.products(); ps.forEach((p) => { p.cats = p.cats.map((s) => (s === c.slug ? slug : s)); }); S.saveProducts(ps); }
-        Object.assign(c, { name, slug, desc: form.elements.desc.value.trim() });
-      } else list.push({ id: list.reduce((m, c) => Math.max(m, c.id), 0) + 1, name, slug, desc: form.elements.desc.value.trim() });
+        Object.assign(c, { name, slug, desc: form.elements.desc.value.trim(), image: img });
+      } else list.push({ id: list.reduce((m, c) => Math.max(m, c.id), 0) + 1, name, slug, desc: form.elements.desc.value.trim(), image: img });
       S.saveCategories(list); reset(); api.refresh(); A.toast(editing ? 'Category updated' : 'Category added');
     });
     $('#cat-cancel').addEventListener('click', reset);
+    $('#cat-img-up').addEventListener('click', () => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.onchange = async () => { if (!i.files[0]) return; try { img = await Admin.compressImage(i.files[0], 700); paintImg(); } catch (e) { A.toast('Could not read that image', 'err'); } }; i.click(); });
+    $('#cat-img-box').addEventListener('click', (e) => { if (e.target.closest('#cat-img-rm')) { img = ''; paintImg(); } });
+    paintImg();
   };
 
   /* ======================================================================

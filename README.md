@@ -66,6 +66,14 @@ customers vs paid to couriers), courier balances and return rates, fabric about 
 production, and plain-language insights computed from the numbers. *Reports* adds fabric & production and
 couriers tabs.
 
+## Collection pages (admin)
+
+*Admin → Collection pages* lists the pages of your storefront (Panjabi, Kids, Sets, or any new one). Open **Add New**
+to create a page: give it a title, add categories to it (pick an existing one, or create a new one with a **name and an
+image**), reorder them, and publish. The page appears at `category.html?c=<slug>` (and in the main menu for new pages),
+shows the round category pictures, and lists **every product that belongs to the page's categories**. Category images can
+also be edited under *Products → Categories*. The storefront design itself does not change.
+
 ## One system, three sales channels
 
 Showroom, website and social-media orders share **one orders table** (`channel: 'store' | 'online' | 'social'`)
