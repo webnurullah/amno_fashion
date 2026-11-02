@@ -42,6 +42,7 @@
      Dashboard
      ====================================================================== */
   P.dashboard = () => {
+    if (Admin.SITE_ONLY) { location.replace('collections.html'); return; }
     const sel = $('#range');
     sel.value = DB.get('dash.range', '30');
     const rev = (o) => Math.max(0, o.subtotal - (o.discount || 0));

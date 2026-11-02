@@ -54,7 +54,18 @@
   /* ======================================================================
      Shell
      ====================================================================== */
+  /** Site-only mode: the business modules (sales, delivery, warehouse, finance...) are hidden from the menu and
+      everything about editing the website lives in one "Site Editor" module. Set to false to bring the full menu back. */
+  Admin.SITE_ONLY = true;
+  const SITE_PAGES = ['collections', 'collection-edit', 'products', 'product-edit', 'categories', 'banners', 'pages', 'media', 'appearance'];
+  const NAV_SITE = () => [
+    { id: 'site', label: 'Site Editor', icon: 'layout', href: 'collections.html', open: true, sub: [
+      ['Collection Pages', 'collections.html', 'collections'], ['Add Collection Page', 'collection-edit.html', 'collection-edit'],
+      ['Products', 'products.html', 'products'], ['Add Product', 'product-edit.html', 'product-edit'], ['Categories', 'categories.html', 'categories'],
+      ['Banners', 'banners.html', 'banners'], ['Pages & Posts', 'pages.html', 'pages'], ['Media', 'media.html', 'media'], ['Customize', 'appearance.html', 'appearance']] }
+  ];
   const NAV = () => {
+    if (Admin.SITE_ONLY) return NAV_SITE();
     const open = S.orders().filter((o) => o.status === 'processing' || o.status === 'pending').length;
     const toBook = S.parcels().filter((o) => S.isLive(o) && o.ship.status === 'pending' && o.ship.courier !== 'pickup').length;
     const wip = S.inProduction().length;
@@ -93,20 +104,21 @@
     ];
   };
   const PARENT = { 'product-edit': 'products', categories: 'products', 'order-view': 'orders', 'collection-edit': 'collections' };
+  const siteParent = (page) => (SITE_PAGES.includes(page) ? 'site' : page);
 
   function sidebarHTML(page) {
-    const active = PARENT[page] || page;
+    const active = Admin.SITE_ONLY ? siteParent(page) : (PARENT[page] || page);
     const items = NAV().map((n) => {
       if (n.heading) return `<div class="nav-heading">${n.heading}</div>`;
       const on = n.id === active;
-      const sub = n.sub && on ? `<ul class="subnav">${n.sub.map(([l, h, id]) => `<li><a href="${h}" class="${id === page ? 'on' : ''}">${l}</a></li>`).join('')}</ul>` : '';
+      const sub = n.sub && (on || n.open) ? `<ul class="subnav">${n.sub.map(([l, h, id]) => `<li><a href="${h}" class="${id === page ? 'on' : ''}">${l}</a></li>`).join('')}</ul>` : '';
       return `<a class="nav-item ${on ? 'on' : ''}" href="${n.href}" ${on ? 'aria-current="page"' : ''} title="${esc(n.label)}">${icon(n.icon, 20)}<span class="nav-label">${n.label}</span>${n.badge ? `<span class="nav-count">${n.badge}</span>` : ''}</a>${sub}`;
     }).join('');
-    return `<div class="side-top"><a class="side-brand" href="index.html" title="AMNU Fashion"><span class="nav-label"><b>AMNU Fashion</b><small>Admin</small></span></a></div>
+    return `<div class="side-top"><a class="side-brand" href="${Admin.SITE_ONLY ? 'collections.html' : 'index.html'}" title="AMNU Fashion"><span class="nav-label"><b>AMNU Fashion</b><small>Admin</small></span></a></div>
       <nav class="side-nav" aria-label="Admin">${items}
         <div class="nav-heading">Channels</div>
         <a class="nav-item" href="../index.html" target="_blank" rel="noopener" title="Online store">${icon('store', 20)}<span class="nav-label">Online Store</span><span class="nav-ext">${icon('external', 14)}</span></a>
-        <a class="nav-item" href="${esc(settings.facebook)}" target="_blank" rel="noopener" title="Facebook page">${icon('facebook', 20)}<span class="nav-label">Facebook Page</span><span class="nav-ext">${icon('external', 14)}</span></a>
+        ${Admin.SITE_ONLY ? '' : `<a class="nav-item" href="${esc(settings.facebook)}" target="_blank" rel="noopener" title="Facebook page">${icon('facebook', 20)}<span class="nav-label">Facebook Page</span><span class="nav-ext">${icon('external', 14)}</span></a>`}
       </nav>
       <div class="side-bottom">
         <button class="nav-item collapse-btn" id="collapse-btn" type="button" title="Collapse menu">${icon('chevron-left', 20)}<span class="nav-label">Collapse menu</span></button>
@@ -120,31 +132,31 @@
     const drafts = S.pages().filter((p) => p.status === 'draft').length;
     const today = A.ymd(Date.now());
     const unclosed = S.showrooms().filter((l) => !S.closeFor(l.id, today)).length;
-    const alerts = openOrders + lowStock + drafts;
+    const alerts = Admin.SITE_ONLY ? drafts : openOrders + lowStock + drafts;
     return `<button class="icon-btn only-mobile" id="side-open" aria-label="Open menu">${icon('menu', 22)}</button>
       <button class="search-btn" id="search-open" type="button" aria-label="Search">${icon('search', 18)}<span>Search anything…</span><kbd>⌘ K</kbd></button>
       <div class="top-actions">
         <div class="dd"><button class="btn btn-violet btn-sm" data-dd aria-haspopup="true">${icon('plus', 16)} <span class="hide-sm">New</span></button>
-          <div class="dd-menu glass-strong"><a href="pos.html">${icon('receipt', 18)} POS sale</a><a href="product-edit.html">${icon('package', 18)} Product</a><a href="expenses.html?new=1">${icon('trend-down', 18)} Expense</a><a href="purchases.html?new=1">${icon('swap', 18)} Purchase order</a><a href="pages.html?new=post">${icon('file', 18)} Post</a><a href="coupons.html?new=1">${icon('tag', 18)} Coupon</a><a href="users.html?new=1">${icon('user', 18)} User</a></div></div>
+          <div class="dd-menu glass-strong">${Admin.SITE_ONLY ? `<a href="collection-edit.html">${icon('layout', 18)} Collection page</a><a href="product-edit.html">${icon('package', 18)} Product</a><a href="pages.html?new=post">${icon('file', 18)} Post</a><a href="banners.html">${icon('image', 18)} Banner</a>` : `<a href="pos.html">${icon('receipt', 18)} POS sale</a><a href="product-edit.html">${icon('package', 18)} Product</a><a href="expenses.html?new=1">${icon('trend-down', 18)} Expense</a><a href="purchases.html?new=1">${icon('swap', 18)} Purchase order</a><a href="pages.html?new=post">${icon('file', 18)} Post</a><a href="coupons.html?new=1">${icon('tag', 18)} Coupon</a><a href="users.html?new=1">${icon('user', 18)} User</a>`}</div></div>
         <div class="dd"><button class="icon-btn" data-dd aria-label="Notifications" aria-haspopup="true">${icon('bell', 20)}${alerts ? '<span class="pulse"></span>' : ''}</button>
           <div class="dd-menu glass-strong wide"><div class="dd-h">Notifications</div>
-            <a href="orders.html?status=processing">${icon('bag', 18)}<span><b>${openOrders}</b> orders waiting to be processed</span></a>
-            <a href="products.html?stock=low">${icon('alert', 18)}<span><b>${lowStock}</b> products low or out of stock</span></a>
+            ${Admin.SITE_ONLY ? '' : `<a href="orders.html?status=processing">${icon('bag', 18)}<span><b>${openOrders}</b> orders waiting to be processed</span></a>`}
+            ${Admin.SITE_ONLY ? '' : `<a href="products.html?stock=low">${icon('alert', 18)}<span><b>${lowStock}</b> products low or out of stock</span></a>`}
             <a href="pages.html?view=draft">${icon('file', 18)}<span><b>${drafts}</b> drafts to review</span></a>
-            <a href="day-close.html">${icon('lock', 18)}<span><b>${unclosed}</b> showroom${unclosed === 1 ? '' : 's'} not closed for today</span></a></div></div>
+            ${Admin.SITE_ONLY ? '' : `<a href="day-close.html">${icon('lock', 18)}<span><b>${unclosed}</b> showroom${unclosed === 1 ? '' : 's'} not closed for today</span></a>`}</div></div>
         <button class="icon-btn" data-theme-toggle aria-label="Toggle dark mode">${A.themeIcon()}</button>
         <a class="btn btn-glass btn-sm hide-sm" href="../index.html" target="_blank" rel="noopener">${icon('external', 16)} Visit site</a>
         <div class="dd"><button class="user-btn" data-dd aria-haspopup="true">${Admin.avatar('Amnu Admin', 'sm')}<span class="hide-sm">Howdy, <b>Admin</b></span>${icon('chevron-down', 16)}</button>
-          <div class="dd-menu glass-strong right"><div class="dd-h">Amnu Admin<span class="xs muted" style="display:block;font-weight:400">admin@example.com</span></div><a href="users.html">${icon('user', 18)} Profile</a><a href="settings.html">${icon('sliders', 18)} Settings</a><a href="login.html">${icon('logout', 18)} Log out</a></div></div>
+          <div class="dd-menu glass-strong right"><div class="dd-h">Amnu Admin<span class="xs muted" style="display:block;font-weight:400">admin@example.com</span></div>${Admin.SITE_ONLY ? '' : `<a href="users.html">${icon('user', 18)} Profile</a><a href="settings.html">${icon('sliders', 18)} Settings</a>`}<a href="login.html">${icon('logout', 18)} Log out</a></div></div>
       </div>`;
   }
 
   /* ---------- command palette ---------- */
   function openPalette() {
-    const pages = NAV().filter((n) => n.id).map((n) => ({ t: n.label, s: 'Go to page', href: n.href, ic: n.icon }));
+    const pages = Admin.SITE_ONLY ? NAV()[0].sub.map(([l, h]) => ({ t: l, s: 'Go to page', href: h, ic: 'layout' })) : NAV().filter((n) => n.id).map((n) => ({ t: n.label, s: 'Go to page', href: n.href, ic: n.icon }));
     const m = A.modal({
       title: 'Search',
-      body: `<div class="input-group">${icon('search')}<input id="pal-q" type="search" placeholder="Search products, orders, customers, pages…" autocomplete="off"></div><div class="pal-results" id="pal-r" role="listbox"></div>`,
+      body: `<div class="input-group">${icon('search')}<input id="pal-q" type="search" placeholder="Search products, pages…" autocomplete="off"></div><div class="pal-results" id="pal-r" role="listbox"></div>`,
       onOpen(el) {
         const input = $('#pal-q', el); const out = $('#pal-r', el); let idx = 0; let items = [];
         const run = () => {
@@ -153,8 +165,8 @@
           items = pages.filter((p) => !q || has(p.t)).slice(0, q ? 4 : 6);
           if (q) {
             S.products().filter((p) => has(p.name, p.sku)).slice(0, 4).forEach((p) => items.push({ t: p.name, s: 'Product · ' + p.sku, href: 'product-edit.html?id=' + p.id, ic: 'package' }));
-            S.orders().filter((o) => has('#' + o.id, o.customer.name, o.customer.phone)).slice(-4).reverse().forEach((o) => items.push({ t: `Order #${o.id} · ${o.customer.name}`, s: money(o.total), href: 'order-view.html?id=' + o.id, ic: 'bag' }));
-            S.customers().filter((c) => has(c.name, c.phone, c.email)).slice(0, 3).forEach((c) => items.push({ t: c.name, s: 'Customer · ' + c.phone, href: 'customers.html?q=' + encodeURIComponent(c.name), ic: 'user' }));
+            (Admin.SITE_ONLY ? [] : S.orders()).filter((o) => has('#' + o.id, o.customer.name, o.customer.phone)).slice(-4).reverse().forEach((o) => items.push({ t: `Order #${o.id} · ${o.customer.name}`, s: money(o.total), href: 'order-view.html?id=' + o.id, ic: 'bag' }));
+            (Admin.SITE_ONLY ? [] : S.customers()).filter((c) => has(c.name, c.phone, c.email)).slice(0, 3).forEach((c) => items.push({ t: c.name, s: 'Customer · ' + c.phone, href: 'customers.html?q=' + encodeURIComponent(c.name), ic: 'user' }));
             S.pages().filter((p) => has(p.title)).slice(0, 3).forEach((p) => items.push({ t: p.title, s: p.type === 'post' ? 'Post' : 'Page', href: 'pages.html?q=' + encodeURIComponent(p.title), ic: 'file' }));
           }
           idx = 0;
