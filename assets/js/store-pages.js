@@ -217,9 +217,10 @@
       const pics = (inCat.length ? inCat : all).slice(0, 5);
       const title = pageTitle;
       const tag = st.sale ? 'Online offer' : st.sort === 'new' ? 'New arrivals' : st.cat ? 'Collection' : 'Our collection';
+      const catRec = st.cat ? S.categories().find((c) => c.slug === st.cat) : null; const catImg = catRec && catRec.image;
       const bimg = S.banners().cats[st.cat || (coll ? coll.slug : 'all')] || S.banners().cats.all;
       if (bimg) { $('#cat-hero').className = 'cat-hero has-img'; $('#cat-hero').removeAttribute('style'); $('#cat-hero').innerHTML = `<img src="${bimg}" alt="${esc(title)}">`; return; }
-      $('#cat-hero').className = 'cat-hero scene'; $('#cat-hero').innerHTML = `${sceneSVG(st.cat || (coll && SCENES[coll.slug] ? coll.slug : 'all'))}<div class="cat-hero-art" aria-hidden="true">${pics.slice(0, 3).map((p, i) => `<div class="cat-pj c${i}">${S.thumb(p)}</div>`).join('')}</div><span class="cat-hero-tag">${esc(title)}</span>`;
+      $('#cat-hero').className = 'cat-hero scene' + (catImg ? ' has-photo' : ''); $('#cat-hero').innerHTML = `${sceneSVG(st.cat || (coll && SCENES[coll.slug] ? coll.slug : 'all'))}<div class="cat-hero-art" aria-hidden="true">${pics.slice(0, 3).map((p, i) => `<div class="cat-pj c${i}">${S.thumb(p)}</div>`).join('')}</div><span class="cat-hero-tag">${esc(title)}</span>${catImg ? `<div class="cat-hero-photo"><img src="${catImg}" alt="${esc(title)}"></div>` : ''}`;
     })();
     document.title = `${st.cat ? catName(st.cat) : coll ? coll.title : 'Shop'} — ${settings.storeName}`;
 
