@@ -786,3 +786,10 @@ a.contact-card:hover { transform: translateX(4px); }
 @keyframes galNext { from { transform: translateX(46px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes galPrev { from { transform: translateX(-46px); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (max-width: 1000px) { .gal-arrow { width: 36px; height: 36px; } .gal-arrow.l { left: 8px; } .gal-arrow.r { right: 8px; } }
+
+/* shop by category circles */
+.shop-cats { margin: 26px 0 8px; }
+.shop-cats h2 { font-size: clamp(1.6rem, 2.6vw, 2.3rem); font-weight: 500; letter-spacing: -.02em; margin-bottom: 18px; }
+.circle.on .circle-img { box-shadow: 0 0 0 3px var(--bg, #fff), 0 0 0 5px var(--primary, #2563eb); }
+.circle.on > span:last-child { font-weight: 700; color: var(--primary, #2563eb); }
+@media (max-width: 700px) { .shop-cats .circle-img { width: 96px; height: 96px; } .shop-cats .circle { font-size: 14px; } .rail-wrap.circles .rail > * { flex: 0 0 110px; } }
