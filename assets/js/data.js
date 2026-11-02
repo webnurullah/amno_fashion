@@ -365,6 +365,28 @@
   /* categories (counts are derived) */
   store.categories = () => DB.get('categories', null) || (DB.set('categories', SEED_CATEGORIES), SEED_CATEGORIES.slice());
   store.saveCategories = (list) => DB.set('categories', list);
+  /* home page layout: ordered sections edited in Admin -> Pages -> Home */
+  const SEED_HOME = [
+    { id: 'hero', type: 'hero', enabled: true },
+    { id: 's-panjabi', type: 'collection', enabled: true, title: 'Panjabi', link: 'category.html?c=panjabi', linkLabel: 'Explore All', pages: ['panjabi'], extra: [] },
+    { id: 's-kids', type: 'collection', enabled: true, title: 'Kids & Sets', link: 'shop.html?cat=kids', linkLabel: 'Explore All', pages: ['kids', 'sets'], extra: [
+      { title: 'Father & Son', sub: 'Matching sets', link: 'shop.html?cat=sets', pid: 16 }, { title: 'Eid for Kids', sub: 'Festive picks', link: 'shop.html?cat=kids', pid: 13 }] },
+    { id: 's-new', type: 'rail', enabled: true, title: 'New Arrivals', link: 'shop.html?sort=new', linkLabel: 'Explore All', source: 'new', cat: '', count: 8 },
+    { id: 's-trend', type: 'rail', enabled: true, title: 'Trending Styles', link: 'shop.html', linkLabel: 'Explore All', source: 'popular', cat: '', count: 8 },
+    { id: 's-stores', type: 'showrooms', enabled: true, title: 'Visit our showrooms', link: 'stores.html', linkLabel: 'All locations' },
+    { id: 's-recent', type: 'recent', enabled: true, title: 'Recently Viewed' },
+    { id: 's-quality', type: 'quality', enabled: true, kicker: 'Discover', title: 'Our Product Quality', cards: [
+      { t: 'Fabric first', d: 'Cotton, linen, jamdani and silk-touch fabrics chosen for how they feel after a long day. Every roll is checked before it is cut.', ic: 'gem' },
+      { t: 'Tailored fit', d: 'Consistent size charts, generous placket allowances and clean shoulder lines so a size M is always an M.', ic: 'ruler' },
+      { t: 'Hand finishing', d: 'Buttons set, edges turned and embroidery checked by hand by our master tailors.', ic: 'sparkle' },
+      { t: 'Colour-fast dyes', d: 'Fabrics are pre-washed and tested so colours stay deep after wash after wash.', ic: 'zap' },
+      { t: 'Strong stitching', d: 'Reinforced seams at every stress point: collar, placket, sleeves and hem.', ic: 'scissors' },
+      { t: 'Quality check', d: 'Every piece is inspected for stitching, size and finish before it leaves the showroom or warehouse.', ic: 'shield' },
+      { t: 'Easy exchange', d: 'Wrong size? Exchange online or in any showroom within 7 days.', ic: 'refresh' }] }
+  ];
+  store.homeDefault = () => JSON.parse(JSON.stringify(SEED_HOME));
+  store.homeLayout = () => DB.get('home', null) || store.homeDefault();
+  store.saveHomeLayout = (l) => DB.set('home', l);
   /* collection pages: admin-made pages that group categories (storefront: category.html?c=slug) */
   const SEED_COLLECTIONS = [
     { id: 1, slug: 'panjabi', title: 'Panjabi', sub: 'Eid, weddings and every day in between', cats: ['eid', 'wedding', 'embroidered', 'cotton', 'silk'], status: 'publish', order: 1 },

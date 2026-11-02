@@ -74,6 +74,13 @@ image**), reorder them, and publish. The page appears at `category.html?c=<slug>
 shows the round category pictures, and lists **every product that belongs to the page's categories**. Category images can
 also be edited under *Products → Categories*. The storefront design itself does not change.
 
+## Editing the home page (admin)
+
+*Admin → Pages → Home* opens the **home page builder**: every section of the storefront home page as a box. Turn sections on or off,
+move them up and down, change titles, links and text, choose which shop pages feed a collection-cards section, set what a product row
+shows (newest, best selling, featured or one category) and how many products, edit the quality-slider cards and its background, and add
+new collection or product-row sections. **Update** saves it. The slider pictures are managed in *Banners*. The page design itself is unchanged.
+
 ## Admin menu: Site and Product
 
 The admin menu currently shows one group, **Site and Product**: **Pages** (all storefront pages in one WordPress-style list: shop pages

@@ -20,9 +20,9 @@
   /* tall studio card for a collection */
   const collectionCard = (title, href, p, sub) => `<a class="dcard stage ${stageOf(p)}" style="--tint:${p.color}" href="${href}">${S.thumb(p)}<span class="dcard-title">${esc(title)}${sub ? `<small>${esc(sub)}</small>` : ''}</span></a>`;
   const sectionHead = (title, link, linkLabel = 'Explore All') => `<div class="section-h"><h2>${esc(title)}</h2>${link ? `<a class="u-link" href="${link}">${esc(linkLabel)}</a>` : ''}</div>`;
-  const recentRail = (exclude) => {
+  const recentRail = (exclude, title = 'Recently Viewed') => {
     const l = Recent.list().filter((p) => p.id !== exclude);
-    return l.length ? `<section class="section container"><div class="section-h"><h2>Recently Viewed</h2></div>${rail(l.map(card).join(''), 'products')}</section>` : '';
+    return l.length ? `<section class="section container"><div class="section-h"><h2>${esc(title)}</h2></div>${rail(l.map(card).join(''), 'products')}</section>` : '';
   };
 
   /* ======================================================================
@@ -62,28 +62,40 @@
       window.addEventListener('resize', build); build(); play();
     })();
 
+    const layout = S.homeLayout(); const heroSec = layout.find((x) => x.type === 'hero');
+    if (heroSec && heroSec.enabled === false) $('.hero-slider').hidden = true;
     const byCat = (slug) => pub.find((p) => p.cats[0] === slug) || pub.find((p) => p.cats.includes(slug)) || pub[0];
     const catCards = (slugs) => slugs.map((s) => { const c = S.categories().find((x) => x.slug === s); return c ? collectionCard(c.name, `shop.html?cat=${s}`, byCat(s), A.plural(S.categoryCount(s), 'style')) : ''; }).join('');
-    $('#dept-panjabi').innerHTML = rail(catCards(['eid', 'wedding', 'embroidered', 'cotton', 'silk']), 'cards');
-    $('#dept-kids').innerHTML = rail(catCards(['kids', 'sets']) + collectionCard('Father & Son', 'shop.html?cat=sets', set(16), 'Matching sets') + collectionCard('Eid for Kids', 'shop.html?cat=kids', set(13), 'Festive picks'), 'cards');
-    $('#dept-stores').innerHTML = S.showrooms().map((l) => `<article class="store-card glass"><span class="store-ico">${icon('store', 22)}</span><div class="grow"><h3>${esc(l.name)}</h3><p class="muted small">${esc(l.address)}</p><p class="xs muted">${esc(l.hours)}</p></div><div class="col gap-8"><a class="btn btn-glass btn-sm" href="stores.html">Details</a></div></article>`).join('');
+    const head = (sec) => `<div class="section-h"><h2>${esc(sec.title || '')}</h2>${sec.link ? `<a class="u-link" href="${esc(sec.link)}">${esc(sec.linkLabel || 'Explore All')}</a>` : ''}</div>`;
+    const blocks = layout.filter((x) => x.type !== 'hero' && x.enabled !== false);
+    $('#home-sections').innerHTML = blocks.map((sec) => {
+      if (sec.type === 'recent') return `<div id="sec-${sec.id}"></div>`;
+      if (sec.type === 'quality') return `<section class="craft" id="craft"><div class="container"><span class="kicker light">${esc(sec.kicker || '')}</span><h2>${esc(sec.title || '')}</h2>
+        <div class="cf-stage" id="craft-cards" role="group" aria-roledescription="carousel" aria-label="${esc(sec.title || '')}"></div>
+        <div class="cf-controls"><button class="cf-btn" id="cf-prev" type="button" aria-label="Previous">\u2039</button><div class="cf-bar" id="cf-bar" aria-hidden="true"><i></i></div><button class="cf-btn" id="cf-next" type="button" aria-label="Next">\u203a</button></div></div></section>`;
+      return `<section class="section container ">${head(sec)}<div ${sec.type === 'showrooms' ? 'class="store-row" ' : ''}id="sec-${sec.id}"></div></section>`;
+    }).join('');
+    blocks.forEach((sec) => {
+      const el = $('#sec-' + sec.id);
+      if (sec.type === 'collection') {
+        const slugs = [...new Set((sec.pages || []).flatMap((slug) => (S.collection(slug) || { cats: [] }).cats))];
+        el.innerHTML = rail(catCards(slugs) + (sec.extra || []).map((x) => collectionCard(x.title, x.link || 'shop.html', set(Number(x.pid) || 0), x.sub || '')).join(''), 'cards');
+      } else if (sec.type === 'rail') {
+        let list = sec.source === 'popular' ? popular(pub) : sec.source === 'cat' && sec.cat ? newest(pub.filter((p) => p.cats.includes(sec.cat))) : newest(pub);
+        if (sec.source === 'featured') list = pub.filter((p) => p.featured);
+        el.innerHTML = rail(list.slice(0, Math.max(2, Number(sec.count) || 8)).map(card).join(''), 'products');
+      } else if (sec.type === 'showrooms') {
+        el.innerHTML = S.showrooms().map((l) => `<article class="store-card glass"><span class="store-ico">${icon('store', 22)}</span><div class="grow"><h3>${esc(l.name)}</h3><p class="muted small">${esc(l.address)}</p><p class="xs muted">${esc(l.hours)}</p></div><div class="col gap-8"><a class="btn btn-glass btn-sm" href="stores.html">Details</a></div></article>`).join('');
+      } else if (sec.type === 'recent') {
+        el.innerHTML = recentRail(undefined, sec.title);
+      } else if (sec.type === 'quality') {
+        $('#craft-cards').innerHTML = (sec.cards || []).map((c) => `<article class="cf-card"><span class="craft-ico">${icon(c.ic || 'gem', 26)}</span><p>${esc(c.d)}</p><h3>${esc(c.t)}</h3></article>`).join('');
+        const cbg = S.banners().craftBg; if (cbg) $('#craft').style.backgroundImage = `linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.45)), url('${cbg}')`;
+      }
+    });
 
-    $('#new-rail').innerHTML = rail(newest(pub).slice(0, 8).map(card).join(''), 'products');
-    $('#trend-rail').innerHTML = rail(popular(pub).slice(0, 8).map(card).join(''), 'products');
-    $('#recent-host').innerHTML = recentRail();
-
-    const craft = [
-      ['Fabric first', 'Cotton, linen, jamdani and silk-touch fabrics chosen for how they feel after a long day. Every roll is checked before it is cut.', 'gem'],
-      ['Tailored fit', 'Consistent size charts, generous placket allowances and clean shoulder lines so a size M is always an M.', 'ruler'],
-      ['Hand finishing', 'Buttons set, edges turned and embroidery checked by hand by our master tailors.', 'sparkle'],
-      ['Colour-fast dyes', 'Fabrics are pre-washed and tested so colours stay deep after wash after wash.', 'zap'],
-      ['Strong stitching', 'Reinforced seams at every stress point: collar, placket, sleeves and hem.', 'scissors'],
-      ['Quality check', 'Every piece is inspected for stitching, size and finish before it leaves the showroom or warehouse.', 'shield'],
-      ['Easy exchange', 'Wrong size? Exchange online or in any showroom within 7 days.', 'refresh']
-    ];
-    $('#craft-cards').innerHTML = craft.map(([t, d, ic]) => `<article class="cf-card"><span class="craft-ico">${icon(ic, 26)}</span><p>${d}</p><h3>${t}</h3></article>`).join('');
-    const cbg = S.banners().craftBg; if (cbg) $('#craft').style.backgroundImage = `linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.45)), url('${cbg}')`;
     (() => {
+      if (!$('#craft-cards') || !$('#craft-cards').children.length) return;
       const cards = [...$('#craft-cards').children]; const bar = $('#cf-bar i'); let cur = Math.floor(cards.length / 2); let timer;
       const place = () => {
         const w = $('#craft-cards').clientWidth; const narrow = w < 700; const step = narrow ? w * 0.2 : Math.min(190, w / 6);
