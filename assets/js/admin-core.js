@@ -102,7 +102,7 @@
       { id: 'settings', label: 'Settings', icon: 'sliders', href: 'settings.html' }
     ];
   };
-  const PARENT = { 'product-edit': 'products', categories: 'products', 'order-view': 'orders', 'collection-edit': 'pages', 'home-edit': 'pages', 'page-edit': 'pages', collections: 'pages' };
+  const PARENT = { 'product-edit': 'products', categories: 'products', 'order-view': 'orders', 'collection-edit': 'pages', 'home-edit': 'pages', 'page-edit': 'pages', 'footer-edit': 'pages', collections: 'pages' };
 
   function sidebarHTML(page) {
     const active = PARENT[page] || page;

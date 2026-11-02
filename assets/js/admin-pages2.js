@@ -148,12 +148,12 @@
     };
     const api = Admin.listTable({
       id: 'pages', mount: $('#list'), perPage: 10, empty: 'Nothing here yet', searchPlaceholder: 'Search pages',
-      rows: () => S.pages().concat(S.collections().map((c) => ({ id: 'c' + c.id, cid: c.id, type: 'shop', title: c.title, slug: 'category.html?c=' + c.slug, status: c.status, author: 'Amnu Admin', cats: c.cats, order: c.order, date: null, file: 'category.html?c=' + c.slug }))), rowId: (p) => p.id, initialQ: A.qs.get('q') || '', initialView: A.qs.get('view') || undefined,
-      views: [{ id: 'all', label: 'All' }, { id: 'shop', label: 'Shop pages', filter: (p) => p.type === 'shop' }, { id: 'page', label: 'Content pages', filter: (p) => p.type === 'page' }, { id: 'publish', label: 'Published', filter: (p) => p.status === 'publish' }, { id: 'draft', label: 'Drafts', filter: (p) => p.status === 'draft' }],
+      rows: () => S.pages().concat([{ id: 'footer', type: 'site', title: 'Footer (all pages)', slug: 'Shown on every page', status: 'publish', author: 'Amnu Admin', date: null, system: true }]).concat(S.collections().map((c) => ({ id: 'c' + c.id, cid: c.id, type: 'shop', title: c.title, slug: 'category.html?c=' + c.slug, status: c.status, author: 'Amnu Admin', cats: c.cats, order: c.order, date: null, file: 'category.html?c=' + c.slug }))), rowId: (p) => p.id, initialQ: A.qs.get('q') || '', initialView: A.qs.get('view') || undefined,
+      views: [{ id: 'all', label: 'All' }, { id: 'shop', label: 'Shop pages', filter: (p) => p.type === 'shop' }, { id: 'page', label: 'Content pages', filter: (p) => p.type === 'page' || p.type === 'site' }, { id: 'publish', label: 'Published', filter: (p) => p.status === 'publish' }, { id: 'draft', label: 'Drafts', filter: (p) => p.status === 'draft' }],
       search: (p, q) => (p.title + ' ' + p.slug + ' ' + (p.cat || '')).toLowerCase().includes(q),
       columns: [
-        { id: 'title', label: 'Title', sort: (a, b) => a.title.localeCompare(b.title), render: (p) => (p.type === 'shop' ? `<a class="row-title" href="collection-edit.html?id=${p.cid}">${esc(p.title)}</a>${p.status !== 'publish' ? ' <span class="draft-tag">— Draft</span>' : ''}${Admin.actions([{ label: 'Edit', href: `collection-edit.html?id=${p.cid}` }, { label: p.status === 'publish' ? 'Unpublish' : 'Publish', act: 'toggle', id: p.id }, { label: 'View', href: '../' + p.file, target: '_blank' }, { label: 'Trash', act: 'del', id: p.id, danger: true }])}` : `<a class="row-title" href="#" data-act="edit" data-id="${p.id}">${esc(p.title)}</a>${p.status === 'draft' ? ' <span class="draft-tag">— Draft</span>' : ''}${p.system ? ' <span class="muted xs">· Built-in</span>' : ''}${Admin.actions([{ label: 'Edit', act: 'edit', id: p.id }, { label: p.status === 'publish' ? 'Unpublish' : 'Publish', act: 'toggle', id: p.id }, p.file ? { label: 'View', href: '../' + p.file, target: '_blank' } : null, p.system ? null : { label: 'Trash', act: 'del', id: p.id, danger: true }])}`) },
-        { id: 'type', label: 'Type', render: (p) => `<span class="badge ${p.type === 'shop' ? 'b-ok' : 'b-violet'}">${p.type === 'shop' ? 'Shop page' : 'Page'}</span>` },
+        { id: 'title', label: 'Title', sort: (a, b) => a.title.localeCompare(b.title), render: (p) => (p.type === 'site' ? `<a class="row-title" href="footer-edit.html">${esc(p.title)}</a> <span class="muted xs">· Built-in</span>${Admin.actions([{ label: 'Edit', href: 'footer-edit.html' }])}` : p.type === 'shop' ? `<a class="row-title" href="collection-edit.html?id=${p.cid}">${esc(p.title)}</a>${p.status !== 'publish' ? ' <span class="draft-tag">— Draft</span>' : ''}${Admin.actions([{ label: 'Edit', href: `collection-edit.html?id=${p.cid}` }, { label: p.status === 'publish' ? 'Unpublish' : 'Publish', act: 'toggle', id: p.id }, { label: 'View', href: '../' + p.file, target: '_blank' }, { label: 'Trash', act: 'del', id: p.id, danger: true }])}` : `<a class="row-title" href="#" data-act="edit" data-id="${p.id}">${esc(p.title)}</a>${p.status === 'draft' ? ' <span class="draft-tag">— Draft</span>' : ''}${p.system ? ' <span class="muted xs">· Built-in</span>' : ''}${Admin.actions([{ label: 'Edit', act: 'edit', id: p.id }, { label: p.status === 'publish' ? 'Unpublish' : 'Publish', act: 'toggle', id: p.id }, p.file ? { label: 'View', href: '../' + p.file, target: '_blank' } : null, p.system ? null : { label: 'Trash', act: 'del', id: p.id, danger: true }])}`) },
+        { id: 'type', label: 'Type', render: (p) => `<span class="badge ${p.type === 'shop' ? 'b-ok' : 'b-violet'}">${p.type === 'shop' ? 'Shop page' : p.type === 'site' ? 'Site-wide' : 'Page'}</span>` },
         { id: 'author', label: 'Author', render: (p) => `<div class="row gap-8">${Admin.avatar(p.author, 'xs')}<span class="small">${esc(p.author)}</span></div>` },
         { id: 'cat', label: 'Categories', render: (p) => (p.type === 'shop' ? `<div class="chip-list">${p.cats.map((slug) => { const k = S.categories().find((x) => x.slug === slug); return k ? `<span class="badge">${esc(k.name)}</span>` : ''; }).join('') || '—'}</div>` : '—') },
         { id: 'slug', label: 'URL', hidden: true, render: (p) => `<span class="mono xs">${esc(p.slug)}</span>` },
@@ -225,13 +225,7 @@
       <details class="c-det" open><summary>Site identity</summary>${tx('Site title', 'storeName')}${tx('Tagline', 'tagline')}${logoBox()}${tx('Logo text (optional)', 'site.logoText', 'Defaults to the site title')}</details>
       <details class="c-det"><summary>Contact &amp; social</summary>${tx('Phone', 'phone')}${tx('Email', 'email')}${tx('Address', 'address')}${tx('Facebook page link', 'facebook')}${tx('Messenger link', 'messenger')}</details>
       <details class="c-det"><summary>Header</summary>${tx('Announcement bar (text above the header, empty = hidden)', 'announcement')}${ck('Show the top bar', 'site.topbar.show')}${ck('Show the email in the top bar', 'site.topbar.showEmail')}${tx('Deliver to (text)', 'site.topbar.deliverTo')}${links('Top bar links', 'site.topbar.links')}${links('Main menu', 'site.menu')}<p class="xs muted">New shop pages you publish are added to the menu automatically.</p></details>
-      <details class="c-det"><summary>Footer</summary>${tx('Text under the logo', 'site.footerNote')}
-        ${[0, 1, 2].map((i) => `<div class="field"><label>Column ${i + 1} title</label><input data-p="site.footer.cols.${i}.title" value="${esc(sv.site.footer.cols[i].title)}"></div>${links('Column ' + (i + 1) + ' links', 'site.footer.cols.' + i + '.links')}`).join('')}
-        ${ck('Show the service center column', 'site.footer.showService')}${tx('Service center title', 'site.footer.serviceTitle')}
-        ${ck('Show the payment logos', 'site.footer.showPay')}${tx('Payment title', 'site.footer.payTitle')}
-        <div class="row gap-8 wrap">${[['visa', 'VISA'], ['nagad', 'Nagad'], ['bkash', 'bKash'], ['mc', 'Mastercard'], ['cod', 'COD']].map(([k, l]) => ck(l, 'site.footer.pay.' + k)).join('')}</div>
-        ${tx('Copyright line', 'site.footer.copyright', '© {year} {name}. All rights reserved.')}<span class="hint">{year} and {name} are filled in for you.</span>
-        ${ck('Show the "Admin dashboard" link', 'site.footer.showAdminLink')}</details>`;
+      <details class="c-det"><summary>Footer</summary><p class="xs muted" style="margin:0 0 10px">The footer has its own visual editor with a live preview.</p><a class="btn btn-violet btn-sm" href="footer-edit.html">Edit footer</a></details>`;
     const paintSite = () => { const open = [...$$('#site-groups details')].map((d) => d.open); $('#site-groups').innerHTML = siteHTML(); $$('#site-groups details').forEach((d, i) => { if (open[i] != null) d.open = open[i]; }); };
     paintSite();
     const sg = $('#site-groups');
@@ -792,6 +786,61 @@
       S.saveCollections(list); DB.set('coll.draft', null); core.saved();
       try { history.replaceState(null, '', 'collection-edit.html?id=' + st.id); } catch (er) { /* file:// */ }
       paintList(); paintInsp(); A.toast(st.status === 'publish' ? 'Page published' : 'Draft saved'); core.reload();
+    });
+    paintList(); paintInsp(); core.start();
+  };
+
+  P['footer-edit'] = () => {
+    const base = S.settings();
+    const st = JSON.parse(JSON.stringify({ storeName: base.storeName, tagline: base.tagline, email: base.email, phone: base.phone, facebook: base.facebook, messenger: base.messenger, site: base.site }));
+    const F = st.site.footer; F.cols = F.cols || []; F.pay = F.pay || {};
+    let sel = 'brand';
+    const groups = () => [{ id: 'brand', label: 'Logo & about', sub: st.storeName || 'Logo, title, tagline', icon: 'image' }]
+      .concat(F.cols.map((c, i) => ({ id: 'col' + i, label: c.title || 'Link column ' + (i + 1), sub: A.plural((c.links || []).length, 'link'), icon: 'list' })))
+      .concat([{ id: 'service', label: 'Service center', sub: F.showService === false ? 'Hidden' : 'Phone, email, chat', icon: 'phone' }, { id: 'pay', label: 'Payment logos', sub: F.showPay === false ? 'Hidden' : 'Shown', icon: 'card' }, { id: 'bottom', label: 'Bottom bar', sub: 'Copyright line', icon: 'file' }]);
+    const core = builderCore({
+      snap: () => JSON.stringify(st), restore: (j) => { const o = JSON.parse(j); Object.keys(st).forEach((k) => delete st[k]); Object.assign(st, o); paintList(); paintInsp(); },
+      saveDraft: () => DB.set('site.draft', JSON.parse(JSON.stringify(st))),
+      url: () => '../contact.html?preview=1',
+      onPick: (pid) => { if (groups().some((g) => g.id === pid)) { sel = pid; paintList(); paintInsp(); } }, onReady: () => core.focus(sel)
+    });
+    const tx = (label, k, v, ph) => `<div class="hb-f"><label>${label}</label><input data-k="${k}" value="${esc(v || '')}" placeholder="${esc(ph || '')}"></div>`;
+    const sw = (label, k, on) => `<label class="check small" style="margin:6px 0"><input type="checkbox" data-k="${k}" ${on ? 'checked' : ''}> ${label}</label>`;
+    const linksHTML = (arr) => `<div class="hb-f"><label>Links</label>${(arr || []).map((l, i) => `<div class="lk-row" data-i="${i}"><input data-lf="label" value="${esc(l.label)}" placeholder="Text"><input data-lf="href" value="${esc(l.href)}" placeholder="Link"><span class="lk-btns"><button type="button" data-mv="-1" ${i === 0 ? 'disabled' : ''} aria-label="Up">${icon('chevron-up', 13)}</button><button type="button" data-mv="1" ${i === arr.length - 1 ? 'disabled' : ''} aria-label="Down">${icon('chevron-down', 13)}</button><button type="button" data-rm aria-label="Remove">${icon('x', 13)}</button></span></div>`).join('')}<button class="btn btn-glass btn-sm" type="button" data-add style="align-self:flex-start;margin-top:6px">${icon('plus', 13)} Add link</button></div>`;
+    const paintList = () => { $('#hb-list').innerHTML = listHTML(groups(), sel) + (F.cols.length < 4 ? `<button class="btn btn-glass btn-sm" id="ft-addcol" type="button" style="margin-top:10px">${icon('plus', 13)} Add link column</button>` : ''); };
+    const paintInsp = () => {
+      const g = groups().find((x) => x.id === sel) || groups()[0]; sel = g.id; const insp = $('#hb-insp'); insp.innerHTML = inspHead(g) + '<div class="hb-ib" id="hb-ib"></div>'; const ib = $('#hb-ib');
+      if (sel === 'brand') ib.innerHTML = `<div class="hb-f"><label>Logo picture</label><div class="cp-img-pick"><div class="cp-new-img">${st.site.logoImage ? `<img src="${st.site.logoImage}" alt="" style="border-radius:8px;width:auto;max-width:150px;height:46px;object-fit:contain">` : '<span class="muted xs">Text logo (no picture)</span>'}</div><button class="btn btn-glass btn-sm" id="ft-logo-up" type="button">${icon('upload', 14)} Upload</button>${st.site.logoImage ? '<button class="btn btn-ghost btn-sm danger" id="ft-logo-rm" type="button">Remove</button>' : ''}</div><span class="hint">Also used in the header.</span></div>${tx('Logo text (optional)', 'site.logoText', st.site.logoText, 'Defaults to the site title')}${tx('Site title', 'storeName', st.storeName)}${tx('Tagline', 'tagline', st.tagline)}${tx('Text under the logo', 'site.footerNote', st.site.footerNote)}`;
+      else if (sel.startsWith('col')) { const i = Number(sel.slice(3)); const c = F.cols[i]; ib.innerHTML = `${tx('Column title', 'site.footer.cols.' + i + '.title', c.title)}${linksHTML(c.links)}<div class="hb-if"><button class="btn danger" id="ft-delcol" type="button">Remove this column</button></div>`; }
+      else if (sel === 'service') ib.innerHTML = `${sw('Show the service center column', 'site.footer.showService', F.showService !== false)}${tx('Title', 'site.footer.serviceTitle', F.serviceTitle)}${tx('Phone', 'phone', st.phone)}${tx('Email', 'email', st.email)}${tx('Facebook page link', 'facebook', st.facebook)}${tx('Messenger link', 'messenger', st.messenger)}`;
+      else if (sel === 'pay') ib.innerHTML = `${sw('Show the payment logos', 'site.footer.showPay', F.showPay !== false)}${tx('Title', 'site.footer.payTitle', F.payTitle)}<div class="hb-f"><label>Logos to show</label>${[['visa', 'VISA'], ['nagad', 'Nagad'], ['bkash', 'bKash'], ['mc', 'Mastercard'], ['cod', 'Cash on delivery']].map(([k, l]) => sw(l, 'site.footer.pay.' + k, F.pay[k] !== false)).join('')}</div>`;
+      else ib.innerHTML = `${tx('Copyright line', 'site.footer.copyright', F.copyright, '© {year} {name}. All rights reserved.')}<span class="hint">{year} and {name} are filled in for you.</span>${sw('Show the "Admin dashboard" link', 'site.footer.showAdminLink', F.showAdminLink !== false)}`;
+    };
+    const setp = (path, v) => { const ks = path.split('.'); const last = ks.pop(); const o = ks.reduce((a, k) => a[k], st); o[last] = v; };
+    const curLinks = () => F.cols[Number(sel.slice(3))].links;
+    $('#hb-list').addEventListener('click', (e) => {
+      if (e.target.closest('#ft-addcol')) { F.cols.push({ title: 'New column', links: [{ label: 'New link', href: 'index.html' }] }); sel = 'col' + (F.cols.length - 1); core.changed(true); paintList(); paintInsp(); return; }
+      const r = e.target.closest('.hb-sec'); if (!r) return; sel = r.dataset.id; paintList(); paintInsp(); core.focus(sel);
+    });
+    const insp = $('#hb-insp');
+    insp.addEventListener('input', (e) => {
+      const t = e.target;
+      if (t.dataset.k) { setp(t.dataset.k, t.type === 'checkbox' ? t.checked : t.value); const g = groups().find((x) => x.id === sel); const sm = $('.hb-sec.sel small'), b = $('.hb-sec.sel b'); if (g && b) { b.textContent = g.label; sm.textContent = g.sub; } core.changed(t.type === 'checkbox'); if (t.type === 'checkbox') paintList(); return; }
+      const row = t.closest('.lk-row'); if (row && t.dataset.lf) { curLinks()[Number(row.dataset.i)][t.dataset.lf] = t.value; core.changed(false); }
+    });
+    insp.addEventListener('click', async (e) => {
+      const t = e.target;
+      if (t.closest('#ft-logo-up')) { const src = await readPic(600); if (src) { st.site.logoImage = src; core.changed(true); paintInsp(); } return; }
+      if (t.closest('#ft-logo-rm')) { st.site.logoImage = ''; core.changed(true); paintInsp(); return; }
+      if (t.closest('#ft-delcol')) { if (await A.confirm('Remove this footer column?', 'Remove')) { F.cols.splice(Number(sel.slice(3)), 1); sel = 'brand'; core.changed(true); paintList(); paintInsp(); } return; }
+      if (t.closest('[data-add]')) { curLinks().push({ label: 'New link', href: 'index.html' }); core.changed(true); paintInsp(); paintList(); return; }
+      const row = t.closest('.lk-row'); if (!row) return; const arr = curLinks(); const i = Number(row.dataset.i);
+      if (t.closest('[data-rm]')) { arr.splice(i, 1); core.changed(true); paintInsp(); paintList(); return; }
+      const mv = t.closest('[data-mv]'); if (mv) { const j = i + Number(mv.dataset.mv); [arr[i], arr[j]] = [arr[j], arr[i]]; core.changed(true); paintInsp(); }
+    });
+    $('#hb-save').addEventListener('click', () => {
+      S.saveSettings({ storeName: (st.storeName || '').trim() || base.storeName, tagline: st.tagline, email: st.email, phone: st.phone, facebook: st.facebook, messenger: st.messenger, site: st.site });
+      DB.set('site.draft', null); core.saved(); A.toast('Footer updated'); core.reload();
     });
     paintList(); paintInsp(); core.start();
   };
