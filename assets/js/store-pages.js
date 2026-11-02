@@ -199,7 +199,9 @@
     const SORTS = [['default', 'Default'], ['new', 'Newest'], ['price-asc', 'Price: low to high'], ['price-desc', 'Price: high to low'], ['popular', 'Best selling']];
 
     const pct = settings.digitalDiscountPct;
-    $('#sub-chips').innerHTML = `<a class="chip ${!st.cat ? 'active' : ''}" href="shop.html">All</a>` + S.categories().map((c) => `<a class="chip ${st.cat === c.slug ? 'active' : ''}" href="shop.html?cat=${c.slug}">${esc(c.name)}</a>`).join('');
+    const catPic = (slug) => all.find((x) => (slug ? x.cats.includes(slug) : true)) || all[0];
+    const catCircle = (slug, name) => { const q = catPic(slug); return `<a class="circle ${st.cat === slug ? 'on' : ''}" href="${slug ? 'shop.html?cat=' + slug : 'shop.html'}"><span class="circle-img stage ${stageOf(q)}" style="--tint:${q.color}">${S.thumb(q)}</span><span>${esc(name)}</span></a>`; };
+    $('#sub-chips').innerHTML = rail(catCircle('', 'All') + S.categories().map((c) => catCircle(c.slug, c.name)).join(''), 'circles');
     $('#crumb-cat').textContent = st.cat ? catName(st.cat) : 'All Panjabi';
     (() => {
       const inCat = st.cat ? all.filter((p) => p.cats.includes(st.cat)) : all;
@@ -230,7 +232,6 @@
     const render = () => {
       const list = filtered();
       $('#shop-grid').innerHTML = grid(list.slice(0, st.n), 'No products match your filters');
-      $('#shop-count').textContent = `${list.length} ${list.length === 1 ? 'style' : 'styles'}`;
       const more = $('#load-more'); more.hidden = list.length <= st.n; more.textContent = `Load more (${list.length - st.n} left)`;
       const chips = [];
       st.sizes.forEach((s) => chips.push(['size:' + s, 'Size ' + S.sizeLabel(s)]));
