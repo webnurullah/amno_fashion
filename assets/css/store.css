@@ -778,3 +778,11 @@ a.contact-card:hover { transform: translateX(4px); }
   #shop-grid.grid-products::-webkit-scrollbar { display: none; }
   #shop-grid.grid-products > * { scroll-snap-align: start; min-width: 0; }
 }
+
+/* product gallery: slide between images (swipe on phones) */
+.pdp-main { overflow: hidden; touch-action: pan-y; }
+.pdp-main.go-next > :first-child { animation: galNext .32s ease-out; }
+.pdp-main.go-prev > :first-child { animation: galPrev .32s ease-out; }
+@keyframes galNext { from { transform: translateX(46px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes galPrev { from { transform: translateX(-46px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (max-width: 1000px) { .gal-arrow { width: 36px; height: 36px; } .gal-arrow.l { left: 8px; } .gal-arrow.r { right: 8px; } }
