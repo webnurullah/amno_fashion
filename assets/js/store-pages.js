@@ -291,7 +291,7 @@
     Recent.add(p.id);
     $('#crumb-name').textContent = p.name;
     $('#crumb-cat').innerHTML = `<a href="shop.html?cat=${p.cats[0]}">${esc(catName(p.cats[0]))}</a>`;
-    const v = { color: p.color, size: '', view: 0, more: false };
+    const v = { color: p.color, size: '', view: 0, more: false, dir: 0 };
     const VIEWS = [['front', 'Front'], ['back', 'Back'], ['detail', 'Collar'], ['fabric', 'Fabric']];
     const images = () => (p.image ? [p.image, ...(p.gallery || [])].map((src) => `<img class="pj" src="${esc(src)}" alt="${esc(p.name)}">`) : VIEWS.map(([k]) => A.panjabi(v.color, p.style, k)));
 
@@ -304,7 +304,7 @@
       const url = location.href.split('#')[0];
       root.innerHTML = `
         <div class="pdp-gallery">
-          <div class="pdp-main stage ${stageOf(p)}" style="--tint:${v.color}">${imgs[v.view]}
+          <div class="pdp-main stage ${stageOf(p)} ${v.dir ? (v.dir > 0 ? 'go-next' : 'go-prev') : ''}" style="--tint:${v.color}">${imgs[v.view]}
             ${p.sale ? '<span class="promo-tag">Promo</span>' : ''}
             ${imgs.length > 1 ? `<button class="gal-arrow l" data-view="-1" aria-label="Previous image">${icon('chevron-left', 18)}</button><button class="gal-arrow r" data-view="1" aria-label="Next image">${icon('chevron-right', 18)}</button>` : ''}</div>
           <div class="gal-progress"><span class="num small">${v.view + 1} / ${imgs.length}</span><i><b style="width:${((v.view + 1) / imgs.length) * 100}%"></b></i></div>
@@ -333,7 +333,7 @@
       const t = e.target;
       const c = t.closest('[data-color]'); if (c) { v.color = c.dataset.color; if (v.size && S.onlineStock(p.id, v.size) <= 0) v.size = ''; paint(); return; }
       const s = t.closest('[data-size]'); if (s) { v.size = s.dataset.size; paint(); return; }
-      const g = t.closest('[data-view]'); if (g) { v.view += Number(g.dataset.view); paint(); return; }
+      const g = t.closest('[data-view]'); if (g) { v.dir = Number(g.dataset.view); v.view += v.dir; paint(); v.dir = 0; return; }
       if (t.closest('[data-more]')) { v.more = !v.more; paint(); return; }
       if (t.closest('[data-find]')) { Shop.findInStore(p, v.size || null); return; }
       if (t.closest('[data-copy]')) { try { navigator.clipboard.writeText(location.href); A.toast('Link copied'); } catch (er) { A.toast('Copy the address from your browser bar'); } return; }
@@ -341,6 +341,13 @@
         if (!v.size) { $('#size-err').hidden = false; $('.size-pills').scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
         if (Cart.add({ id: p.id, size: v.size, color: v.color, qty: 1 })) Shop.openDrawer(); else A.toast('That size just sold out online', 'err');
       }
+    });
+    let sx = null; let sy = null;
+    root.addEventListener('touchstart', (e) => { if (!e.target.closest('.pdp-main')) { sx = null; return; } sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+    root.addEventListener('touchend', (e) => {
+      if (sx == null) return; const dx = e.changedTouches[0].clientX - sx; const dy = e.changedTouches[0].clientY - sy; sx = null;
+      if (Math.abs(dx) < 40 || Math.abs(dx) < Math.abs(dy)) return;
+      v.dir = dx < 0 ? 1 : -1; v.view += v.dir; paint(); v.dir = 0;
     });
     paint();
     const rel = S.published().filter((x) => x.id !== p.id).map((x) => ({ x, score: x.cats.filter((c) => p.cats.includes(c)).length * 10 + (x.style === p.style ? 2 : 0) + x.rating })).sort((a, b) => b.score - a.score).slice(0, 8).map((r) => r.x);
