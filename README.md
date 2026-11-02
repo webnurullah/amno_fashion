@@ -74,9 +74,9 @@ image**), reorder them, and publish. The page appears at `category.html?c=<slug>
 shows the round category pictures, and lists **every product that belongs to the page's categories**. Category images can
 also be edited under *Products → Categories*. The storefront design itself does not change.
 
-## Admin menu: Site Editor
+## Admin menu: Site and Product
 
-The admin menu currently shows one module, **Site Editor**, with everything for editing and updating the website: Collection
+The admin menu currently shows one module, **Site and Product**, with everything for editing and updating the website: Collection
 Pages, Products, Categories, Banners, Pages & Posts, Media and Customize. The business modules (orders, POS, couriers,
 warehouse, finance, reports, settings) are hidden from the menu but their pages and data are untouched. To show the full
 menu again set `Admin.SITE_ONLY = false` in `assets/js/admin-core.js`.

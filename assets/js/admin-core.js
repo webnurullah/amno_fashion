@@ -55,14 +55,16 @@
      Shell
      ====================================================================== */
   /** Site-only mode: the business modules (sales, delivery, warehouse, finance...) are hidden from the menu and
-      everything about editing the website lives in one "Site Editor" module. Set to false to bring the full menu back. */
+      everything about editing the website lives in one "Site and Product" group. Set to false to bring the full menu back. */
   Admin.SITE_ONLY = true;
-  const SITE_PAGES = ['collections', 'collection-edit', 'products', 'product-edit', 'categories', 'banners', 'pages', 'media', 'appearance'];
   const NAV_SITE = () => [
-    { id: 'site', label: 'Site Editor', icon: 'layout', href: 'collections.html', open: true, sub: [
-      ['Collection Pages', 'collections.html', 'collections'], ['Add Collection Page', 'collection-edit.html', 'collection-edit'],
-      ['Products', 'products.html', 'products'], ['Add Product', 'product-edit.html', 'product-edit'], ['Categories', 'categories.html', 'categories'],
-      ['Banners', 'banners.html', 'banners'], ['Pages & Posts', 'pages.html', 'pages'], ['Media', 'media.html', 'media'], ['Customize', 'appearance.html', 'appearance']] }
+    { heading: 'Site and Product' },
+    { id: 'collections', label: 'Collection pages', icon: 'layout', href: 'collections.html', sub: [['All Pages', 'collections.html', 'collections'], ['Add New', 'collection-edit.html', 'collection-edit']] },
+    { id: 'products', label: 'Products', icon: 'tag', href: 'products.html', sub: [['All Products', 'products.html', 'products'], ['Add New', 'product-edit.html', 'product-edit'], ['Categories', 'categories.html', 'categories']] },
+    { id: 'banners', label: 'Banners', icon: 'image', href: 'banners.html' },
+    { id: 'media', label: 'Media', icon: 'image', href: 'media.html' },
+    { id: 'pages', label: 'Pages & Posts', icon: 'file', href: 'pages.html' },
+    { id: 'appearance', label: 'Customize', icon: 'sliders', href: 'appearance.html' }
   ];
   const NAV = () => {
     if (Admin.SITE_ONLY) return NAV_SITE();
@@ -104,14 +106,13 @@
     ];
   };
   const PARENT = { 'product-edit': 'products', categories: 'products', 'order-view': 'orders', 'collection-edit': 'collections' };
-  const siteParent = (page) => (SITE_PAGES.includes(page) ? 'site' : page);
 
   function sidebarHTML(page) {
-    const active = Admin.SITE_ONLY ? siteParent(page) : (PARENT[page] || page);
+    const active = PARENT[page] || page;
     const items = NAV().map((n) => {
       if (n.heading) return `<div class="nav-heading">${n.heading}</div>`;
       const on = n.id === active;
-      const sub = n.sub && (on || n.open) ? `<ul class="subnav">${n.sub.map(([l, h, id]) => `<li><a href="${h}" class="${id === page ? 'on' : ''}">${l}</a></li>`).join('')}</ul>` : '';
+      const sub = n.sub && on ? `<ul class="subnav">${n.sub.map(([l, h, id]) => `<li><a href="${h}" class="${id === page ? 'on' : ''}">${l}</a></li>`).join('')}</ul>` : '';
       return `<a class="nav-item ${on ? 'on' : ''}" href="${n.href}" ${on ? 'aria-current="page"' : ''} title="${esc(n.label)}">${icon(n.icon, 20)}<span class="nav-label">${n.label}</span>${n.badge ? `<span class="nav-count">${n.badge}</span>` : ''}</a>${sub}`;
     }).join('');
     return `<div class="side-top"><a class="side-brand" href="${Admin.SITE_ONLY ? 'collections.html' : 'index.html'}" title="AMNU Fashion"><span class="nav-label"><b>AMNU Fashion</b><small>Admin</small></span></a></div>
@@ -153,7 +154,7 @@
 
   /* ---------- command palette ---------- */
   function openPalette() {
-    const pages = Admin.SITE_ONLY ? NAV()[0].sub.map(([l, h]) => ({ t: l, s: 'Go to page', href: h, ic: 'layout' })) : NAV().filter((n) => n.id).map((n) => ({ t: n.label, s: 'Go to page', href: n.href, ic: n.icon }));
+    const pages = NAV().filter((n) => n.id).map((n) => ({ t: n.label, s: 'Go to page', href: n.href, ic: n.icon }));
     const m = A.modal({
       title: 'Search',
       body: `<div class="input-group">${icon('search')}<input id="pal-q" type="search" placeholder="Search products, pages…" autocomplete="off"></div><div class="pal-results" id="pal-r" role="listbox"></div>`,
