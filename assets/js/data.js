@@ -421,6 +421,14 @@
   store.livePages = () => store.collections().filter((c) => c.status === 'publish');
   /** every product that carries one of the page's categories */
   store.collectionProducts = (c) => store.products().filter((p) => p.status === 'publish' && p.cats.some((x) => (c.cats || []).includes(x)));
+  /** the blocks a shop page shows below its banner (editable like the home page) */
+  store.pageSectionsDefault = () => [
+    { id: 'cats', type: 'categories', enabled: true, title: '{page}: Shop By Category', mode: 'page', cats: [] },
+    { id: 'new', type: 'products', enabled: true, title: 'New Arrivals', link: '', linkLabel: 'Explore All', source: 'new', scope: 'page', cat: '', pids: [], count: 8 },
+    { id: 'trend', type: 'products', enabled: true, title: 'Trending Styles', link: '', linkLabel: 'Explore All', source: 'popular', scope: 'page', cat: '', pids: [], count: 8 },
+    { id: 'recent', type: 'recent', enabled: true, title: 'Recently Viewed' }
+  ];
+  store.pageSections = (c) => (c && Array.isArray(c.sections) ? c.sections : store.pageSectionsDefault());
   store.categoryCount = (slug) => store.products().filter((p) => p.status === 'publish' && p.cats.includes(slug)).length;
 
   /* products */
