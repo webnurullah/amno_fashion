@@ -84,7 +84,7 @@
         if (sec.source === 'featured') list = pub.filter((p) => p.featured);
         el.innerHTML = rail(list.slice(0, Math.max(2, Number(sec.count) || 8)).map(card).join(''), 'products');
       } else if (sec.type === 'showrooms') {
-        el.innerHTML = S.showrooms().map((l) => `<article class="store-card glass"><span class="store-ico">${icon('store', 22)}</span><div class="grow"><h3>${esc(l.name)}</h3><p class="muted small">${esc(l.address)}</p><p class="xs muted">${esc(l.hours)}</p></div><div class="col gap-8"><a class="btn btn-glass btn-sm" href="stores.html">Details</a></div></article>`).join('');
+        el.innerHTML = S.showrooms().map((l) => `<article class="store-card glass"><span class="store-ico">${icon('store', 22)}</span><div class="grow"><h3>${esc(l.name)}</h3><p class="muted small">${esc(l.address)}</p><p class="xs muted">${esc(l.hours)}</p></div><div class="col gap-8"><a class="btn btn-glass btn-sm" href="contact.html#stores">Details</a></div></article>`).join('');
       } else if (sec.type === 'recent') {
         el.innerHTML = recentRail(undefined, sec.title);
       } else if (sec.type === 'quality') {

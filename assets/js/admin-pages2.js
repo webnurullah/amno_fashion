@@ -643,7 +643,7 @@
     const setBadge = () => { $('#hb-status').textContent = $('#hb-pub').value === 'publish' ? 'Published' : 'Draft'; $('#hb-status').className = 'badge ' + ($('#hb-pub').value === 'publish' ? 'b-ok' : 'b-warn'); }; setBadge();
     $('#hb-open').href = '../' + (rec.file || 'index.html');
     const saved = S.pageText(key);
-    const st = { vals: {}, banner: S.bn(key === 'shop' ? (S.banners().cats || {}).all : (S.banners().pages || {})[key]), title: '', paras: [] };
+    const st = { vals: {}, banner: S.bn(key === 'shop' ? (S.banners().cats || {}).all : (S.banners().pages || {})[key]), title: '', paras: [], locs: key === 'contact' ? JSON.parse(JSON.stringify(S.locations().filter((l) => l.type === 'showroom'))) : [] };
     let fields = []; let groups = [];
     if (isPolicy) { const cur = S.policy(pk); st.title = cur.title; st.paras = cur.paras.slice(); groups = [{ id: 'banner', label: 'Page banner', sub: 'Picture, headline, button', icon: 'image' }, { id: 'title', label: 'Page title', sub: st.title, icon: 'file' }, { id: 'text', label: 'Page text', sub: A.plural(st.paras.filter((t) => t !== 'TABLE').length, 'paragraph'), icon: 'list' }]; }
     else if (key === 'shop') groups = [{ id: 'banner', label: 'Shop banner', sub: 'Picture, headline, button', icon: 'image' }];
@@ -658,10 +658,10 @@
     }
     let sel = groups[0].id;
     const groupOf = (id) => { if (groups.some((g) => g.id === id)) return id; const f = fields.find((x) => x.k === id); return f ? 'g:' + f.group : null; };
-    const snap = () => JSON.stringify({ v: st.vals, b: st.banner, t: st.title, p: st.paras });
+    const snap = () => JSON.stringify({ v: st.vals, b: st.banner, t: st.title, p: st.paras, l: st.locs });
     const core = builderCore({
-      snap, restore: (j) => { const o = JSON.parse(j); st.vals = o.v; st.banner = o.b; st.title = o.t; st.paras = o.p; paintInsp(); paintList(); },
-      saveDraft: () => { const all = DB.get('page.draft', {}); all[key] = { text: isPolicy ? { title: st.title, paras: st.paras.filter((t) => t === 'TABLE' || t.trim()) } : Object.fromEntries(fields.filter((f) => st.vals[f.k].trim() && st.vals[f.k].replace(/\s+/g, ' ').trim() !== f.def).map((f) => [f.k, st.vals[f.k].trim()])), banner: S.bnHas(st.banner) ? st.banner : null }; DB.set('page.draft', all); },
+      snap, restore: (j) => { const o = JSON.parse(j); st.vals = o.v; st.banner = o.b; st.title = o.t; st.paras = o.p; st.locs = o.l || []; paintInsp(); paintList(); },
+      saveDraft: () => { if (key === 'contact') DB.set('loc.draft', JSON.parse(JSON.stringify(st.locs))); const all = DB.get('page.draft', {}); all[key] = { text: isPolicy ? { title: st.title, paras: st.paras.filter((t) => t === 'TABLE' || t.trim()) } : Object.fromEntries(fields.filter((f) => st.vals[f.k].trim() && st.vals[f.k].replace(/\s+/g, ' ').trim() !== f.def).map((f) => [f.k, st.vals[f.k].trim()])), banner: S.bnHas(st.banner) ? st.banner : null }; DB.set('page.draft', all); },
       url: () => '../' + (rec.file || 'index.html') + (String(rec.file).includes('?') ? '&' : '?') + 'preview=1',
       onPick: (id) => { const g = groupOf(id); if (g) { sel = g; paintList(); paintInsp(); } },
       onReady: () => core.focus(sel === 'banner' ? 'banner' : sel === 'title' ? 'title' : sel === 'text' ? 'text' : (fields.find((f) => 'g:' + f.group === sel) || {}).k)
@@ -675,12 +675,14 @@
       if (g.id === 'title') { ib.innerHTML = `<div class="hb-f"><label>Page title</label><input data-pt value="${esc(st.title)}"></div>`; return; }
       if (g.id === 'text') { ib.innerHTML = st.paras.map((t, i) => t === 'TABLE' ? `<div class="hb-qc"><div class="row between"><b class="small">Size chart table</b><span class="muted xs">Shown automatically</span></div></div>` : `<div class="hb-qc" data-i="${i}"><textarea data-para rows="4">${esc(t)}</textarea><div class="row gap-8"><button class="hb-mini" data-mv="-1" ${i === 0 ? 'disabled' : ''} type="button" aria-label="Move up">${icon('chevron-up', 13)}</button><button class="hb-mini" data-mv="1" ${i === st.paras.length - 1 ? 'disabled' : ''} type="button" aria-label="Move down">${icon('chevron-down', 13)}</button><button class="btn btn-ghost btn-sm danger" data-rm type="button">Remove paragraph</button></div></div>`).join('') + `<button class="btn btn-glass btn-sm" id="pp-add" type="button" style="align-self:flex-start">${icon('plus', 14)} Add paragraph</button>`; return; }
       const gname = g.id.slice(2);
-      ib.innerHTML = fields.filter((f) => f.group === gname).map((f) => `<div class="hb-f"><label>${esc(f.label)}</label>${f.type === 'area' ? `<textarea data-k="${esc(f.k)}" rows="4">${esc(st.vals[f.k])}</textarea>` : `<input data-k="${esc(f.k)}" value="${esc(st.vals[f.k])}">`}${st.vals[f.k].replace(/\s+/g, ' ').trim() !== f.def ? `<button class="btn-link xs" data-reset="${esc(f.k)}" type="button" style="align-self:flex-start">Reset to original</button>` : ''}</div>`).join('');
+      const locsHTML = () => key === 'contact' && gname === 'Store locations' ? `<h5 class="hb-lh">Store addresses</h5>${st.locs.map((l, i) => `<div class="hb-qc loc-row" data-li="${i}"><div class="row between"><b class="small">Store ${i + 1}</b><label class="check small"><input type="checkbox" data-lf="active" ${l.active !== false ? 'checked' : ''}> Show on website</label></div><input data-lf="name" value="${esc(l.name || '')}" placeholder="Store name"><input data-lf="address" value="${esc(l.address || '')}" placeholder="Full address"><input data-lf="hours" value="${esc(l.hours || '')}" placeholder="Opening hours, e.g. Sat – Thu · 10:00 am – 9:00 pm"><input data-lf="phone" value="${esc(l.phone || '')}" placeholder="Phone"><input data-lf="map" value="${esc(l.map || '')}" placeholder="Google Maps link (optional)"><button class="btn btn-ghost btn-sm danger" data-loc-rm type="button" style="align-self:flex-start">Remove this store</button></div>`).join('')}<button class="btn btn-glass btn-sm" id="loc-add" type="button" style="align-self:flex-start">${icon('plus', 14)} Add a store</button>` : '';
+      ib.innerHTML = fields.filter((f) => f.group === gname).map((f) => `<div class="hb-f"><label>${esc(f.label)}</label>${f.type === 'area' ? `<textarea data-k="${esc(f.k)}" rows="4">${esc(st.vals[f.k])}</textarea>` : `<input data-k="${esc(f.k)}" value="${esc(st.vals[f.k])}">`}${st.vals[f.k].replace(/\s+/g, ' ').trim() !== f.def ? `<button class="btn-link xs" data-reset="${esc(f.k)}" type="button" style="align-self:flex-start">Reset to original</button>` : ''}</div>`).join('') + locsHTML();
     };
     $('#hb-list').addEventListener('click', (e) => { const r = e.target.closest('.hb-sec'); if (!r) return; sel = r.dataset.id; paintList(); paintInsp(); core.focus(sel === 'banner' ? 'banner' : sel === 'title' ? 'title' : sel === 'text' ? 'text' : (fields.find((f) => 'g:' + f.group === sel) || {}).k); });
     const insp = $('#hb-insp');
     insp.addEventListener('input', (e) => {
       const el = e.target;
+      const lr = el.closest && el.closest('.loc-row'); if (lr && el.dataset.lf) { st.locs[Number(lr.dataset.li)][el.dataset.lf] = el.type === 'checkbox' ? el.checked : el.value; core.changed(el.type === 'checkbox'); return; }
       if (el.dataset.k) { st.vals[el.dataset.k] = el.value; core.changed(false); return; }
       if (el.dataset.pt != null) { st.title = el.value; const s = groups.find((x) => x.id === 'title'); if (s) { s.sub = st.title; const sm = $('.hb-sec[data-id="title"] small'); if (sm) sm.textContent = st.title; } core.changed(false); return; }
       if (el.dataset.para != null) { st.paras[Number(el.closest('[data-i]').dataset.i)] = el.value; core.changed(false); }
@@ -688,6 +690,8 @@
     insp.addEventListener('click', (e) => {
       const t = e.target; const rs = t.closest('[data-reset]');
       if (rs) { const f = fields.find((x) => x.k === rs.dataset.reset); st.vals[f.k] = f.def; core.changed(true); paintInsp(); return; }
+      if (t.closest('#loc-add')) { st.locs.push({ id: 's-' + A.uid().slice(0, 5), name: 'New store', type: 'showroom', address: '', district: '', phone: '', hours: '', active: true }); core.changed(true); paintInsp(); return; }
+      const lrm = t.closest('[data-loc-rm]'); if (lrm) { st.locs.splice(Number(lrm.closest('.loc-row').dataset.li), 1); core.changed(true); paintInsp(); return; }
       if (t.closest('#pp-add')) { st.paras.push(''); core.changed(true); paintInsp(); return; }
       const row = t.closest('[data-i]'); if (!row) return; const i = Number(row.dataset.i);
       if (t.closest('[data-rm]')) { st.paras.splice(i, 1); core.changed(true); paintInsp(); return; }
@@ -697,6 +701,7 @@
     $('#hb-save').addEventListener('click', () => {
       if (isPolicy) { S.savePageText(key, { title: st.title.trim() || S.policy(pk).title, paras: st.paras.filter((t) => t === 'TABLE' || t.trim()) }); rec.title = st.title.trim() || rec.title; }
       else if (fields.length) { const out = {}; const ss = {}; fields.forEach((f) => { const v = st.vals[f.k]; if (f.src) { if (v.trim()) ss[f.src] = v.trim(); f.def = String(v.trim() || f.def); return; } if (v.trim() && v.replace(/\s+/g, ' ').trim() !== f.def) out[f.k] = v.trim(); }); S.savePageText(key, out); if (Object.keys(ss).length) S.saveSettings(ss); }
+      if (key === 'contact') { S.saveLocations(S.locations().filter((l) => l.type !== 'showroom').concat(JSON.parse(JSON.stringify(st.locs)))); DB.set('loc.draft', null); }
       const bn = S.banners(); if (key === 'shop') { bn.cats = bn.cats || {}; if (S.bnHas(st.banner)) bn.cats.all = st.banner; else delete bn.cats.all; } else { bn.pages = bn.pages || {}; if (S.bnHas(st.banner)) bn.pages[key] = st.banner; else delete bn.pages[key]; } S.saveBanners(bn);
       rec.status = $('#hb-pub').value; rec.date = new Date().toISOString(); const l = S.pages(); l[l.findIndex((x) => x.id === rec.id)] = rec; S.savePages(l);
       const all = DB.get('page.draft', {}); delete all[key]; DB.set('page.draft', all); core.saved(); A.toast('Page updated'); core.reload();
