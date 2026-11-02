@@ -369,6 +369,19 @@
   /* categories (counts are derived) */
   store.categories = () => DB.get('categories', null) || (DB.set('categories', SEED_CATEGORIES), SEED_CATEGORIES.slice());
   store.saveCategories = (list) => DB.set('categories', list);
+  /* collection pages: admin-made pages that group categories (storefront: category.html?c=slug) */
+  const SEED_COLLECTIONS = [
+    { id: 1, slug: 'panjabi', title: 'Panjabi', sub: 'Eid, weddings and every day in between', cats: ['eid', 'wedding', 'embroidered', 'cotton', 'silk'], status: 'publish', order: 1 },
+    { id: 2, slug: 'kids', title: 'Kids', sub: 'Little ones, big occasions', cats: ['kids'], status: 'publish', order: 2 },
+    { id: 3, slug: 'sets', title: 'Sets', sub: 'Panjabi and pajama, ready to wear', cats: ['sets'], status: 'publish', order: 3 }
+  ];
+  store.collections = () => (DB.get('collections', null) || (DB.set('collections', SEED_COLLECTIONS), SEED_COLLECTIONS.slice())).slice().sort((x, y) => (x.order || 0) - (y.order || 0));
+  store.saveCollections = (list) => DB.set('collections', list);
+  store.collection = (slug) => store.collections().find((c) => c.slug === slug);
+  /** published collection pages only */
+  store.livePages = () => store.collections().filter((c) => c.status === 'publish');
+  /** every product that carries one of the page's categories */
+  store.collectionProducts = (c) => store.products().filter((p) => p.status === 'publish' && p.cats.some((x) => (c.cats || []).includes(x)));
   store.categoryCount = (slug) => store.products().filter((p) => p.status === 'publish' && p.cats.includes(slug)).length;
 
   /* products */

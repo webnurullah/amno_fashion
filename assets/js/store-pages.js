@@ -112,25 +112,30 @@
   /* ======================================================================
      Department landing
      ====================================================================== */
-  const DEPTS = {
-    panjabi: { title: 'Panjabi', sub: 'Eid, weddings and every day in between', cats: ['eid', 'wedding', 'embroidered', 'cotton', 'silk'], hero: [2, 1, 4] },
-    kids: { title: 'Kids', sub: 'Little ones, big occasions', cats: ['kids'], hero: [13, 14, 16] },
-    sets: { title: 'Sets', sub: 'Panjabi and pajama, ready to wear', cats: ['sets'], hero: [16, 13, 9] }
+  /** round category tile: the admin-uploaded image when there is one, else the product drawing */
+  const catTile = (c, href, on) => {
+    const prod = S.published().find((x) => x.cats[0] === c.slug) || S.published().find((x) => x.cats.includes(c.slug)) || S.published()[0];
+    const art = c.image ? `<img src="${c.image}" alt="${esc(c.name)}" class="circle-photo">` : S.thumb(prod);
+    return `<a class="circle ${on ? 'on' : ''}" href="${href}"><span class="circle-img ${c.image ? '' : 'stage ' + stageOf(prod)}" style="--tint:${prod.color}">${art}</span><span>${esc(c.name)}</span></a>`;
   };
+  const pageOfCat = (slug) => S.livePages().find((c) => (c.cats || []).includes(slug));
   P.category = () => {
-    const key = A.qs.get('c') in DEPTS ? A.qs.get('c') : 'panjabi';
-    const d = DEPTS[key];
+    const pages = S.livePages();
+    const d = pages.find((c) => c.slug === A.qs.get('c')) || pages[0];
+    if (!d) { $('#cat-banner').innerHTML = '<p class="muted">This page is not available.</p>'; return; }
     document.title = `${d.title} — ${settings.storeName}`;
     const pub = S.published();
-    const inDept = pub.filter((p) => p.cats.some((c) => d.cats.includes(c)));
-    $('#cat-banner').innerHTML = `<div class="banner glass"><div class="banner-copy"><span class="kicker">${esc(d.title)}</span><h1>${esc(d.sub)}</h1><a class="btn btn-primary btn-lg" href="shop.html${d.cats.length === 1 ? '?cat=' + d.cats[0] : ''}">Shop all ${esc(d.title.toLowerCase())}</a></div><div class="banner-art">${d.hero.map((id, i) => `<div class="tile-pj p${i}">${S.thumb(pub.find((p) => p.id === id) || pub[i])}</div>`).join('')}</div></div>`;
+    const inDept = S.collectionProducts(d);
+    const shopAll = d.cats.length === 1 ? `shop.html?cat=${d.cats[0]}` : `shop.html?coll=${d.slug}`;
+    const hero = (inDept.length ? inDept : pub).slice(0, 3);
+    $('#cat-banner').innerHTML = `<div class="banner glass"><div class="banner-copy"><span class="kicker">${esc(d.title)}</span><h1>${esc(d.sub || d.title)}</h1><a class="btn btn-primary btn-lg" href="${shopAll}">Shop all ${esc(d.title.toLowerCase())}</a></div><div class="banner-art">${hero.map((p, i) => `<div class="tile-pj p${i}">${S.thumb(p)}</div>`).join('')}</div></div>`;
     $('#cat-title').textContent = `${d.title}: Shop By Category`;
-    const circles = S.categories().filter((c) => d.cats.includes(c.slug)).map((c) => { const p = pub.find((x) => x.cats[0] === c.slug) || pub.find((x) => x.cats.includes(c.slug)) || pub[0]; return `<a class="circle" href="shop.html?cat=${c.slug}"><span class="circle-img stage ${stageOf(p)}" style="--tint:${p.color}">${S.thumb(p)}</span><span>${esc(c.name)}</span></a>`; }).join('');
+    const circles = d.cats.map((slug) => S.categories().find((c) => c.slug === slug)).filter(Boolean).map((c) => catTile(c, `shop.html?cat=${c.slug}`, false)).join('');
     $('#cat-circles').innerHTML = rail(circles, 'circles');
     $('#cat-new').innerHTML = rail(newest(inDept).slice(0, 8).map(card).join(''), 'products');
     $('#cat-trend').innerHTML = rail(popular(inDept).slice(0, 8).map(card).join(''), 'products');
-    $('#new-link').href = `shop.html?sort=new${d.cats.length === 1 ? '&cat=' + d.cats[0] : ''}`;
-    $('#trend-link').href = `shop.html${d.cats.length === 1 ? '?cat=' + d.cats[0] : ''}`;
+    $('#new-link').href = `shop.html?sort=new${d.cats.length === 1 ? '&cat=' + d.cats[0] : '&coll=' + d.slug}`;
+    $('#trend-link').href = shopAll;
     $('#recent-host').innerHTML = recentRail();
     Shop.syncRails();
   };
@@ -190,7 +195,7 @@
     const maxPrice = Math.ceil(Math.max(...all.map((p) => S.price(p))) / 50) * 50;
     const minPrice = Math.floor(Math.min(...all.map((p) => S.price(p))) / 50) * 50;
     const st = {
-      cat: A.qs.get('cat') || '', q: A.qs.get('q') || '', sort: A.qs.get('sort') || 'default', max: Number(A.qs.get('max')) || maxPrice,
+      cat: A.qs.get('cat') || '', coll: A.qs.get('coll') || '', q: A.qs.get('q') || '', sort: A.qs.get('sort') || 'default', max: Number(A.qs.get('max')) || maxPrice,
       sizes: (A.qs.get('size') || '').split(',').filter(Boolean), colors: (A.qs.get('color') || '').split(',').filter(Boolean), sale: A.qs.get('sale') === '1', n: 8
     };
     const colorMap = new Map();
@@ -199,33 +204,37 @@
     const SORTS = [['default', 'Default'], ['new', 'Newest'], ['price-asc', 'Price: low to high'], ['price-desc', 'Price: high to low'], ['popular', 'Best selling']];
 
     const pct = settings.digitalDiscountPct;
-    const catPic = (slug) => all.find((x) => (slug ? x.cats.includes(slug) : true)) || all[0];
-    const catCircle = (slug, name) => { const q = catPic(slug); return `<a class="circle ${st.cat === slug ? 'on' : ''}" href="${slug ? 'shop.html?cat=' + slug : 'shop.html'}"><span class="circle-img stage ${stageOf(q)}" style="--tint:${q.color}">${S.thumb(q)}</span><span>${esc(name)}</span></a>`; };
-    $('#sub-chips').innerHTML = rail(catCircle('', 'All') + S.categories().map((c) => catCircle(c.slug, c.name)).join(''), 'circles');
-    $('#crumb-cat').textContent = st.cat ? catName(st.cat) : 'All Panjabi';
+    const coll = st.coll ? S.livePages().find((c) => c.slug === st.coll) : null;
+    const scope = coll || (st.cat ? pageOfCat(st.cat) : null);
+    const scopeCats = scope ? scope.cats.map((slug) => S.categories().find((c) => c.slug === slug)).filter(Boolean) : S.categories();
+    const allLabel = scope ? 'All ' + scope.title : 'All';
+    const allHref = scope ? `shop.html?coll=${scope.slug}` : 'shop.html';
+    $('#sub-chips').innerHTML = rail(catTile({ slug: '', name: allLabel, image: '' }, allHref, !st.cat && (!scope || !!coll)) + scopeCats.map((c) => catTile(c, `shop.html?cat=${c.slug}`, st.cat === c.slug)).join(''), 'circles');
+    const pageTitle = st.cat ? catName(st.cat) : coll ? coll.title : 'All Panjabi';
+    $('#crumb-cat').textContent = pageTitle;
     (() => {
-      const inCat = st.cat ? all.filter((p) => p.cats.includes(st.cat)) : all;
+      const inCat = st.cat ? all.filter((p) => p.cats.includes(st.cat)) : coll ? S.collectionProducts(coll) : all;
       const pics = (inCat.length ? inCat : all).slice(0, 5);
-      const title = st.cat ? catName(st.cat) : 'All Panjabi';
+      const title = pageTitle;
       const tag = st.sale ? 'Online offer' : st.sort === 'new' ? 'New arrivals' : st.cat ? 'Collection' : 'Our collection';
-      const bimg = S.banners().cats[st.cat || 'all'] || S.banners().cats.all;
+      const bimg = S.banners().cats[st.cat || (coll ? coll.slug : 'all')] || S.banners().cats.all;
       if (bimg) { $('#cat-hero').className = 'cat-hero has-img'; $('#cat-hero').removeAttribute('style'); $('#cat-hero').innerHTML = `<img src="${bimg}" alt="${esc(title)}">`; return; }
-      $('#cat-hero').className = 'cat-hero scene'; $('#cat-hero').innerHTML = `${sceneSVG(st.cat || 'all')}<div class="cat-hero-art" aria-hidden="true">${pics.slice(0, 3).map((p, i) => `<div class="cat-pj c${i}">${S.thumb(p)}</div>`).join('')}</div><span class="cat-hero-tag">${esc(title)}</span>`;
+      $('#cat-hero').className = 'cat-hero scene'; $('#cat-hero').innerHTML = `${sceneSVG(st.cat || (coll && SCENES[coll.slug] ? coll.slug : 'all'))}<div class="cat-hero-art" aria-hidden="true">${pics.slice(0, 3).map((p, i) => `<div class="cat-pj c${i}">${S.thumb(p)}</div>`).join('')}</div><span class="cat-hero-tag">${esc(title)}</span>`;
     })();
-    document.title = `${st.cat ? catName(st.cat) : 'Shop'} — ${settings.storeName}`;
+    document.title = `${st.cat ? catName(st.cat) : coll ? coll.title : 'Shop'} — ${settings.storeName}`;
 
     const filtered = () => {
       const by = {
         default: (a, b) => (b.featured - a.featured) || (b.sold - a.sold), new: (a, b) => new Date(b.created) - new Date(a.created),
         'price-asc': (a, b) => S.price(a) - S.price(b), 'price-desc': (a, b) => S.price(b) - S.price(a), popular: (a, b) => b.sold - a.sold
       };
-      return all.filter((p) => (!st.cat || p.cats.includes(st.cat)) && (!st.q || [p.name, p.fabric, p.colorName, p.style, p.sku, ...p.cats, ...p.tags].join(' ').toLowerCase().includes(st.q.toLowerCase())) &&
+      return all.filter((p) => (!st.cat || p.cats.includes(st.cat)) && (!coll || p.cats.some((x) => coll.cats.includes(x))) && (!st.q || [p.name, p.fabric, p.colorName, p.style, p.sku, ...p.cats, ...p.tags].join(' ').toLowerCase().includes(st.q.toLowerCase())) &&
         S.price(p) <= st.max && (!st.sizes.length || st.sizes.some((s) => p.sizes.includes(s) && S.onlineStock(p.id, s) > 0)) &&
         (!st.colors.length || p.colors.some((c) => st.colors.includes(c.hex.slice(1)))) && (!st.sale || p.sale)).sort(by[st.sort] || by.default);
     };
     const sync = () => {
       const p = new URLSearchParams();
-      if (st.cat) p.set('cat', st.cat); if (st.q) p.set('q', st.q); if (st.sort !== 'default') p.set('sort', st.sort); if (st.max < maxPrice) p.set('max', st.max);
+      if (st.cat) p.set('cat', st.cat); if (st.coll) p.set('coll', st.coll); if (st.q) p.set('q', st.q); if (st.sort !== 'default') p.set('sort', st.sort); if (st.max < maxPrice) p.set('max', st.max);
       if (st.sizes.length) p.set('size', st.sizes.join(',')); if (st.colors.length) p.set('color', st.colors.join(',')); if (st.sale) p.set('sale', '1');
       try { history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : '')); } catch (e) { /* file:// */ }
     };

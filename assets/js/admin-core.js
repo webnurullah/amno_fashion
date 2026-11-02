@@ -73,6 +73,7 @@
       { id: 'purchases', label: 'Fabric purchases', icon: 'swap', href: 'purchases.html' },
       { heading: 'Showroom & catalog' },
       { id: 'products', label: 'Designs & products', icon: 'tag', href: 'products.html', sub: [['All Products', 'products.html', 'products'], ['Add New', 'product-edit.html', 'product-edit'], ['Categories', 'categories.html', 'categories']] },
+      { id: 'collections', label: 'Collection pages', icon: 'layout', href: 'collections.html', sub: [['All Pages', 'collections.html', 'collections'], ['Add New', 'collection-edit.html', 'collection-edit']] },
       { id: 'inventory', label: 'Showroom stock', icon: 'barcode', href: 'inventory.html' },
       { id: 'banners', label: 'Banners', icon: 'layout', href: 'banners.html' },
       { id: 'media', label: 'Media', icon: 'image', href: 'media.html' },
@@ -91,7 +92,7 @@
       { id: 'settings', label: 'Settings', icon: 'sliders', href: 'settings.html' }
     ];
   };
-  const PARENT = { 'product-edit': 'products', categories: 'products', 'order-view': 'orders' };
+  const PARENT = { 'product-edit': 'products', categories: 'products', 'order-view': 'orders', 'collection-edit': 'collections' };
 
   function sidebarHTML(page) {
     const active = PARENT[page] || page;

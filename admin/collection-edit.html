@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en" data-surface="admin">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Add New Collection Page ‹ AMNU Fashion Admin</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/glass.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <script src="../assets/js/core.js"></script>
+</head>
+<body data-page="collection-edit">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="admin" id="admin">
+    <aside class="sidebar glass" id="sidebar"></aside>
+
+    <div class="admin-main">
+      <header class="topbar glass" id="topbar"></header>
+
+      <main class="content" id="content">
+        <div class="page-head">
+          <div><h1 id="cp-heading">Add new collection page</h1></div>
+          <a class="btn btn-glass" href="collections.html"><i data-icon="chevron-left" data-size="16"></i> All pages</a>
+        </div>
+        <div class="editor-layout">
+          <div class="col gap-16">
+            <div class="card">
+              <div class="field"><label class="sr-only" for="cp-title">Page title</label><input id="cp-title" class="big-input" type="text" placeholder="Page title (e.g. Winter Collection)" autocomplete="off"><span class="msg">Add a page title.</span></div>
+              <div id="cp-permalink" class="permalink small muted"></div>
+              <div class="field" style="margin-top:16px"><label for="cp-sub">Intro line (shown in the page banner)</label><input id="cp-sub" type="text" maxlength="120" placeholder="One short sentence about this page"></div>
+            </div>
+            <div class="card metabox">
+              <div class="metabox-h"><h3>Categories on this page</h3><button class="mb-toggle" type="button" aria-label="Toggle panel"><i data-icon="chevron-up" data-size="18"></i></button></div>
+              <div class="metabox-b">
+                <div id="cp-cats"></div>
+                <div class="cp-add">
+                  <div class="field"><label for="cp-existing">Add an existing category</label><div class="row gap-8"><select id="cp-existing" class="grow"></select><button class="btn btn-glass" id="cp-add-existing" type="button">Add</button></div></div>
+                  <div class="field"><label for="cp-new-name">Or create a new category</label>
+                    <div class="row gap-8 wrap"><input id="cp-new-name" class="grow" type="text" placeholder="Category name" maxlength="40">
+                      <div class="cp-img-pick"><div id="cp-new-img" class="cp-new-img"></div><button class="btn btn-glass btn-sm" id="cp-new-up" type="button"><i data-icon="upload" data-size="14"></i> Image</button></div>
+                      <button class="btn btn-violet" id="cp-add-new" type="button"><i data-icon="plus" data-size="16"></i> Create &amp; add</button></div>
+                    <span class="hint">The image is the round picture shown for this category on the page.</span></div>
+                </div>
+              </div>
+            </div>
+            <div class="card metabox">
+              <div class="metabox-h"><h3>Products on this page <span class="muted small" id="cp-count"></span></h3><button class="mb-toggle" type="button" aria-label="Toggle panel"><i data-icon="chevron-up" data-size="18"></i></button></div>
+              <div class="metabox-b"><div class="cp-products" id="cp-products"></div></div>
+            </div>
+          </div>
+          <aside class="col gap-16">
+            <div class="card metabox">
+              <div class="metabox-h"><h3>Publish</h3><button class="mb-toggle" type="button" aria-label="Toggle panel"><i data-icon="chevron-up" data-size="18"></i></button></div>
+              <div class="metabox-b col gap-12">
+                <div class="field"><label for="cp-status">Status</label><select id="cp-status"><option value="publish">Published</option><option value="draft">Draft</option></select></div>
+                <div class="row between gap-8"><button class="btn btn-ghost" id="cp-draft" type="button">Save draft</button><button class="btn btn-violet" id="cp-save" type="button">Publish</button></div>
+                <button class="btn-link danger small" id="cp-del" type="button" hidden>Move to trash</button>
+              </div>
+            </div>
+            <div class="card metabox">
+              <div class="metabox-h"><h3>Page attributes</h3><button class="mb-toggle" type="button" aria-label="Toggle panel"><i data-icon="chevron-up" data-size="18"></i></button></div>
+              <div class="metabox-b"><div class="field"><label for="cp-order">Order</label><input id="cp-order" type="number" min="0"><span class="hint">Lower numbers come first.</span></div></div>
+            </div>
+          </aside>
+        </div>
+      </main>
+
+      <footer class="admin-footer" id="admin-footer"></footer>
+    </div>
+  </div>
+
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/ops.js"></script>
+  <script src="../assets/js/prod.js"></script>
+  <script src="../assets/js/charts.js"></script>
+  <script src="../assets/js/admin-core.js"></script>
+  <script src="../assets/js/admin-pages.js"></script>
+  <script src="../assets/js/admin-pages2.js"></script>
+  <script src="../assets/js/admin-ops.js"></script>
+  <script src="../assets/js/admin-fin.js"></script>
+  <script src="../assets/js/admin-prod.js"></script>
+  <script>Amnu.admin.boot('collection-edit', Amnu.adminPages['collection-edit']);</script>
+</body>
+</html>
