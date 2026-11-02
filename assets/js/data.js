@@ -31,12 +31,12 @@
     /* site-wide look & content edited in Admin -> Customize */
     site: {
       logoImage: '', logoText: '', footerNote: 'Panjabi for Eid, weddings and every day.',
-      topbar: { show: true, showEmail: true, deliverTo: 'Bangladesh', links: [{ label: 'Store Locations', href: 'stores.html' }, { label: 'Track Order', href: 'track-order.html' }] },
+      topbar: { show: true, showEmail: true, deliverTo: 'Bangladesh', links: [{ label: 'Store Locations', href: 'contact.html#stores' }, { label: 'Track Order', href: 'track-order.html' }] },
       menu: [{ label: 'Eid Special', href: 'shop.html?cat=eid' }, { label: 'New Arrivals', href: 'shop.html?sort=new' }, { label: 'Panjabi', href: 'category.html?c=panjabi' }, { label: 'Wedding', href: 'shop.html?cat=wedding' }, { label: 'Kids', href: 'shop.html?cat=kids' }, { label: 'Sets', href: 'shop.html?cat=sets' }, { label: 'Inside Story', href: 'about.html' }],
       footer: {
         cols: [
           { title: 'Legal', links: [{ label: 'Shipping Policy', href: 'policy.html?p=shipping' }, { label: 'Terms and Conditions', href: 'policy.html?p=terms' }, { label: 'Privacy Policy', href: 'policy.html?p=privacy' }, { label: 'Payment Policy', href: 'policy.html?p=payment' }] },
-          { title: 'Information', links: [{ label: 'Exchange & Refund', href: 'policy.html?p=exchange' }, { label: 'Size Guide', href: 'policy.html?p=size' }, { label: 'Store Locations', href: 'stores.html' }, { label: 'Track Your Order', href: 'track-order.html' }] },
+          { title: 'Information', links: [{ label: 'Exchange & Refund', href: 'policy.html?p=exchange' }, { label: 'Size Guide', href: 'policy.html?p=size' }, { label: 'Store Locations', href: 'contact.html#stores' }, { label: 'Track Your Order', href: 'track-order.html' }] },
           { title: 'Company', links: [{ label: 'About Us', href: 'about.html' }, { label: 'Contact Us', href: 'contact.html' }, { label: 'Our Craft', href: 'about.html#craft' }, { label: 'Inside Story', href: 'about.html' }, { label: 'Sign in', href: 'login.html' }] }
         ],
         showService: true, serviceTitle: 'Service Center', showPay: true, payTitle: 'You Can Pay By', pay: { visa: true, nagad: true, bkash: true, mc: true, cod: true },
@@ -313,7 +313,6 @@
     { id: 3, key: 'about', system: true, type: 'page', title: 'About Us', slug: '/about', author: 'Amnu Admin', status: 'publish', date: daysAgo(110), file: 'about.html' },
     { id: 4, key: 'contact', system: true, type: 'page', title: 'Contact', slug: '/contact', author: 'Amnu Admin', status: 'publish', date: daysAgo(110), file: 'contact.html' },
     { id: 5, key: 'track', system: true, type: 'page', title: 'Track Your Order', slug: '/track-order', author: 'Amnu Admin', status: 'publish', date: daysAgo(100), file: 'track-order.html' },
-    { id: 6, key: 'stores', system: true, type: 'page', title: 'Store Locations', slug: '/stores', author: 'Amnu Admin', status: 'publish', date: daysAgo(100), file: 'stores.html' },
     { id: 7, key: 'policy-shipping', system: true, type: 'page', title: 'Shipping Policy', slug: '/policy/shipping', author: 'Shop Manager', status: 'publish', date: daysAgo(90), file: 'policy.html?p=shipping' },
     { id: 8, key: 'policy-terms', system: true, type: 'page', title: 'Terms and Conditions', slug: '/policy/terms', author: 'Shop Manager', status: 'publish', date: daysAgo(90), file: 'policy.html?p=terms' },
     { id: 9, key: 'policy-privacy', system: true, type: 'page', title: 'Privacy Policy', slug: '/policy/privacy', alt: ['/privacy'], author: 'Shop Manager', status: 'publish', date: daysAgo(90), file: 'policy.html?p=privacy' },
@@ -376,7 +375,7 @@
     const saved = DB.get('settings', {}) || {};
     const out = Object.assign({}, DEFAULT_SETTINGS, saved);
     ['shipping', 'payments', 'couriers'].forEach((k) => { out[k] = Object.assign({}, DEFAULT_SETTINGS[k], saved[k]); });
-    out.site = Object.assign({}, DEFAULT_SETTINGS.site, saved.site || {});
+    out.site = JSON.parse(JSON.stringify(Object.assign({}, DEFAULT_SETTINGS.site, saved.site || {})).replace(/stores\.html/g, 'contact.html#stores'));
     return out;
   };
   store.saveSettings = (patch) => DB.set('settings', Object.assign({}, DB.get('settings', {}), patch));
@@ -394,7 +393,7 @@
       { title: 'Father & Son', sub: 'Matching sets', link: 'shop.html?cat=sets', pid: 16 }, { title: 'Eid for Kids', sub: 'Festive picks', link: 'shop.html?cat=kids', pid: 13 }] },
     { id: 's-new', type: 'rail', enabled: true, title: 'New Arrivals', link: 'shop.html?sort=new', linkLabel: 'Explore All', source: 'new', cat: '', count: 8 },
     { id: 's-trend', type: 'rail', enabled: true, title: 'Trending Styles', link: 'shop.html', linkLabel: 'Explore All', source: 'popular', cat: '', count: 8 },
-    { id: 's-stores', type: 'showrooms', enabled: true, title: 'Visit our showrooms', link: 'stores.html', linkLabel: 'All locations' },
+    { id: 's-stores', type: 'showrooms', enabled: true, title: 'Visit our showrooms', link: 'contact.html#stores', linkLabel: 'All locations' },
     { id: 's-recent', type: 'recent', enabled: true, title: 'Recently Viewed' },
     { id: 's-quality', type: 'quality', enabled: true, kicker: 'Discover', title: 'Our Product Quality', cards: [
       { t: 'Fabric first', d: 'Cotton, linen, jamdani and silk-touch fabrics chosen for how they feel after a long day. Every roll is checked before it is cut.', ic: 'gem' },
@@ -406,7 +405,7 @@
       { t: 'Easy exchange', d: 'Wrong size? Exchange online or in any showroom within 7 days.', ic: 'refresh' }] }
   ];
   store.homeDefault = () => JSON.parse(JSON.stringify(SEED_HOME));
-  store.homeLayout = () => DB.get('home', null) || store.homeDefault();
+  store.homeLayout = () => (DB.get('home', null) ? JSON.parse(JSON.stringify(DB.get('home', null)).replace(/stores\.html/g, 'contact.html#stores')) : store.homeDefault());
   store.saveHomeLayout = (l) => DB.set('home', l);
   /* collection pages: admin-made pages that group categories (storefront: category.html?c=slug) */
   const SEED_COLLECTIONS = [
@@ -535,7 +534,7 @@
   /* built-in pages (home, about, policies...) always exist: they can be turned to draft but not deleted */
   store.pages = () => {
     const raw = DB.get('pages', null);
-    const list = (raw || SEED_PAGES.map((p) => Object.assign({}, p))).filter((p) => p.type !== 'post');
+    const list = (raw || SEED_PAGES.map((p) => Object.assign({}, p))).filter((p) => p.type !== 'post' && p.key !== 'stores');
     let changed = !raw;
     SEED_PAGES.forEach((sd) => {
       const f = list.find((p) => p.key === sd.key) || list.find((p) => p.slug === sd.slug || (sd.alt || []).includes(p.slug));

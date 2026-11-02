@@ -225,7 +225,7 @@
     </div></div>`}
     <header class="site-header"><div class="container nav-in">
       <a class="logo" data-pv="brand" href="index.html" aria-label="${esc(s.storeName)} home">${logoHTML(s)}</a>
-      <nav class="menu" id="menu" aria-label="Main">${(site.menu || []).map((x) => `<a href="${esc(x.href)}" class="${linkOn(x.href) ? 'active' : ''}">${esc(x.label)}</a>`).join('')}${S.livePages().filter((c) => !['panjabi', 'kids', 'sets'].includes(c.slug) && !(site.menu || []).some((x) => x.href === 'category.html?c=' + c.slug)).map((c) => `<a href="category.html?c=${esc(c.slug)}" class="${page === 'category' && A.qs.get('c') === c.slug ? 'active' : ''}">${esc(c.title)}</a>`).join('')}<a class="menu-extra" href="stores.html">Store Locations</a><a class="menu-extra" href="track-order.html">Track Order</a></nav>
+      <nav class="menu" id="menu" aria-label="Main">${(site.menu || []).map((x) => `<a href="${esc(x.href)}" class="${linkOn(x.href) ? 'active' : ''}">${esc(x.label)}</a>`).join('')}${S.livePages().filter((c) => !['panjabi', 'kids', 'sets'].includes(c.slug) && !(site.menu || []).some((x) => x.href === 'category.html?c=' + c.slug)).map((c) => `<a href="category.html?c=${esc(c.slug)}" class="${page === 'category' && A.qs.get('c') === c.slug ? 'active' : ''}">${esc(c.title)}</a>`).join('')}<a class="menu-extra" href="contact.html#stores">Store Locations</a><a class="menu-extra" href="track-order.html">Track Order</a></nav>
       <div class="nav-actions">
         <button class="icon-btn" data-search aria-label="Search">${icon('search', 21)}</button>
         <div class="dd" id="acc-dd"><button class="icon-btn" data-dd aria-label="Account" aria-haspopup="true">${icon('user', 21)}</button><div class="dd-menu acc-menu glass-strong">${accountMenu(user)}</div></div>
@@ -238,7 +238,7 @@
   function accountMenu(user) {
     return user
       ? `<div class="dd-h2">${esc(user.name)}!</div><a href="account.html#profile">${icon('user', 18)} My Account</a><a href="account.html#orders">${icon('history', 18)} Order History</a><a href="account.html#addresses">${icon('pin', 18)} Shipping Address</a><button type="button" data-signout>${icon('logout', 18)} Sign Out</button>`
-      : `<div class="dd-h2">Welcome!</div><a href="login.html">${icon('user', 18)} Sign in</a><a href="login.html#register">${icon('plus', 18)} Create an account</a><a href="track-order.html">${icon('truck', 18)} Track an order</a><a href="stores.html">${icon('pin', 18)} Store Locations</a>`;
+      : `<div class="dd-h2">Welcome!</div><a href="login.html">${icon('user', 18)} Sign in</a><a href="login.html#register">${icon('plus', 18)} Create an account</a><a href="track-order.html">${icon('truck', 18)} Track an order</a><a href="contact.html#stores">${icon('pin', 18)} Store Locations</a>`;
   }
 
   function footerHTML() {

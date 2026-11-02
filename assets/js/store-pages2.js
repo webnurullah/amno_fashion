@@ -180,17 +180,6 @@
   /* ======================================================================
      Store locations
      ====================================================================== */
-  P.stores = () => {
-    const rooms = S.showrooms();
-    const fri = new Date().getDay() === 5;
-    $('#store-list').innerHTML = rooms.map((l, i) => {
-      const closed = fri && /Sat\s*–\s*Thu/.test(l.hours);
-      return `<article class="store-big glass" data-i="${i}"><div class="store-head"><span class="store-ico">${icon('store', 24)}</span><div class="grow"><h2>${esc(l.name)}</h2><span class="badge ${closed ? 'b-err' : 'b-ok'}">${closed ? 'Closed today' : 'Open today'}</span></div></div>
-        <p>${icon('pin', 16)} ${esc(l.address)}</p><p>${icon('clock', 16)} ${esc(l.hours)}</p><p>${icon('phone', 16)} <a href="tel:${esc(l.phone.replace(/[^\d+]/g, ''))}">${esc(l.phone)}</a></p>
-        <div class="row gap-8 wrap"><a class="btn btn-primary" target="_blank" rel="noopener" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(l.name + ' ' + l.address)}">${icon('mapnav', 16)} Get directions</a><a class="btn btn-outline" href="tel:${esc(l.phone.replace(/[^\d+]/g, ''))}">Call</a></div></article>`;
-    }).join('') || '<p class="muted">No showrooms listed yet.</p>';
-    $('#map-pins').innerHTML = rooms.map((l, i) => `<span class="pin" style="left:${28 + i * 34}%;top:${34 + (i % 2) * 26}%" title="${esc(l.name)}">${icon('pin', 22)}<b>${esc(l.name.split(' ')[0])}</b></span>`).join('');
-  };
 
   /* ======================================================================
      Policies
@@ -218,6 +207,17 @@
     $('#cc-msgr').href = settings.messenger;
     $('#cc-phone').href = 'tel:' + settings.phone.replace(/[^\d+]/g, '');
     $('#cc-mail').href = 'mailto:' + settings.email;
+    const draft = A.qs.get('preview') === '1' ? DB.get('loc.draft', null) : null;
+    const rooms = (draft || S.locations().filter((l) => l.type === 'showroom')).filter((l) => l.active !== false);
+    const fri = new Date().getDay() === 5;
+    const tel = (v) => String(v || '').replace(/[^\d+]/g, '');
+    $('#store-list').innerHTML = rooms.map((l, i) => {
+      const closed = fri && /Sat\s*–\s*Thu/.test(l.hours || '');
+      const dir = l.map || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent((l.name || '') + ' ' + (l.address || ''))}`;
+      return `<article class="store-card2"><div class="sc-top"><span class="sc-ico">${icon('store', 22)}</span><div class="grow"><h3>${esc(l.name)}</h3></div><span class="badge ${closed ? 'b-err' : 'b-ok'}">${closed ? 'Closed today' : 'Open today'}</span></div>
+        <ul class="sc-list"><li>${icon('pin', 17)}<span>${esc(l.address)}</span></li>${l.hours ? `<li>${icon('clock', 17)}<span>${esc(l.hours)}</span></li>` : ''}${l.phone ? `<li>${icon('phone', 17)}<a href="tel:${esc(tel(l.phone))}">${esc(l.phone)}</a></li>` : ''}</ul>
+        <div class="sc-actions"><a class="btn btn-primary" target="_blank" rel="noopener" href="${esc(dir)}">${icon('mapnav', 16)} Get directions</a>${l.phone ? `<a class="btn btn-outline" href="tel:${esc(tel(l.phone))}">Call</a>` : ''}</div></article>`;
+    }).join('') || '<p class="muted">No stores listed yet.</p>';
   };
   P.track = () => {
     const steps = [['Order placed', 'We received your order'], ['Confirmed', 'Our team verified your order'], ['Packed & shipped', 'Your parcel is on its way'], ['Delivered', 'Enjoy your panjabi!']];
@@ -246,7 +246,7 @@
      ====================================================================== */
   const page = document.body.dataset.page;
   Shop.mount(page);
-  const pageKey = page === 'policy' ? 'policy-' + (POLICIES[A.qs.get('p')] ? A.qs.get('p') : 'shipping') : ({ home: 'home', shop: 'shop', about: 'about', contact: 'contact', track: 'track', stores: 'stores' })[page];
+  const pageKey = page === 'policy' ? 'policy-' + (POLICIES[A.qs.get('p')] ? A.qs.get('p') : 'shipping') : ({ home: 'home', shop: 'shop', about: 'about', contact: 'contact', track: 'track' })[page];
   const previewMode = A.qs.get('preview') === '1';
   if (previewMode && pageKey) { const dr = DB.get('page.draft', {})[pageKey]; if (dr) S.__pv = { key: pageKey, text: dr.text || {}, banner: dr.banner }; }
   const doc = pageKey && S.pageDoc(pageKey);
