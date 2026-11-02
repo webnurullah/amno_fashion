@@ -247,15 +247,23 @@
   const page = document.body.dataset.page;
   Shop.mount(page);
   const pageKey = page === 'policy' ? 'policy-' + (POLICIES[A.qs.get('p')] ? A.qs.get('p') : 'shipping') : ({ home: 'home', shop: 'shop', about: 'about', contact: 'contact', track: 'track', stores: 'stores' })[page];
+  const previewMode = A.qs.get('preview') === '1';
+  if (previewMode && pageKey) { const dr = DB.get('page.draft', {})[pageKey]; if (dr) S.__pv = { key: pageKey, text: dr.text || {}, banner: dr.banner }; }
   const doc = pageKey && S.pageDoc(pageKey);
-  if (doc && doc.status !== 'publish') {
+  if (!previewMode && doc && doc.status !== 'publish') {
     $('#main').innerHTML = '<div class="container"><div class="empty glass pad" style="margin:60px auto;max-width:560px;text-align:center"><h2>This page is not available right now</h2><p class="muted">Please check back soon.</p><a class="btn btn-primary" href="index.html">Back to home</a></div></div>';
   } else {
     if (P[page]) P[page]();
-    const pbn = S.bn((S.banners().pages || {})[pageKey]);
+    const pbn = S.bn(S.__pv && S.__pv.key === pageKey && S.__pv.banner ? S.__pv.banner : (S.banners().pages || {})[pageKey]);
     if (S.bnHas(pbn) && page !== 'home' && page !== 'shop') { const c = $('#main .container'); if (c) { const html = Shop.bannerHTML(pbn, 'page-banner'); const cr = c.querySelector('.crumbs'); if (cr) cr.insertAdjacentHTML('afterend', html); else c.insertAdjacentHTML('afterbegin', html); } }
     const txt = S.pageText(pageKey || page);
     $$('[data-edit]').forEach((el) => { const v = txt[el.dataset.edit]; if (v != null && v !== '') el.textContent = v; });
+    if (previewMode) {
+      if (page === 'policy') { const h = $('#policy-body h1'); if (h) h.dataset.pv = 'title'; $$('#policy-body p, #policy-body .table-wrap').forEach((x) => { x.dataset.pv = 'text'; }); }
+      const bn = $('.page-banner'); if (bn) bn.dataset.pv = 'banner';
+      if (page === 'shop') { const h = $('#cat-hero'); if (h) h.dataset.pv = 'banner'; const sc = $('#sub-chips'); if (sc) sc.dataset.pv = 'categories'; }
+      if (page !== 'home') Shop.preview();
+    }
   }
   A.hydrate();
 })();

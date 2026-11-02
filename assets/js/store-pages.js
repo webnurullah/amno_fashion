@@ -138,8 +138,8 @@
   };
   const pageOfCat = (slug) => S.livePages().find((c) => (c.cats || []).includes(slug));
   P.category = () => {
-    const pages = S.livePages();
-    const d = pages.find((c) => c.slug === A.qs.get('c')) || pages[0];
+    const pages = S.livePages(); const pvC = A.qs.get('preview') === '1' ? DB.get('coll.draft', null) : null;
+    const d = (pvC && pvC.coll && pvC.coll.slug === A.qs.get('c') && pvC.coll) || pages.find((c) => c.slug === A.qs.get('c')) || pages[0];
     if (!d) { $('#cat-banner').innerHTML = '<p class="muted">This page is not available.</p>'; return; }
     document.title = `${d.title} — ${settings.storeName}`;
     const pub = S.published();
@@ -156,6 +156,7 @@
     $('#trend-link').href = shopAll;
     $('#recent-host').innerHTML = recentRail();
     Shop.syncRails();
+    if (pvC) { const b = $('#cat-banner .banner'); if (b) b.dataset.pv = 'details'; const cc = $('#cat-circles'); if (cc) cc.dataset.pv = 'categories'; }
   };
 
   /* ======================================================================
@@ -222,7 +223,8 @@
     const SORTS = [['default', 'Default'], ['new', 'Newest'], ['price-asc', 'Price: low to high'], ['price-desc', 'Price: high to low'], ['popular', 'Best selling']];
 
     const pct = settings.digitalDiscountPct;
-    const coll = st.coll ? S.livePages().find((c) => c.slug === st.coll) : null;
+    const pvS = A.qs.get('preview') === '1' ? DB.get('coll.draft', null) : null;
+    const coll = st.coll ? ((pvS && pvS.coll && pvS.coll.slug === st.coll && pvS.coll) || S.livePages().find((c) => c.slug === st.coll)) : null;
     const scope = coll || (st.cat ? pageOfCat(st.cat) : null);
     const scopeCats = scope ? scope.cats.map((slug) => S.categories().find((c) => c.slug === slug)).filter(Boolean) : S.categories();
     const allLabel = scope ? 'All ' + scope.title : 'All';
@@ -236,7 +238,10 @@
       const title = pageTitle;
       const tag = st.sale ? 'Online offer' : st.sort === 'new' ? 'New arrivals' : st.cat ? 'Collection' : 'Our collection';
       const catRec = st.cat ? S.categories().find((c) => c.slug === st.cat) : null; const catImg = catRec && catRec.image;
-      const bns = S.banners().cats; const binfo = [bns[st.cat || (coll ? coll.slug : 'all')], bns.all].map(S.bn).find(S.bnHas);
+      const bns = Object.assign({}, S.banners().cats);
+      if (pvS && coll && pvS.coll && pvS.coll.slug === coll.slug) bns[coll.slug] = pvS.banner;
+      if (S.__pv && S.__pv.key === 'shop') bns.all = S.__pv.banner;
+      const binfo = [bns[st.cat || (coll ? coll.slug : 'all')], bns.all].map(S.bn).find(S.bnHas);
       if (binfo && binfo.image) { const h = $('#cat-hero'); h.className = 'cat-hero has-img'; h.removeAttribute('style'); h.innerHTML = Shop.bannerHTML(binfo, 'hb'); return; }
       const btxt = binfo && !binfo.image ? Shop.bannerText(binfo) : '';
       $('#cat-hero').className = 'cat-hero scene' + (btxt ? ' has-text t-' + (binfo.align || 'left') : catImg ? ' has-photo' : ''); $('#cat-hero').innerHTML = `${sceneSVG(st.cat || (coll && SCENES[coll.slug] ? coll.slug : 'all'))}<div class="cat-hero-art" aria-hidden="true">${pics.slice(0, 3).map((p, i) => `<div class="cat-pj c${i}">${S.thumb(p)}</div>`).join('')}</div>${btxt ? btxt : `<span class="cat-hero-tag">${esc(title)}</span>`}${!btxt && catImg ? `<div class="cat-hero-photo"><img src="${catImg}" alt="${esc(title)}"></div>` : ''}`;
@@ -255,7 +260,7 @@
     const sync = () => {
       const p = new URLSearchParams();
       if (st.cat) p.set('cat', st.cat); if (st.coll) p.set('coll', st.coll); if (st.q) p.set('q', st.q); if (st.sort !== 'default') p.set('sort', st.sort); if (st.max < maxPrice) p.set('max', st.max);
-      if (st.sizes.length) p.set('size', st.sizes.join(',')); if (st.colors.length) p.set('color', st.colors.join(',')); if (st.sale) p.set('sale', '1');
+      if (st.sizes.length) p.set('size', st.sizes.join(',')); if (st.colors.length) p.set('color', st.colors.join(',')); if (st.sale) p.set('sale', '1'); if (A.qs.get('preview') === '1') p.set('preview', '1');
       try { history.replaceState(null, '', location.pathname + (p.toString() ? '?' + p : '')); } catch (e) { /* file:// */ }
     };
     const render = () => {

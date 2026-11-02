@@ -89,6 +89,15 @@ picture or logo text), **Contact & social** (phone, email, address, Facebook and
 top bar links and the main menu, each link with text, address, reorder and remove), **Footer** (text under the logo, the three link columns, service center,
 payment logos, copyright line, Admin dashboard link), plus the brand colour and glass effect (the home headline is edited in the Home page builder). **Publish** saves and refreshes the preview.
 
+## Editing every page (admin)
+
+All page editors use the same three-panel builder as the home page: **sections** on the left, a **live preview** of the storefront page in the middle
+(desktop, tablet and mobile sizes; click any text, banner or category in the preview to edit it), and the **editing panel** on the right, with undo/redo,
+a Published/Draft switch and an **Update** button in the top bar. Nothing changes for visitors until you click Update.
+
+* **Built-in pages** (About, Contact, Track Order, Store Locations, the six policies, Shop): sections are the page banner plus its text groups; policies edit the title and paragraphs.
+* **Shop pages** (Panjabi, Kids, Sets and your own): page details, categories, shop banner and status; switch the preview between the landing page and the shop view.
+
 ## Editing the other pages (admin)
 
 Every storefront page is in *Admin → Pages*: Home, Shop, About Us, Contact, Track Your Order, Store Locations and the six policy pages
