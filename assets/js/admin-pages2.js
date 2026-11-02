@@ -394,6 +394,7 @@
     const thumb = (src, label) => (src ? `<img src="${src}" alt="">` : `<span class="muted xs">${label}</span>`);
     const paint = () => {
       $('#bn-defaults').checked = st.showDefaults !== false;
+      $('#bn-craft').innerHTML = `<div class="bn-thumb wide">${thumb(st.craftBg, 'Uses the dark marble artwork')}</div><div class="bn-cat-body"><div class="row gap-8"><button class="btn btn-glass btn-sm" data-cbg type="button">${icon('upload', 14)} ${st.craftBg ? 'Replace' : 'Upload'}</button>${st.craftBg ? '<button class="btn btn-ghost btn-sm danger" data-cbgrm type="button">Remove</button>' : ''}</div></div>`;
       $('#bn-home').innerHTML = st.home.length ? st.home.map((b, i) => `<div class="bn-row" data-i="${i}">
           <div class="bn-thumb">${thumb(b.image, 'No image')}</div>
           <div class="bn-fields">
@@ -417,6 +418,7 @@
       if (e.target.closest('[data-cup]')) { const src = await read(await pick()); if (src) { st.cats[slug] = src; paint(); } return; }
       if (e.target.closest('[data-crm]')) { delete st.cats[slug]; paint(); }
     });
+    $('#bn-craft').addEventListener('click', async (e) => { if (e.target.closest('[data-cbg]')) { const src = await read(await pick()); if (src) { st.craftBg = src; paint(); } } if (e.target.closest('[data-cbgrm]')) { delete st.craftBg; paint(); } });
     $('#bn-save').addEventListener('click', () => save('Banners saved. Your storefront is updated.'));
     paint();
   };

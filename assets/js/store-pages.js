@@ -75,8 +75,40 @@
     $('#trend-rail').innerHTML = rail(popular(pub).slice(0, 8).map(card).join(''), 'products');
     $('#recent-host').innerHTML = recentRail();
 
-    const craft = [['Fabric first', 'Cotton, linen and jamdani chosen for how they feel after a long day.', 'gem'], ['Tailored fit', 'Consistent size charts and generous placket allowances.', 'ruler'], ['Hand finishing', 'Buttons set, edges turned and embroidery checked by hand.', 'sparkle'], ['Quality check', 'Every piece is inspected before it leaves the showroom or warehouse.', 'shield'], ['Easy exchange', 'Wrong size? Exchange online or in any showroom within 7 days.', 'refresh']];
-    $('#craft-cards').innerHTML = craft.map(([t, d, ic], i) => `<article class="craft-card ${i === 2 ? 'mid' : ''}"><span class="craft-ico">${icon(ic, 26)}</span><h3>${t}</h3><p>${d}</p></article>`).join('');
+    const craft = [
+      ['Fabric first', 'Cotton, linen, jamdani and silk-touch fabrics chosen for how they feel after a long day. Every roll is checked before it is cut.', 'gem'],
+      ['Tailored fit', 'Consistent size charts, generous placket allowances and clean shoulder lines so a size M is always an M.', 'ruler'],
+      ['Hand finishing', 'Buttons set, edges turned and embroidery checked by hand by our master tailors.', 'sparkle'],
+      ['Colour-fast dyes', 'Fabrics are pre-washed and tested so colours stay deep after wash after wash.', 'zap'],
+      ['Strong stitching', 'Reinforced seams at every stress point: collar, placket, sleeves and hem.', 'scissors'],
+      ['Quality check', 'Every piece is inspected for stitching, size and finish before it leaves the showroom or warehouse.', 'shield'],
+      ['Easy exchange', 'Wrong size? Exchange online or in any showroom within 7 days.', 'refresh']
+    ];
+    $('#craft-cards').innerHTML = craft.map(([t, d, ic]) => `<article class="cf-card"><span class="craft-ico">${icon(ic, 26)}</span><p>${d}</p><h3>${t}</h3></article>`).join('');
+    const cbg = S.banners().craftBg; if (cbg) $('#craft').style.backgroundImage = `linear-gradient(rgba(0,0,0,.45), rgba(0,0,0,.45)), url('${cbg}')`;
+    (() => {
+      const cards = [...$('#craft-cards').children]; const bar = $('#cf-bar i'); let cur = Math.floor(cards.length / 2); let timer;
+      const place = () => {
+        const w = $('#craft-cards').clientWidth; const narrow = w < 700; const step = narrow ? w * 0.2 : Math.min(190, w / 6);
+        cards.forEach((c, i) => {
+          const d = i - cur; const ad = Math.abs(d);
+          c.style.transform = `translateX(calc(-50% + ${d * step}px)) scale(${1 - Math.min(ad, 3) * 0.12})`;
+          c.style.zIndex = String(10 - ad); c.style.opacity = ad > (narrow ? 1 : 3) ? '0' : String(1 - ad * 0.12);
+          c.style.filter = ad ? `blur(${Math.min(ad, 3) * 0.7}px) brightness(${1 - ad * 0.08})` : 'none';
+          c.classList.toggle('on', !ad); c.setAttribute('aria-hidden', ad ? 'true' : 'false');
+        });
+        bar.style.width = (100 / cards.length) + '%'; bar.style.marginLeft = (cur * 100 / cards.length) + '%';
+      };
+      const go = (n) => { cur = (n + cards.length) % cards.length; place(); };
+      const play = () => { clearInterval(timer); if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) timer = setInterval(() => go(cur + 1), 4500); };
+      $('#cf-prev').addEventListener('click', () => { go(cur - 1); play(); });
+      $('#cf-next').addEventListener('click', () => { go(cur + 1); play(); });
+      cards.forEach((c, i) => c.addEventListener('click', () => { go(i); play(); }));
+      const stage = $('#craft'); stage.addEventListener('mouseenter', () => clearInterval(timer)); stage.addEventListener('mouseleave', play);
+      let sx = null; $('#craft-cards').addEventListener('touchstart', (ev) => { sx = ev.touches[0].clientX; }, { passive: true });
+      $('#craft-cards').addEventListener('touchend', (ev) => { if (sx == null) return; const dx = ev.changedTouches[0].clientX - sx; if (Math.abs(dx) > 40) { go(cur + (dx < 0 ? 1 : -1)); play(); } sx = null; });
+      window.addEventListener('resize', place); place(); play();
+    })();
     Shop.syncRails();
   };
 
