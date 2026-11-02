@@ -247,7 +247,7 @@
      ====================================================================== */
   const page = document.body.dataset.page;
   Shop.mount(page);
-  const pageKey = page === 'policy' ? 'policy-' + (POLICIES[A.qs.get('p')] ? A.qs.get('p') : 'shipping') : ({ home: 'home', shop: 'shop', about: 'about', contact: 'contact', track: 'track' })[page];
+  const pageKey = page === 'policy' ? 'policy-' + (POLICIES[A.qs.get('p')] ? A.qs.get('p') : 'shipping') : ({ home: 'home', shop: 'shop', contact: 'contact', track: 'track' })[page];
   const previewMode = A.qs.get('preview') === '1';
   if (previewMode && pageKey) { const dr = DB.get('page.draft', {})[pageKey]; if (dr) S.__pv = { key: pageKey, text: dr.text || {}, banner: dr.banner }; }
   const doc = pageKey && S.pageDoc(pageKey);

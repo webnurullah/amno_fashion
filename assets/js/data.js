@@ -32,12 +32,12 @@
     site: {
       logoImage: '', logoText: '', footerNote: 'Panjabi for Eid, weddings and every day.',
       topbar: { show: true, showEmail: true, deliverTo: 'Bangladesh', links: [{ label: 'Store Locations', href: 'contact.html#stores' }, { label: 'Track Order', href: 'track-order.html' }] },
-      menu: [{ label: 'Eid Special', href: 'shop.html?cat=eid' }, { label: 'New Arrivals', href: 'shop.html?sort=new' }, { label: 'Panjabi', href: 'category.html?c=panjabi' }, { label: 'Wedding', href: 'shop.html?cat=wedding' }, { label: 'Kids', href: 'shop.html?cat=kids' }, { label: 'Sets', href: 'shop.html?cat=sets' }, { label: 'Inside Story', href: 'about.html' }],
+      menu: [{ label: 'Eid Special', href: 'shop.html?cat=eid' }, { label: 'New Arrivals', href: 'shop.html?sort=new' }, { label: 'Panjabi', href: 'category.html?c=panjabi' }, { label: 'Wedding', href: 'shop.html?cat=wedding' }, { label: 'Kids', href: 'shop.html?cat=kids' }, { label: 'Sets', href: 'shop.html?cat=sets' }],
       footer: {
         cols: [
           { title: 'Legal', links: [{ label: 'Shipping Policy', href: 'policy.html?p=shipping' }, { label: 'Terms and Conditions', href: 'policy.html?p=terms' }, { label: 'Privacy Policy', href: 'policy.html?p=privacy' }, { label: 'Payment Policy', href: 'policy.html?p=payment' }] },
           { title: 'Information', links: [{ label: 'Exchange & Refund', href: 'policy.html?p=exchange' }, { label: 'Size Guide', href: 'policy.html?p=size' }, { label: 'Store Locations', href: 'contact.html#stores' }, { label: 'Track Your Order', href: 'track-order.html' }] },
-          { title: 'Company', links: [{ label: 'About Us', href: 'about.html' }, { label: 'Contact Us', href: 'contact.html' }, { label: 'Our Craft', href: 'about.html#craft' }, { label: 'Inside Story', href: 'about.html' }, { label: 'Sign in', href: 'login.html' }] }
+          { title: 'Company', links: [{ label: 'Contact Us', href: 'contact.html' }, { label: 'Sign in', href: 'login.html' }] }
         ],
         showService: true, serviceTitle: 'Service Center', showPay: true, payTitle: 'You Can Pay By', pay: { visa: true, nagad: true, bkash: true, mc: true, cod: true },
         copyright: '\u00a9 {year} {name}. All rights reserved.', showAdminLink: true
@@ -310,7 +310,6 @@
   const SEED_PAGES = [
     { id: 1, key: 'home', system: true, type: 'page', title: 'Home', slug: '/', author: 'Amnu Admin', status: 'publish', date: daysAgo(120), file: 'index.html' },
     { id: 2, key: 'shop', system: true, type: 'page', title: 'Shop', slug: '/shop', author: 'Amnu Admin', status: 'publish', date: daysAgo(120), file: 'shop.html' },
-    { id: 3, key: 'about', system: true, type: 'page', title: 'About Us', slug: '/about', author: 'Amnu Admin', status: 'publish', date: daysAgo(110), file: 'about.html' },
     { id: 4, key: 'contact', system: true, type: 'page', title: 'Contact', slug: '/contact', author: 'Amnu Admin', status: 'publish', date: daysAgo(110), file: 'contact.html' },
     { id: 5, key: 'track', system: true, type: 'page', title: 'Track Your Order', slug: '/track-order', author: 'Amnu Admin', status: 'publish', date: daysAgo(100), file: 'track-order.html' },
     { id: 7, key: 'policy-shipping', system: true, type: 'page', title: 'Shipping Policy', slug: '/policy/shipping', author: 'Shop Manager', status: 'publish', date: daysAgo(90), file: 'policy.html?p=shipping' },
@@ -376,6 +375,9 @@
     const out = Object.assign({}, DEFAULT_SETTINGS, saved);
     ['shipping', 'payments', 'couriers'].forEach((k) => { out[k] = Object.assign({}, DEFAULT_SETTINGS[k], saved[k]); });
     out.site = JSON.parse(JSON.stringify(Object.assign({}, DEFAULT_SETTINGS.site, saved.site || {})).replace(/stores\.html/g, 'contact.html#stores'));
+    const noAbout = (arr) => (Array.isArray(arr) ? arr.filter((l) => !/^about\.html/.test(l.href || '')) : arr);
+    out.site.menu = noAbout(out.site.menu); out.site.topbar = Object.assign({}, out.site.topbar, { links: noAbout((out.site.topbar || {}).links) });
+    out.site.footer = Object.assign({}, out.site.footer, { cols: ((out.site.footer || {}).cols || []).map((c) => Object.assign({}, c, { links: noAbout(c.links) })) });
     return out;
   };
   store.saveSettings = (patch) => DB.set('settings', Object.assign({}, DB.get('settings', {}), patch));
@@ -534,7 +536,7 @@
   /* built-in pages (home, about, policies...) always exist: they can be turned to draft but not deleted */
   store.pages = () => {
     const raw = DB.get('pages', null);
-    const list = (raw || SEED_PAGES.map((p) => Object.assign({}, p))).filter((p) => p.type !== 'post' && p.key !== 'stores');
+    const list = (raw || SEED_PAGES.map((p) => Object.assign({}, p))).filter((p) => p.type !== 'post' && p.key !== 'stores' && p.key !== 'about');
     let changed = !raw;
     SEED_PAGES.forEach((sd) => {
       const f = list.find((p) => p.key === sd.key) || list.find((p) => p.slug === sd.slug || (sd.alt || []).includes(p.slug));
