@@ -422,8 +422,6 @@ button.swatch:hover { transform: scale(1.12); }
 .craft-card h3 { font-size: 18px; font-weight: 600; }
 .craft-card p { font-size: 13.5px; color: rgba(255, 255, 255, .78); }
 .craft-ico { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; background: rgba(255, 255, 255, .14); }
-.newsletter { text-align: center; padding: 56px 20px; display: flex; flex-direction: column; align-items: center; gap: 22px; }
-.newsletter h2 { font-size: clamp(2.2rem, 5vw, 4rem); font-weight: 500; letter-spacing: -.03em; line-height: 1.05; max-width: 14ch; }
 .news-field { display: flex; width: min(520px, 100%); padding: 6px; border-radius: 999px; background: var(--glass-strong); border: 1.5px solid var(--ink); }
 .news-field input { border: 0; background: transparent; box-shadow: none; min-width: 0; }
 .news-field input:focus { box-shadow: none; background: transparent; }
