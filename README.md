@@ -76,10 +76,11 @@ also be edited under *Products → Categories*. The storefront design itself doe
 
 ## Editing the home page (admin)
 
-*Admin → Pages → Home* opens the **home page builder**: every section of the storefront home page as a box. Turn sections on or off,
-move them up and down, change titles, links and text, choose which shop pages feed a collection-cards section, set what a product row
-shows (newest, best selling, featured or one category) and how many products, edit the quality-slider cards and its background, and add
-new collection or product-row sections. **Update** saves it. The slider pictures are managed in the Hero slider box. The page design itself is unchanged.
+*Admin → Pages → Home* opens the **home page builder**, a three-panel editor: the **sections list** on the left (drag to reorder, switch a
+section on or off, add new ones), a **live preview** of the home page in the middle (desktop, tablet and mobile sizes; click any section in the preview
+to edit it), and the **editing panel** on the right for the selected section. The hero slider shows its slides as small pictures to click and edit
+(text, badge, button, look or your own picture, show/hide, delete, reset); product rows, collection cards, showrooms, recently viewed and the
+quality slider each get their own simple panel. Undo and redo are in the top bar, **Update** publishes, and nothing changes for visitors until you click it.
 
 ## Customize: site-wide settings (admin)
 

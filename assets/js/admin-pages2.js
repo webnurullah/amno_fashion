@@ -538,106 +538,156 @@
   };
 
   /* ======================================================================
-     Home page builder (Pages -> Home): sections of the storefront home page
+     Home page builder (Pages -> Home): sections list | live preview | inspector
      ====================================================================== */
   P['home-edit'] = () => {
     const ICONS = ['gem', 'ruler', 'sparkle', 'zap', 'scissors', 'shield', 'refresh', 'check', 'heart', 'star', 'truck', 'package', 'tag', 'lock', 'globe', 'clock', 'scale', 'coins'];
-    const LABEL = { hero: 'Hero slider', collection: 'Collection cards', rail: 'Product row', showrooms: 'Showrooms', recent: 'Recently viewed', quality: 'Quality slider' };
+    const LABEL = { hero: 'Hero slider', collection: 'Collection cards', rail: 'Product row', showrooms: 'Showrooms', recent: 'Recently viewed', quality: 'Product quality' };
     const SIC = { hero: 'image', collection: 'grid', rail: 'tag', showrooms: 'store', recent: 'clock', quality: 'shield' };
-    const settings = S.settings();
+    const rec = S.pageDoc('home');
     const st = { layout: JSON.parse(JSON.stringify(S.homeLayout())), slides: JSON.parse(JSON.stringify(S.heroSlides())), craftBg: S.banners().craftBg || '' };
     if (!st.layout.some((x) => x.type === 'hero')) st.layout.unshift({ id: 'hero', type: 'hero', enabled: true });
-    const closed = new Set(); let dirty = false;
-    const pages = () => S.collections();
+    let sel = 'hero'; let si = 0; let dirty = false; const undo = []; const redo = [];
+    const snapshot = () => JSON.stringify({ l: st.layout, s: st.slides, b: st.craftBg });
+    const restore = (j) => { const o = JSON.parse(j); st.layout = o.l; st.slides = o.s; st.craftBg = o.b; if (!sec(sel)) sel = 'hero'; si = Math.min(si, Math.max(0, st.slides.length - 1)); };
     const sec = (id) => st.layout.find((x) => x.id === id);
-    const field = (label, inner, hint) => `<div class="field"><label>${label}</label>${inner}${hint ? `<span class="hint">${hint}</span>` : ''}</div>`;
-    const inp = (id, k, v, ph = '', extra = '') => `<input data-sec="${id}" data-k="${k}" value="${esc(v == null ? '' : v)}" placeholder="${esc(ph)}" ${extra}>`;
+    let last = snapshot(); let tUndo; let tPrev;
+    const pushUndo = () => { const now = snapshot(); if (now === last) return; undo.push(last); if (undo.length > 60) undo.shift(); redo.length = 0; last = now; };
+    const changed = (structural) => {
+      dirty = true; $('#hb-dirty').hidden = false;
+      if (structural) { clearTimeout(tUndo); pushUndo(); } else { clearTimeout(tUndo); tUndo = setTimeout(pushUndo, 700); }
+      clearTimeout(tPrev); tPrev = setTimeout(refreshPreview, 650);
+      $('#hb-undo').disabled = !undo.length && snapshot() === last; $('#hb-redo').disabled = !redo.length;
+    };
+    const frame = $('#hb-iframe');
+    const saveDraft = () => DB.set('home.draft', { layout: st.layout, slides: st.slides, craftBg: st.craftBg });
+    const refreshPreview = () => { saveDraft(); try { frame.contentWindow.location.reload(); } catch (e) { frame.src = frame.src; } };
+    const goto = () => { try { frame.contentWindow.postMessage({ type: 'amnu-scroll', id: sel }, '*'); } catch (e) { /* ignore */ } };
+
+    /* ---- left: sections ---- */
+    const sub = (x) => ({ hero: `${A.plural(st.slides.filter((s) => s.active !== false).length, 'slide')}`, collection: 'Collection cards', rail: `Product row · ${x.count || 8}`, showrooms: 'From store details', recent: 'Shows automatically', quality: `${(x.cards || []).length} cards · slider` })[x.type];
+    const paintList = () => {
+      $('#hb-list').innerHTML = st.layout.map((x) => `<div class="hb-sec ${x.id === sel ? 'sel' : ''} ${x.enabled === false ? 'off' : ''}" data-id="${x.id}" ${x.type === 'hero' ? '' : 'draggable="true"'}>
+        <span class="hb-grip" title="Drag to reorder">${x.type === 'hero' ? '' : '⋮⋮'}</span><span class="hb-ic">${icon(SIC[x.type] || 'grid', 16)}</span>
+        <div class="grow"><b>${esc(x.title || LABEL[x.type])}</b><small>${esc(sub(x) || '')}</small></div>
+        <button class="hb-switch ${x.enabled === false ? '' : 'on'}" data-toggle type="button" role="switch" aria-checked="${x.enabled !== false}" aria-label="Visible"></button></div>`).join('');
+    };
+    const select = (id, scroll = true) => { sel = id; paintList(); paintInsp(); if (scroll) goto(); };
+    let dragId = null;
+    $('#hb-list').addEventListener('dragstart', (e) => { const r = e.target.closest('.hb-sec'); if (!r) return; dragId = r.dataset.id; r.classList.add('drag'); e.dataTransfer.effectAllowed = 'move'; try { e.dataTransfer.setData('text/plain', dragId); } catch (er) { /* ignore */ } });
+    $('#hb-list').addEventListener('dragend', () => { dragId = null; $$('#hb-list .hb-sec').forEach((x) => x.classList.remove('drag', 'over')); });
+    $('#hb-list').addEventListener('dragover', (e) => { const r = e.target.closest('.hb-sec'); if (!r || !dragId || r.dataset.id === 'hero') return; e.preventDefault(); $$('#hb-list .hb-sec').forEach((x) => x.classList.toggle('over', x === r)); });
+    $('#hb-list').addEventListener('drop', (e) => { const r = e.target.closest('.hb-sec'); if (!r || !dragId || r.dataset.id === 'hero') return; e.preventDefault(); const from = st.layout.findIndex((x) => x.id === dragId); const to = st.layout.findIndex((x) => x.id === r.dataset.id); const [m] = st.layout.splice(from, 1); st.layout.splice(to, 0, m); dragId = null; changed(true); paintList(); });
+    $('#hb-list').addEventListener('click', (e) => {
+      const r = e.target.closest('.hb-sec'); if (!r) return; const x = sec(r.dataset.id);
+      if (e.target.closest('[data-toggle]')) { x.enabled = x.enabled === false; changed(true); paintList(); if (x.id === sel) paintInsp(); return; }
+      select(x.id);
+    });
+    $('#hb-add').addEventListener('click', (e) => { $('#hb-addmenu').hidden = !$('#hb-addmenu').hidden; e.stopPropagation(); });
+    document.addEventListener('click', () => { $('#hb-addmenu').hidden = true; });
+    $$('#hb-addmenu [data-new]').forEach((b) => b.addEventListener('click', () => {
+      const id = 's-' + A.uid().slice(0, 5); const type = b.dataset.new;
+      st.layout.push(type === 'rail' ? { id, type, enabled: true, title: 'New products', link: 'shop.html', linkLabel: 'Explore All', source: 'new', cat: '', count: 8 } : { id, type, enabled: true, title: 'New collection', link: 'shop.html', linkLabel: 'Explore All', pages: [], extra: [] });
+      changed(true); select(id, false); setTimeout(goto, 900); A.toast('Section added at the bottom');
+    }));
+
+    /* ---- right: inspector ---- */
+    const field = (label, inner, hint) => `<div class="hb-f"><label>${label}</label>${inner}${hint ? `<span class="hint">${hint}</span>` : ''}</div>`;
+    const t = (id, k, v, ph = '', extra = '') => `<input data-k="${k}" value="${esc(v == null ? '' : v)}" placeholder="${esc(ph)}" ${extra}>`;
+    const opt = (key, cur, list) => `<div class="hb-opt">${list.map(([v, l]) => `<button type="button" data-opt="${key}" data-v="${v}" class="${cur === v ? 'on' : ''}">${l}</button>`).join('')}</div>`;
+    const heroHTML = () => {
+      const sl = st.slides[si];
+      const strip = `<div class="hb-strip">${st.slides.map((b, i) => `<button type="button" class="hb-th ${i === si ? 'sel' : ''} ${b.active === false ? 'off' : ''}" data-slide-pick="${i}"><i style="${b.image ? `background-image:url('${b.image}');background-size:cover` : ({ a: 'background:linear-gradient(135deg,#d8d6cf,#a8a49b)', c: 'background:linear-gradient(135deg,#9bc2ea,#5f8fcb)', d: 'background:linear-gradient(135deg,#bfe5d3,#6fb293)' })[b.art] || ''}"></i>${esc(b.kicker || b.title || 'Slide ' + (i + 1))}</button>`).join('')}<button type="button" class="hb-th new" data-slide-add aria-label="Add slide">＋</button></div><p class="hb-hint">Click a slide to edit it.</p>`;
+      if (!sl) return strip + '<p class="muted small">No slides. Add one with the plus button.</p>';
+      const look = sl.image ? 'pic' : (sl.art || 'a');
+      return `${strip}
+        <div class="hb-g2">${field('Small heading', t('', 'kicker', sl.kicker, '', 'data-s="kicker"'))}${field('Badge', t('', 'stamp', sl.stamp, 'e.g. In stores and online', 'data-s="stamp"'))}</div>
+        ${field('Headline', t('', 'title', sl.title, '', 'data-s="title" maxlength="60"'))}${field('Subtitle', t('', 'sub', sl.sub, '', 'data-s="sub" maxlength="90"'))}
+        <div class="hb-g2">${field('Button text', t('', 'cta', sl.cta, 'Shop now', 'data-s="cta" maxlength="24"'))}${field('Button link', t('', 'link', sl.link, 'shop.html?cat=eid', 'data-s="link"'))}</div>
+        ${field('Background', opt('look', look, [['a', 'Ivory'], ['c', 'Sky'], ['d', 'Mint'], ['pic', 'Picture']]) + (sl.image ? `<div class="hb-pic"><img src="${sl.image}" alt=""><button class="btn btn-glass btn-sm" data-slide-up type="button">${icon('upload', 14)} Replace</button></div>` : look === 'pic' ? `<button class="btn btn-glass btn-sm" data-slide-up type="button" style="margin-top:8px">${icon('upload', 14)} Choose a picture</button>` : ''), 'A picture works best at 1800 x 700.')}
+        ${field('Button style', opt('btn', sl.btn === 'glass' ? 'glass' : 'primary', [['primary', 'Blue'], ['glass', 'White']]))}
+        <div class="hb-g2" style="margin-top:6px"><button class="btn" data-slide-hide type="button">${sl.active === false ? 'Show slide' : 'Hide slide'}</button><button class="btn danger" data-slide-rm type="button">Delete slide</button></div>
+        <button class="btn-link small" data-slide-reset type="button" style="margin-top:12px">Reset all slides to the originals</button>`;
+    };
     const body = (x) => {
-      const id = x.id;
-      if (x.type === 'hero') return `<div class="field"><label>Slider banners</label><span class="hint">Every slide of the home slider. Edit the text and button of each one, switch its look, or use your own picture (best size 1800 x 700). Leave all text empty to show a picture on its own.</span>
-          ${st.slides.map((b, i) => `<div class="bn-row" data-si="${i}"><div class="bn-thumb">${b.image ? `<img src="${b.image}" alt="">` : `<span class="muted xs">${({ a: 'Ivory', c: 'Sky blue', d: 'Mint' })[b.art] || 'Ivory'} look<br>with panjabis</span>`}</div><div class="bn-fields">
-            <div class="row gap-8 wrap"><button class="btn btn-glass btn-sm" data-slide-up type="button">${icon('upload', 14)} ${b.image ? 'Replace picture' : 'Use my picture'}</button>${b.image ? '<button class="btn btn-ghost btn-sm danger" data-slide-img-rm type="button">Remove picture</button>' : ''}<label class="check small"><input type="checkbox" data-slide="active" ${b.active !== false ? 'checked' : ''}> Show</label><span class="grow"></span><button class="btn btn-ghost btn-icon btn-sm" data-slide-mv="-1" ${i === 0 ? 'disabled' : ''} type="button" aria-label="Move up">${icon('chevron-up', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-slide-mv="1" ${i === st.slides.length - 1 ? 'disabled' : ''} type="button" aria-label="Move down">${icon('chevron-down', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-slide-rm type="button" aria-label="Remove slide">${icon('trash', 14)}</button></div>
-            <div class="form-grid2"><div class="field"><label>Small heading</label><input data-slide="kicker" value="${esc(b.kicker || '')}" maxlength="30"></div><div class="field"><label>Headline</label><input data-slide="title" value="${esc(b.title || '')}" maxlength="60"></div><div class="field"><label>Subtitle</label><input data-slide="sub" value="${esc(b.sub || '')}" maxlength="90"></div><div class="field"><label>Badge text</label><input data-slide="stamp" value="${esc(b.stamp || '')}" maxlength="30" placeholder="e.g. In stores and online"></div><div class="field"><label>Button text</label><input data-slide="cta" value="${esc(b.cta || '')}" maxlength="24"></div><div class="field"><label>Button link</label><input data-slide="link" value="${esc(b.link || '')}" placeholder="shop.html?cat=eid"></div>
-            <div class="field"><label>Button style</label><select data-slide="btn"><option value="primary" ${b.btn !== 'glass' ? 'selected' : ''}>Blue</option><option value="glass" ${b.btn === 'glass' ? 'selected' : ''}>White</option></select></div>${b.image ? '' : `<div class="field"><label>Look</label><select data-slide="art"><option value="a" ${b.art === 'a' || !b.art ? 'selected' : ''}>Ivory</option><option value="c" ${b.art === 'c' ? 'selected' : ''}>Sky blue</option><option value="d" ${b.art === 'd' ? 'selected' : ''}>Mint</option></select></div>`}</div></div></div>`).join('')}
-          <div class="row gap-8 wrap"><button class="btn btn-glass btn-sm" data-slide-add type="button">${icon('plus', 14)} Add slide</button><button class="btn btn-ghost btn-sm" data-slide-reset type="button">Reset slides to the originals</button></div></div>`;
-      if (x.type === 'collection') return `<div class="form-grid2">${field('Section title', inp(id, 'title', x.title))}${field('Link text', inp(id, 'linkLabel', x.linkLabel, 'Explore All'))}</div>
-        ${field('Link address', inp(id, 'link', x.link, 'category.html?c=panjabi'))}
-        <div class="field"><label>Shop pages to show here</label><div class="cat-checks">${pages().map((c) => `<label class="check small"><input type="checkbox" data-sec="${id}" data-page="${esc(c.slug)}" ${(x.pages || []).includes(c.slug) ? 'checked' : ''}> ${esc(c.title)} <span class="muted xs">(${c.cats.length} categories)</span></label>`).join('')}</div><span class="hint">Each category of the chosen pages becomes a card.</span></div>
-        <div class="field"><label>Extra cards</label>${(x.extra || []).map((c, i) => `<div class="hm-card" data-sec="${id}" data-i="${i}"><input data-extra="title" value="${esc(c.title)}" placeholder="Title"><input data-extra="sub" value="${esc(c.sub || '')}" placeholder="Small text"><input data-extra="link" value="${esc(c.link || '')}" placeholder="shop.html?cat=sets"><button class="btn btn-ghost btn-sm danger" data-extra-rm type="button">Remove</button></div>`).join('')}<button class="btn btn-glass btn-sm" data-extra-add="${id}" type="button" style="align-self:flex-start">${icon('plus', 14)} Add card</button></div>`;
-      if (x.type === 'rail') return `<div class="form-grid2">${field('Section title', inp(id, 'title', x.title))}${field('Link text', inp(id, 'linkLabel', x.linkLabel, 'Explore All'))}</div>
-        <div class="form-grid2">${field('Link address', inp(id, 'link', x.link, 'shop.html'))}${field('Number of products', `<input type="number" min="2" max="12" data-sec="${id}" data-k="count" value="${x.count || 8}">`)}</div>
-        <div class="form-grid2">${field('Show', `<select data-sec="${id}" data-k="source"><option value="new" ${x.source === 'new' ? 'selected' : ''}>Newest products</option><option value="popular" ${x.source === 'popular' ? 'selected' : ''}>Best selling</option><option value="featured" ${x.source === 'featured' ? 'selected' : ''}>Featured products</option><option value="cat" ${x.source === 'cat' ? 'selected' : ''}>One category</option></select>`)}${x.source === 'cat' ? field('Category', `<select data-sec="${id}" data-k="cat">${S.categories().map((c) => `<option value="${esc(c.slug)}" ${x.cat === c.slug ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select>`) : ''}</div>`;
-      if (x.type === 'showrooms') return `<div class="form-grid2">${field('Section title', inp(id, 'title', x.title))}${field('Link text', inp(id, 'linkLabel', x.linkLabel, 'All locations'))}</div><p class="small muted">Your showrooms come from the store details.</p>`;
-      if (x.type === 'recent') return field('Section title', inp(id, 'title', x.title)) + '<p class="small muted">Shows the products the visitor looked at recently. It stays empty until they have viewed some.</p>';
-      if (x.type === 'quality') return `<div class="form-grid2">${field('Small heading', inp(id, 'kicker', x.kicker))}${field('Section title', inp(id, 'title', x.title))}</div>
-        <div class="field"><label>Background picture</label><div class="cp-img-pick"><div class="cp-new-img">${st.craftBg ? `<img src="${st.craftBg}" alt="">` : '<span class="muted xs">Dark marble (default)</span>'}</div><button class="btn btn-glass btn-sm" data-bg-up type="button">${icon('upload', 14)} Upload</button>${st.craftBg ? '<button class="btn btn-ghost btn-sm danger" data-bg-rm type="button">Remove</button>' : ''}</div></div>
-        <div class="field"><label>Cards</label>${(x.cards || []).map((c, i) => `<div class="hm-qcard" data-sec="${id}" data-i="${i}"><div class="row gap-8"><select data-card="ic" aria-label="Icon">${ICONS.map((n) => `<option ${c.ic === n ? 'selected' : ''}>${n}</option>`).join('')}</select><input class="grow" data-card="t" value="${esc(c.t)}" placeholder="Card title"><button class="btn btn-ghost btn-icon btn-sm" data-card-mv="-1" ${i === 0 ? 'disabled' : ''} type="button" aria-label="Move up">${icon('chevron-up', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-card-mv="1" ${i === x.cards.length - 1 ? 'disabled' : ''} type="button" aria-label="Move down">${icon('chevron-down', 14)}</button><button class="btn btn-ghost btn-sm danger" data-card-rm type="button">Remove</button></div><textarea data-card="d" rows="2" placeholder="Short description">${esc(c.d)}</textarea></div>`).join('')}<button class="btn btn-glass btn-sm" data-card-add="${id}" type="button" style="align-self:flex-start">${icon('plus', 14)} Add card</button></div>`;
+      if (x.type === 'hero') return heroHTML();
+      if (x.type === 'collection') return `<div class="hb-g2">${field('Section title', t('', 'title', x.title))}${field('Link text', t('', 'linkLabel', x.linkLabel, 'Explore All'))}</div>${field('Link address', t('', 'link', x.link, 'category.html?c=panjabi'))}
+        <div class="hb-f"><label>Shop pages shown here</label><div class="hb-checks">${S.collections().map((c) => `<label class="check small"><input type="checkbox" data-page="${esc(c.slug)}" ${(x.pages || []).includes(c.slug) ? 'checked' : ''}> ${esc(c.title)} <span class="muted xs">(${A.plural(c.cats.length, 'category', 'categories')})</span></label>`).join('')}</div><span class="hint">Every category of the chosen pages becomes a card.</span></div>
+        <div class="hb-f"><label>Extra cards</label>${(x.extra || []).map((c, i) => `<div class="hb-card" data-i="${i}"><input data-extra="title" value="${esc(c.title)}" placeholder="Title"><input data-extra="sub" value="${esc(c.sub || '')}" placeholder="Small text"><input data-extra="link" value="${esc(c.link || '')}" placeholder="shop.html?cat=sets"><button class="btn btn-ghost btn-sm danger" data-extra-rm type="button">Remove</button></div>`).join('')}<button class="btn btn-glass btn-sm" data-extra-add type="button" style="align-self:flex-start">${icon('plus', 14)} Add card</button></div>`;
+      if (x.type === 'rail') return `<div class="hb-g2">${field('Section title', t('', 'title', x.title))}${field('Link text', t('', 'linkLabel', x.linkLabel, 'Explore All'))}</div>${field('Link address', t('', 'link', x.link, 'shop.html'))}
+        ${field('Show', opt('source', x.source, [['new', 'Newest'], ['popular', 'Best selling'], ['featured', 'Featured'], ['cat', 'A category']]))}
+        ${x.source === 'cat' ? field('Category', `<select data-k="cat">${S.categories().map((c) => `<option value="${esc(c.slug)}" ${x.cat === c.slug ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select>`) : ''}
+        ${field('Number of products', `<input type="number" min="2" max="12" data-k="count" value="${x.count || 8}">`)}`;
+      if (x.type === 'showrooms') return `<div class="hb-g2">${field('Section title', t('', 'title', x.title))}${field('Link text', t('', 'linkLabel', x.linkLabel, 'All locations'))}</div><p class="hb-hint">Your showrooms come from the store details.</p>`;
+      if (x.type === 'recent') return field('Section title', t('', 'title', x.title)) + '<p class="hb-hint">Shows the products the visitor looked at recently. It stays empty until they have viewed some.</p>';
+      if (x.type === 'quality') return `<div class="hb-g2">${field('Small heading', t('', 'kicker', x.kicker))}${field('Section title', t('', 'title', x.title))}</div>
+        ${field('Background picture', `<div class="hb-pic">${st.craftBg ? `<img src="${st.craftBg}" alt="">` : '<span class="muted xs">Dark marble (default)</span>'}<button class="btn btn-glass btn-sm" data-bg-up type="button">${icon('upload', 14)} Upload</button>${st.craftBg ? '<button class="btn btn-ghost btn-sm danger" data-bg-rm type="button">Remove</button>' : ''}</div>`)}
+        <div class="hb-f"><label>Cards</label>${(x.cards || []).map((c, i) => `<div class="hb-qc" data-i="${i}"><div class="row gap-8"><select data-card="ic" aria-label="Icon">${ICONS.map((n) => `<option ${c.ic === n ? 'selected' : ''}>${n}</option>`).join('')}</select><input class="grow" data-card="t" value="${esc(c.t)}" placeholder="Card title"><button class="hb-mini" data-card-mv="-1" ${i === 0 ? 'disabled' : ''} type="button" aria-label="Move up">${icon('chevron-up', 13)}</button><button class="hb-mini" data-card-mv="1" ${i === x.cards.length - 1 ? 'disabled' : ''} type="button" aria-label="Move down">${icon('chevron-down', 13)}</button><button class="hb-mini danger" data-card-rm type="button" aria-label="Remove">${icon('x', 13)}</button></div><textarea data-card="d" rows="2" placeholder="Short description">${esc(c.d)}</textarea></div>`).join('')}<button class="btn btn-glass btn-sm" data-card-add type="button" style="align-self:flex-start">${icon('plus', 14)} Add card</button></div>`;
       return '';
     };
-    const box = (x, i) => {
-      const fixed = x.type === 'hero'; const removable = x.type === 'collection' || x.type === 'rail';
-      const last = st.layout.length - 1;
-      return `<div class="card metabox ${closed.has(x.id) ? 'closed' : ''}" data-box="${x.id}">
-        <div class="metabox-h" data-head><h3>${icon(SIC[x.type] || 'grid', 18)} ${LABEL[x.type]}${x.title ? ` <span class="muted small">· ${esc(x.title)}</span>` : ''}</h3>
-          <div class="row gap-8"><label class="check small"><input type="checkbox" data-sec="${x.id}" data-k="enabled" ${x.enabled !== false ? 'checked' : ''}> Visible</label>
-            ${fixed ? '' : `<button class="btn btn-ghost btn-icon btn-sm" data-mv="-1" ${i <= 1 ? 'disabled' : ''} type="button" aria-label="Move up">${icon('chevron-up', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-mv="1" ${i === last ? 'disabled' : ''} type="button" aria-label="Move down">${icon('chevron-down', 14)}</button>`}
-            ${removable ? `<button class="btn btn-ghost btn-icon btn-sm danger" data-rm type="button" aria-label="Remove section">${icon('trash', 14)}</button>` : ''}
-            <span class="mb-toggle">${icon('chevron-up', 18)}</span></div></div>
-        <div class="metabox-b col gap-12">${body(x)}</div></div>`;
+    const paintInsp = () => {
+      const x = sec(sel); if (!x) return;
+      $('#hb-insp').innerHTML = `<div class="hb-ih"><span class="hb-ic lg">${icon(SIC[x.type] || 'grid', 20)}</span><div class="grow"><b>${esc(x.title || LABEL[x.type])}</b><small>${LABEL[x.type]}</small></div></div><div class="hb-ib">${body(x)}</div>
+        ${x.type === 'collection' || x.type === 'rail' ? `<div class="hb-if"><button class="btn danger" data-del type="button">Delete this section</button></div>` : ''}`;
     };
-    const paint = () => { $('#hm-sections').innerHTML = st.layout.map(box).join(''); $('#hm-count').textContent = A.plural(st.layout.filter((x) => x.enabled !== false).length, 'visible section'); };
-    paint();
-    const root = $('#hm-sections');
-    root.addEventListener('input', (e) => {
-      dirty = true; const t = e.target;
-      if (t.dataset.top) { st[t.dataset.top] = t.type === 'checkbox' ? t.checked : t.value; return; }
-      if (t.dataset.slide) { const sl = st.slides[Number(t.closest('[data-si]').dataset.si)]; sl[t.dataset.slide] = t.type === 'checkbox' ? t.checked : t.value; return; }
-      const holder = t.closest('[data-sec]') || t; const x = sec(holder.dataset.sec || t.dataset.sec); if (!x) return;
-      if (t.dataset.page) { x.pages = x.pages || []; const i = x.pages.indexOf(t.dataset.page); if (t.checked && i < 0) x.pages.push(t.dataset.page); if (!t.checked && i >= 0) x.pages.splice(i, 1); return; }
-      const row = t.closest('[data-i]'); const i = row ? Number(row.dataset.i) : -1;
-      if (t.dataset.extra && i >= 0) { x.extra[i][t.dataset.extra] = t.value; return; }
-      if (t.dataset.card && i >= 0) { x.cards[i][t.dataset.card] = t.value; return; }
-      if (t.dataset.k) {
-        x[t.dataset.k] = t.type === 'checkbox' ? t.checked : t.type === 'number' ? Math.min(12, Math.max(2, Number(t.value) || 8)) : t.value;
-        if (t.dataset.k === 'source') paint();
-        if (t.dataset.k === 'title') { const h = t.closest('.metabox').querySelector('.metabox-h h3'); if (h) { const sp = h.querySelector('span'); if (sp) sp.textContent = '· ' + t.value; } }
+    const insp = $('#hb-insp');
+    const pickImg = () => new Promise((res) => { const f = document.createElement('input'); f.type = 'file'; f.accept = 'image/*'; f.onchange = async () => { if (!f.files[0]) return res(''); try { res(await Admin.compressImage(f.files[0], 1800)); } catch (er) { A.toast('Could not read that image', 'err'); res(''); } }; f.click(); });
+    insp.addEventListener('input', (e) => {
+      const el = e.target; const x = sec(sel); if (!x) return;
+      if (el.dataset.s) { st.slides[si][el.dataset.s] = el.value; changed(false); if (el.dataset.s === 'kicker' || el.dataset.s === 'title') { const th = $$('.hb-th', insp)[si]; if (th) th.lastChild.textContent = el.value || 'Slide ' + (si + 1); } return; }
+      if (el.dataset.page) { x.pages = x.pages || []; const i = x.pages.indexOf(el.dataset.page); if (el.checked && i < 0) x.pages.push(el.dataset.page); if (!el.checked && i >= 0) x.pages.splice(i, 1); changed(false); return; }
+      const row = el.closest('[data-i]'); const i = row ? Number(row.dataset.i) : -1;
+      if (el.dataset.extra && i >= 0) { x.extra[i][el.dataset.extra] = el.value; changed(false); return; }
+      if (el.dataset.card && i >= 0) { x.cards[i][el.dataset.card] = el.value; changed(false); return; }
+      if (el.dataset.k) {
+        x[el.dataset.k] = el.type === 'number' ? Math.min(12, Math.max(2, Number(el.value) || 8)) : el.value; changed(false);
+        if (el.dataset.k === 'title') { const b = $('.hb-ih b', insp); if (b) b.textContent = el.value || LABEL[x.type]; const lb = $(`.hb-sec[data-id="${x.id}"] .grow b`); if (lb) lb.textContent = el.value || LABEL[x.type]; }
       }
     });
-    root.addEventListener('click', async (e) => {
-      const t = e.target;
-      const srow = t.closest('[data-si]'); const si = srow ? Number(srow.dataset.si) : -1;
-      if (t.closest('[data-slide-add]')) { st.slides.push({ id: 'b' + A.uid(), art: 'a', kicker: '', title: 'New slide', sub: '', stamp: '', cta: 'Shop now', btn: 'primary', link: 'shop.html', active: true }); dirty = true; paint(); return; }
-      if (t.closest('[data-slide-rm]')) { st.slides.splice(si, 1); dirty = true; paint(); return; }
-      if (t.closest('[data-slide-img-rm]')) { delete st.slides[si].image; dirty = true; paint(); return; }
-      if (t.closest('[data-slide-reset]')) { if (await A.confirm('Put the slider back to its three original slides? Your own pictures are removed from it.', 'Reset')) { st.slides = S.heroDefault(); dirty = true; paint(); } return; }
-      const smv = t.closest('[data-slide-mv]'); if (smv) { const j = si + Number(smv.dataset.slideMv); [st.slides[si], st.slides[j]] = [st.slides[j], st.slides[si]]; dirty = true; paint(); return; }
-      if (t.closest('[data-slide-up]')) { const f = document.createElement('input'); f.type = 'file'; f.accept = 'image/*'; f.onchange = async () => { if (!f.files[0]) return; try { st.slides[si].image = await Admin.compressImage(f.files[0], 1800); dirty = true; paint(); } catch (er) { A.toast('Could not read that image', 'err'); } }; f.click(); return; }
-      const boxEl = t.closest('[data-box]'); if (!boxEl) return; const id = boxEl.dataset.box; const x = sec(id); const i = st.layout.indexOf(x);
-      const mv = t.closest('[data-mv]'); if (mv) { const j = i + Number(mv.dataset.mv); if (j >= 1 && j < st.layout.length) { [st.layout[i], st.layout[j]] = [st.layout[j], st.layout[i]]; dirty = true; paint(); } return; }
-      if (t.closest('[data-rm]')) { if (await A.confirm(`Remove the section “${x.title || LABEL[x.type]}”?`, 'Remove')) { st.layout.splice(i, 1); dirty = true; paint(); } return; }
-      const ea = t.closest('[data-extra-add]'); if (ea) { x.extra = x.extra || []; x.extra.push({ title: '', sub: '', link: 'shop.html', pid: 1 }); dirty = true; paint(); return; }
-      if (t.closest('[data-extra-rm]')) { x.extra.splice(Number(t.closest('[data-i]').dataset.i), 1); dirty = true; paint(); return; }
-      const ca = t.closest('[data-card-add]'); if (ca) { x.cards = x.cards || []; x.cards.push({ t: '', d: '', ic: 'check' }); dirty = true; paint(); return; }
-      if (t.closest('[data-card-rm]')) { x.cards.splice(Number(t.closest('[data-i]').dataset.i), 1); dirty = true; paint(); return; }
-      const cm = t.closest('[data-card-mv]'); if (cm) { const k = Number(t.closest('[data-i]').dataset.i); const j = k + Number(cm.dataset.cardMv); [x.cards[k], x.cards[j]] = [x.cards[j], x.cards[k]]; dirty = true; paint(); return; }
-      if (t.closest('[data-bg-up]')) { const f = document.createElement('input'); f.type = 'file'; f.accept = 'image/*'; f.onchange = async () => { if (!f.files[0]) return; try { st.craftBg = await Admin.compressImage(f.files[0], 1800); dirty = true; paint(); } catch (er) { A.toast('Could not read that image', 'err'); } }; f.click(); return; }
-      if (t.closest('[data-bg-rm]')) { st.craftBg = ''; dirty = true; paint(); return; }
-      if (t.closest('[data-head]') && !t.closest('button, label, input')) { closed.has(id) ? closed.delete(id) : closed.add(id); boxEl.classList.toggle('closed'); }
+    insp.addEventListener('click', async (e) => {
+      const el = e.target; const x = sec(sel); if (!x) return;
+      const pick = el.closest('[data-slide-pick]'); if (pick) { si = Number(pick.dataset.slidePick); paintInsp(); return; }
+      if (el.closest('[data-slide-add]')) { st.slides.push({ id: 'b' + A.uid(), art: 'a', kicker: '', title: 'New slide', sub: '', stamp: '', cta: 'Shop now', btn: 'primary', link: 'shop.html', active: true }); si = st.slides.length - 1; changed(true); paintList(); paintInsp(); return; }
+      if (el.closest('[data-slide-rm]')) { st.slides.splice(si, 1); si = Math.max(0, si - 1); changed(true); paintList(); paintInsp(); return; }
+      if (el.closest('[data-slide-hide]')) { const s = st.slides[si]; s.active = s.active === false; changed(true); paintList(); paintInsp(); return; }
+      if (el.closest('[data-slide-reset]')) { if (await A.confirm('Put the slider back to its three original slides? Your own pictures are removed from it.', 'Reset')) { st.slides = S.heroDefault(); si = 0; changed(true); paintList(); paintInsp(); } return; }
+      if (el.closest('[data-slide-up]')) { const v = await pickImg(); if (v) { st.slides[si].image = v; changed(true); paintInsp(); } return; }
+      const op = el.closest('[data-opt]');
+      if (op) {
+        const k = op.dataset.opt; const v = op.dataset.v;
+        if (k === 'look') { const s = st.slides[si]; if (v === 'pic') { if (!s.image) { const img = await pickImg(); if (!img) return; s.image = img; } } else { delete s.image; s.art = v; } }
+        else if (k === 'btn') st.slides[si].btn = v;
+        else if (k === 'source') x.source = v;
+        changed(true); paintInsp(); return;
+      }
+      if (el.closest('[data-extra-add]')) { x.extra = x.extra || []; x.extra.push({ title: '', sub: '', link: 'shop.html', pid: 1 }); changed(true); paintInsp(); return; }
+      if (el.closest('[data-extra-rm]')) { x.extra.splice(Number(el.closest('[data-i]').dataset.i), 1); changed(true); paintInsp(); return; }
+      if (el.closest('[data-card-add]')) { x.cards = x.cards || []; x.cards.push({ t: '', d: '', ic: 'check' }); changed(true); paintInsp(); paintList(); return; }
+      if (el.closest('[data-card-rm]')) { x.cards.splice(Number(el.closest('[data-i]').dataset.i), 1); changed(true); paintInsp(); paintList(); return; }
+      const cm = el.closest('[data-card-mv]'); if (cm) { const k = Number(el.closest('[data-i]').dataset.i); const j = k + Number(cm.dataset.cardMv); [x.cards[k], x.cards[j]] = [x.cards[j], x.cards[k]]; changed(true); paintInsp(); return; }
+      if (el.closest('[data-bg-up]')) { const v = await pickImg(); if (v) { st.craftBg = v; changed(true); paintInsp(); } return; }
+      if (el.closest('[data-bg-rm]')) { st.craftBg = ''; changed(true); paintInsp(); return; }
+      if (el.closest('[data-del]')) { if (await A.confirm(`Delete the section “${x.title || LABEL[x.type]}”?`, 'Delete')) { st.layout.splice(st.layout.indexOf(x), 1); changed(true); select('hero'); } }
     });
-    const add = (type) => {
-      const id = 's-' + A.uid().slice(0, 5);
-      st.layout.push(type === 'rail' ? { id, type, enabled: true, title: 'New products', link: 'shop.html', linkLabel: 'Explore All', source: 'new', cat: '', count: 8 } : { id, type, enabled: true, title: 'New collection', link: 'shop.html', linkLabel: 'Explore All', pages: [], extra: [] });
-      dirty = true; paint(); A.toast('Section added at the bottom');
-    };
-    $('#hm-add-collection').addEventListener('click', () => add('collection'));
-    $('#hm-add-rail').addEventListener('click', () => add('rail'));
-    $('#hm-save').addEventListener('click', () => {
-      S.saveHomeLayout(st.layout);
-      const bn = S.banners(); bn.slides = st.slides; if (st.craftBg) bn.craftBg = st.craftBg; else delete bn.craftBg; S.saveBanners(bn);
-      dirty = false; A.toast('Home page updated');
+    insp.addEventListener('change', (e) => { if (e.target.dataset.k === 'cat') { sec(sel).cat = e.target.value; changed(false); } });
+
+    /* ---- top bar ---- */
+    $('#hb-status').textContent = rec && rec.status === 'publish' ? 'Published' : 'Draft'; $('#hb-status').className = 'badge ' + (rec && rec.status === 'publish' ? 'b-ok' : 'b-warn');
+    $('#hb-dev').addEventListener('click', (e) => { const b = e.target.closest('[data-w]'); if (!b) return; $$('#hb-dev button').forEach((x) => x.setAttribute('aria-pressed', x === b)); $('#hb-frame').style.setProperty('--fw', b.dataset.w); });
+    const apply = (j) => { restore(j); last = snapshot(); paintList(); paintInsp(); clearTimeout(tPrev); tPrev = setTimeout(refreshPreview, 300); dirty = true; $('#hb-dirty').hidden = false; $('#hb-undo').disabled = !undo.length; $('#hb-redo').disabled = !redo.length; };
+    $('#hb-undo').addEventListener('click', () => { clearTimeout(tUndo); pushUndo(); if (!undo.length) return; redo.push(snapshot()); apply(undo.pop()); });
+    $('#hb-redo').addEventListener('click', () => { if (!redo.length) return; undo.push(snapshot()); apply(redo.pop()); });
+    $('#hb-undo').disabled = true; $('#hb-redo').disabled = true;
+    $('#hb-save').addEventListener('click', () => {
+      S.saveHomeLayout(st.layout); const bn = S.banners(); bn.slides = st.slides; if (st.craftBg) bn.craftBg = st.craftBg; else delete bn.craftBg; S.saveBanners(bn);
+      DB.remove ? DB.remove('home.draft') : DB.set('home.draft', null); dirty = false; $('#hb-dirty').hidden = true; A.toast('Home page updated'); refreshPreviewLive();
     });
-    $('#hm-reset').addEventListener('click', () => A.confirm('Put the home page back to its original layout and text?', 'Reset').then((ok) => { if (ok) { S.saveHomeLayout(S.homeDefault()); location.reload(); } }));
+    const refreshPreviewLive = () => { try { frame.contentWindow.location.reload(); } catch (e) { /* ignore */ } };
+    $('#hb-reset').addEventListener('click', () => A.confirm('Put the whole home page back to its original layout and text?', 'Reset').then((ok) => { if (ok) { S.saveHomeLayout(S.homeDefault()); const bn = S.banners(); delete bn.slides; S.saveBanners(bn); DB.set('home.draft', null); dirty = false; location.reload(); } }));
+    window.addEventListener('message', (e) => { const d = e.data || {}; if (d.type === 'amnu-select' && sec(d.id)) { if (d.id === 'hero' || true) select(d.id, false); } if (d.type === 'amnu-ready') setTimeout(goto, 250); });
     window.addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+    saveDraft(); frame.src = '../index.html?preview=1';
+    paintList(); paintInsp();
   };
 
   /* ======================================================================
