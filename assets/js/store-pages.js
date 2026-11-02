@@ -118,6 +118,13 @@
     if (pct) $('#promo-strip').textContent = `Save ${pct}% On Entire Order With Digital Payment`; else $('#promo-strip').hidden = true;
     $('#sub-chips').innerHTML = `<a class="chip ${!st.cat ? 'active' : ''}" href="shop.html">All</a>` + S.categories().map((c) => `<a class="chip ${st.cat === c.slug ? 'active' : ''}" href="shop.html?cat=${c.slug}">${esc(c.name)}</a>`).join('');
     $('#crumb-cat').textContent = st.cat ? catName(st.cat) : 'All Panjabi';
+    (() => {
+      const inCat = st.cat ? all.filter((p) => p.cats.includes(st.cat)) : all;
+      const pics = (inCat.length ? inCat : all).slice(0, 5);
+      const title = st.cat ? catName(st.cat) : 'All Panjabi';
+      const tag = st.sale ? 'Online offer' : st.sort === 'new' ? 'New arrivals' : st.cat ? 'Collection' : 'Our collection';
+      $('#cat-hero').innerHTML = `<div class="cat-hero-art" aria-hidden="true">${pics.map((p, i) => `<div class="cat-pj c${i}">${S.thumb(p)}</div>`).join('')}</div><div class="cat-hero-card"><span class="kicker">${esc(tag)}</span><h1>${esc(title)}</h1><p>${A.plural(inCat.length, 'style')} · in stores and online</p></div>`;
+    })();
     document.title = `${st.cat ? catName(st.cat) : 'Shop'} — ${settings.storeName}`;
 
     const filtered = () => {
