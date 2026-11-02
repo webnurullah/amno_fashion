@@ -40,6 +40,14 @@
     $('#tile-art-c').innerHTML = [set(13), set(14), set(16)].map((p, i) => `<div class="tile-pj p${i}">${S.thumb(p)}</div>`).join('');
     $('#tile-art-d').innerHTML = [set(16), set(9)].map((p, i) => `<div class="tile-pj p${i}">${S.thumb(p)}</div>`).join('');
     (() => {
+      const bn = S.banners(); const track = $('#hero-track');
+      const mine = bn.home.filter((b) => b.image && b.active !== false);
+      if (mine.length) {
+        if (bn.showDefaults === false) [...track.children].forEach((t) => { t.hidden = true; });
+        track.insertAdjacentHTML('afterbegin', mine.map((b) => `<a class="tile tile-img" href="${esc(b.link || 'shop.html')}" aria-label="${esc(b.title || 'Featured banner')}"><div class="tile-art" style="background-image:url('${b.image}')" aria-hidden="true"></div>${b.title || b.sub || b.cta ? `<div class="tile-copy">${b.title ? `<h2 class="tile-h">${esc(b.title)}</h2>` : ''}${b.sub ? `<p>${esc(b.sub)}</p>` : ''}${b.cta ? `<span class="btn btn-primary">${esc(b.cta)}</span>` : ''}</div>` : ''}</a>`).join(''));
+      }
+    })();
+    (() => {
       const track = $('#hero-track'); const slides = [...track.children].filter((t) => !t.hidden); const dots = $('#hero-dots');
       const per = () => 1;
       let idx = 0; let timer;
@@ -123,6 +131,8 @@
       const pics = (inCat.length ? inCat : all).slice(0, 5);
       const title = st.cat ? catName(st.cat) : 'All Panjabi';
       const tag = st.sale ? 'Online offer' : st.sort === 'new' ? 'New arrivals' : st.cat ? 'Collection' : 'Our collection';
+      const bimg = S.banners().cats[st.cat || 'all'] || S.banners().cats.all;
+      if (bimg) { $('#cat-hero').className = 'cat-hero has-img'; $('#cat-hero').removeAttribute('style'); $('#cat-hero').innerHTML = `<img src="${bimg}" alt="${esc(title)}">`; return; }
       $('#cat-hero').innerHTML = `<div class="cat-hero-art" aria-hidden="true">${pics.map((p, i) => `<div class="cat-pj c${i}">${S.thumb(p)}</div>`).join('')}</div><div class="cat-hero-card"><span class="kicker">${esc(tag)}</span><h1>${esc(title)}</h1><p>${A.plural(inCat.length, 'style')} · in stores and online</p></div>`;
     })();
     document.title = `${st.cat ? catName(st.cat) : 'Shop'} — ${settings.storeName}`;

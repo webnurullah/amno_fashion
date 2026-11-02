@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en" data-surface="admin">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Banners ‹ AMNU Fashion Admin</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/svg+xml" href="../assets/img/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600&family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../assets/css/glass.css">
+  <link rel="stylesheet" href="../assets/css/admin.css">
+  <script src="../assets/js/core.js"></script>
+</head>
+<body data-page="banners">
+  <div class="bg" aria-hidden="true"></div>
+  <div class="admin" id="admin">
+    <aside class="sidebar glass" id="sidebar"></aside>
+
+    <div class="admin-main">
+      <header class="topbar glass" id="topbar"></header>
+
+      <main class="content" id="content">
+        <div class="page-head">
+          <div><h1>Banners</h1><p class="muted">Upload the images shown on your homepage slider and at the top of each category page.</p></div>
+          <div class="row gap-8 wrap"><button class="btn btn-violet" id="bn-save" type="button"><i data-icon="check" data-size="18"></i> Save banners</button></div>
+        </div>
+        <section class="card" style="margin-bottom:18px">
+          <div class="card-h"><span class="card-title">Homepage slider</span><button class="btn btn-glass btn-sm" id="bn-add" type="button"><i data-icon="plus" data-size="14"></i> Add slide</button></div>
+          <p class="xs muted" style="margin-bottom:6px">Best size: 1800 × 700 px or wider (landscape). Leave the text empty to show the picture on its own.</p>
+          <div id="bn-home"></div>
+          <label class="check small" style="margin-top:12px"><input type="checkbox" id="bn-defaults" checked> Also show the built-in slides after mine</label>
+        </section>
+        <section class="card">
+          <div class="card-h"><span class="card-title">Category page banners</span></div>
+          <p class="xs muted" style="margin-bottom:12px">Shown above the filters, as the full picture (put any text in the image itself). A category without its own image uses the "All products" banner, or the default artwork if that is empty too.</p>
+          <div class="bn-cats" id="bn-cats"></div>
+        </section>
+      </main>
+
+      <footer class="admin-footer" id="admin-footer"></footer>
+    </div>
+  </div>
+
+  <script src="../assets/js/data.js"></script>
+  <script src="../assets/js/ops.js"></script>
+  <script src="../assets/js/prod.js"></script>
+  <script src="../assets/js/charts.js"></script>
+  <script src="../assets/js/admin-core.js"></script>
+  <script src="../assets/js/admin-pages.js"></script>
+  <script src="../assets/js/admin-pages2.js"></script>
+  <script src="../assets/js/admin-ops.js"></script>
+  <script src="../assets/js/admin-fin.js"></script>
+  <script src="../assets/js/admin-prod.js"></script>
+  <script>Amnu.admin.boot('banners', Amnu.adminPages['banners']);</script>
+</body>
+</html>

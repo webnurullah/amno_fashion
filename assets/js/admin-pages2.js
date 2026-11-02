@@ -385,6 +385,42 @@
   /* ======================================================================
      Login (demo)
      ====================================================================== */
+  P.banners = () => {
+    const st = S.banners();
+    st.home = st.home || []; st.cats = st.cats || {};
+    const save = (msg) => { const ok = S.saveBanners(st); if (ok === false) { A.toast('Browser storage is full. Remove an image first.', 'err'); return false; } if (msg) A.toast(msg); return true; };
+    const pick = (accept = 'image/*') => new Promise((res) => { const i = document.createElement('input'); i.type = 'file'; i.accept = accept; i.onchange = () => res(i.files[0] || null); i.click(); });
+    const read = async (file) => { if (!file) return null; if (!/^image\//.test(file.type)) { A.toast('Choose an image file', 'err'); return null; } try { return await Admin.compressImage(file, 1800); } catch (e) { A.toast('Could not read that image', 'err'); return null; } };
+    const thumb = (src, label) => (src ? `<img src="${src}" alt="">` : `<span class="muted xs">${label}</span>`);
+    const paint = () => {
+      $('#bn-defaults').checked = st.showDefaults !== false;
+      $('#bn-home').innerHTML = st.home.length ? st.home.map((b, i) => `<div class="bn-row" data-i="${i}">
+          <div class="bn-thumb">${thumb(b.image, 'No image')}</div>
+          <div class="bn-fields">
+            <div class="row gap-8 wrap"><button class="btn btn-glass btn-sm" data-up type="button">${icon('upload', 14)} ${b.image ? 'Replace image' : 'Upload image'}</button><label class="check small"><input type="checkbox" data-k="active" ${b.active !== false ? 'checked' : ''}> Show on site</label><span class="grow"></span><button class="btn btn-ghost btn-icon btn-sm" data-mv="-1" ${i === 0 ? 'disabled' : ''} aria-label="Move up">${icon('chevron-up', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-mv="1" ${i === st.home.length - 1 ? 'disabled' : ''} aria-label="Move down">${icon('chevron-down', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-rm aria-label="Remove slide">${icon('trash', 14)}</button></div>
+            <div class="form-grid2"><div class="field"><label>Headline (optional)</label><input data-k="title" value="${esc(b.title || '')}" maxlength="60"></div><div class="field"><label>Subtitle (optional)</label><input data-k="sub" value="${esc(b.sub || '')}" maxlength="90"></div><div class="field"><label>Button text (optional)</label><input data-k="cta" value="${esc(b.cta || '')}" maxlength="24" placeholder="Shop now"></div><div class="field"><label>Link</label><input data-k="link" value="${esc(b.link || '')}" placeholder="shop.html?cat=eid"></div></div>
+          </div></div>`).join('') : '<p class="muted small">No uploaded slides yet. Add one to show your own banner on the homepage.</p>';
+      const cats = [{ slug: 'all', name: 'All products (default for every category)' }].concat(S.categories().map((c) => ({ slug: c.slug, name: c.name })));
+      $('#bn-cats').innerHTML = cats.map((c) => `<div class="bn-cat" data-slug="${esc(c.slug)}"><div class="bn-thumb wide">${thumb(st.cats[c.slug], 'Uses the default banner')}</div><div class="bn-cat-body"><b class="small">${esc(c.name)}</b><div class="row gap-8"><button class="btn btn-glass btn-sm" data-cup type="button">${icon('upload', 14)} ${st.cats[c.slug] ? 'Replace' : 'Upload'}</button>${st.cats[c.slug] ? '<button class="btn btn-ghost btn-sm danger" data-crm type="button">Remove</button>' : ''}</div></div></div>`).join('');
+    };
+    $('#bn-add').addEventListener('click', () => { st.home.push({ id: 'b' + A.uid(), image: '', title: '', sub: '', cta: '', link: 'shop.html', active: true }); paint(); });
+    $('#bn-defaults').addEventListener('change', (e) => { st.showDefaults = e.target.checked; });
+    $('#bn-home').addEventListener('input', (e) => { const row = e.target.closest('.bn-row'); const k = e.target.dataset.k; if (!row || !k) return; const b = st.home[Number(row.dataset.i)]; b[k] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; });
+    $('#bn-home').addEventListener('click', async (e) => {
+      const row = e.target.closest('.bn-row'); if (!row) return; const i = Number(row.dataset.i); const b = st.home[i];
+      if (e.target.closest('[data-up]')) { const src = await read(await pick()); if (src) { b.image = src; paint(); } return; }
+      if (e.target.closest('[data-rm]')) { st.home.splice(i, 1); paint(); return; }
+      const mv = e.target.closest('[data-mv]'); if (mv) { const j = i + Number(mv.dataset.mv); [st.home[i], st.home[j]] = [st.home[j], st.home[i]]; paint(); }
+    });
+    $('#bn-cats').addEventListener('click', async (e) => {
+      const card = e.target.closest('.bn-cat'); if (!card) return; const slug = card.dataset.slug;
+      if (e.target.closest('[data-cup]')) { const src = await read(await pick()); if (src) { st.cats[slug] = src; paint(); } return; }
+      if (e.target.closest('[data-crm]')) { delete st.cats[slug]; paint(); }
+    });
+    $('#bn-save').addEventListener('click', () => save('Banners saved. Your storefront is updated.'));
+    paint();
+  };
+
   P.login = () => {
     const f = $('#login-form');
     f.addEventListener('submit', (e) => {
