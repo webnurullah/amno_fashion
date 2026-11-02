@@ -81,6 +81,14 @@ move them up and down, change titles, links and text, choose which shop pages fe
 shows (newest, best selling, featured or one category) and how many products, edit the quality-slider cards and its background, and add
 new collection or product-row sections. **Update** saves it. The slider pictures are managed in *Banners*. The page design itself is unchanged.
 
+## Editing the other pages (admin)
+
+Every storefront page is in *Admin → Pages*: Home, Shop, About Us, Contact, Track Your Order, Store Locations and the six policy pages
+(Shipping, Terms, Privacy, Payment, Exchange & Refund, Size Guide). They are **built-in**: they cannot be deleted, only set to
+**Draft** (visitors then see "This page is not available"). Click a page to edit all of its text: headings, paragraphs, button labels,
+cards, and for policies the title and each paragraph (add, reorder, remove). Text you did not change keeps following the page. To make
+another piece of text editable, add `data-edit="page.key" data-label="Name" data-group="Section"` to its element in the page's HTML.
+
 ## Admin menu: Site and Product
 
 The admin menu currently shows one group, **Site and Product**: **Pages** (all storefront pages in one WordPress-style list: shop pages

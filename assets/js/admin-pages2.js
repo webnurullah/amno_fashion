@@ -152,7 +152,7 @@
       views: [{ id: 'all', label: 'All' }, { id: 'shop', label: 'Shop pages', filter: (p) => p.type === 'shop' }, { id: 'page', label: 'Content pages', filter: (p) => p.type === 'page' }, { id: 'publish', label: 'Published', filter: (p) => p.status === 'publish' }, { id: 'draft', label: 'Drafts', filter: (p) => p.status === 'draft' }],
       search: (p, q) => (p.title + ' ' + p.slug + ' ' + (p.cat || '')).toLowerCase().includes(q),
       columns: [
-        { id: 'title', label: 'Title', sort: (a, b) => a.title.localeCompare(b.title), render: (p) => (p.type === 'shop' ? `<a class="row-title" href="collection-edit.html?id=${p.cid}">${esc(p.title)}</a>${p.status !== 'publish' ? ' <span class="draft-tag">— Draft</span>' : ''}${Admin.actions([{ label: 'Edit', href: `collection-edit.html?id=${p.cid}` }, { label: p.status === 'publish' ? 'Unpublish' : 'Publish', act: 'toggle', id: p.id }, { label: 'View', href: '../' + p.file, target: '_blank' }, { label: 'Trash', act: 'del', id: p.id, danger: true }])}` : `<a class="row-title" href="#" data-act="edit" data-id="${p.id}">${esc(p.title)}</a>${p.status === 'draft' ? ' <span class="draft-tag">— Draft</span>' : ''}${Admin.actions([{ label: 'Edit', act: 'edit', id: p.id }, { label: p.status === 'publish' ? 'Unpublish' : 'Publish', act: 'toggle', id: p.id }, p.file ? { label: 'View', href: '../' + p.file, target: '_blank' } : null, { label: 'Trash', act: 'del', id: p.id, danger: true }])}`) },
+        { id: 'title', label: 'Title', sort: (a, b) => a.title.localeCompare(b.title), render: (p) => (p.type === 'shop' ? `<a class="row-title" href="collection-edit.html?id=${p.cid}">${esc(p.title)}</a>${p.status !== 'publish' ? ' <span class="draft-tag">— Draft</span>' : ''}${Admin.actions([{ label: 'Edit', href: `collection-edit.html?id=${p.cid}` }, { label: p.status === 'publish' ? 'Unpublish' : 'Publish', act: 'toggle', id: p.id }, { label: 'View', href: '../' + p.file, target: '_blank' }, { label: 'Trash', act: 'del', id: p.id, danger: true }])}` : `<a class="row-title" href="#" data-act="edit" data-id="${p.id}">${esc(p.title)}</a>${p.status === 'draft' ? ' <span class="draft-tag">— Draft</span>' : ''}${p.system ? ' <span class="muted xs">· Built-in</span>' : ''}${Admin.actions([{ label: 'Edit', act: 'edit', id: p.id }, { label: p.status === 'publish' ? 'Unpublish' : 'Publish', act: 'toggle', id: p.id }, p.file ? { label: 'View', href: '../' + p.file, target: '_blank' } : null, p.system ? null : { label: 'Trash', act: 'del', id: p.id, danger: true }])}`) },
         { id: 'type', label: 'Type', render: (p) => `<span class="badge ${p.type === 'shop' ? 'b-ok' : 'b-violet'}">${p.type === 'shop' ? 'Shop page' : 'Page'}</span>` },
         { id: 'author', label: 'Author', render: (p) => `<div class="row gap-8">${Admin.avatar(p.author, 'xs')}<span class="small">${esc(p.author)}</span></div>` },
         { id: 'cat', label: 'Categories', render: (p) => (p.type === 'shop' ? `<div class="chip-list">${p.cats.map((slug) => { const k = S.categories().find((x) => x.slug === slug); return k ? `<span class="badge">${esc(k.name)}</span>` : ''; }).join('') || '—'}</div>` : '—') },
@@ -163,10 +163,10 @@
       bulk: [
         { id: 'publish', label: 'Publish', run: (ids) => { const l = S.pages(); l.forEach((p) => { if (ids.includes(String(p.id))) p.status = 'publish'; }); S.savePages(l); const cl = S.collections(); cl.forEach((c) => { if (ids.includes('c' + c.id)) c.status = 'publish'; }); S.saveCollections(cl); A.toast('Published'); } },
         { id: 'draft', label: 'Move to draft', run: (ids) => { const l = S.pages(); l.forEach((p) => { if (ids.includes(String(p.id))) p.status = 'draft'; }); S.savePages(l); const cl = S.collections(); cl.forEach((c) => { if (ids.includes('c' + c.id)) c.status = 'draft'; }); S.saveCollections(cl); A.toast('Moved to draft'); } },
-        { id: 'del', label: 'Move to trash', confirm: 'Delete the selected items?', run: (ids) => { S.savePages(S.pages().filter((p) => !ids.includes(String(p.id)))); S.saveCollections(S.collections().filter((c) => !ids.includes('c' + c.id))); A.toast('Deleted'); } }
+        { id: 'del', label: 'Move to trash', confirm: 'Delete the selected items? Built-in pages are kept (you can only set them to draft).', run: (ids) => { S.savePages(S.pages().filter((p) => p.system || !ids.includes(String(p.id)))); S.saveCollections(S.collections().filter((c) => !ids.includes('c' + c.id))); A.toast('Deleted'); } }
       ],
       actions: {
-        edit: (id, p, a) => { if (p.slug === '/') { location.href = 'home-edit.html'; return; } edit(id, a); },
+        edit: (id, p, a) => { if (p.key === 'home') { location.href = 'home-edit.html'; return; } if (p.system) { location.href = 'page-edit.html?key=' + p.key; return; } edit(id, a); },
         toggle: (id, p, a) => { if (p.type === 'shop') { const cl = S.collections(); const c = cl.find((k) => k.id === p.cid); c.status = c.status === 'publish' ? 'draft' : 'publish'; S.saveCollections(cl); a.refresh(); A.toast(c.status === 'publish' ? 'Published' : 'Moved to draft'); return; } const l = S.pages(); const x = l.find((k) => String(k.id) === String(id)); x.status = x.status === 'publish' ? 'draft' : 'publish'; S.savePages(l); a.refresh(); A.toast(x.status === 'publish' ? 'Published' : 'Moved to draft'); },
         del: (id, p, a) => A.confirm(`Delete “${p.title}”?`, 'Delete').then((ok) => { if (ok) { if (p.type === 'shop') S.saveCollections(S.collections().filter((k) => k.id !== p.cid)); else S.savePages(S.pages().filter((k) => String(k.id) !== String(id))); a.refresh(); A.toast('Deleted'); } })
       }
@@ -611,6 +611,55 @@
     });
     $('#hm-reset').addEventListener('click', () => A.confirm('Put the home page back to its original layout and text?', 'Reset').then((ok) => { if (ok) { S.saveHomeLayout(S.homeDefault()); location.reload(); } }));
     window.addEventListener('beforeunload', (e) => { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+  };
+
+  /* ======================================================================
+     Built-in page editor (about, contact, policies...): edit every text of the storefront page
+     ====================================================================== */
+  P['page-edit'] = async () => {
+    const key = A.qs.get('key'); const rec = S.pageDoc(key);
+    if (!rec) { location.href = 'pages.html'; return; }
+    if (key === 'home') { location.replace('home-edit.html'); return; }
+    $('#pe-title').textContent = 'Edit page: ' + rec.title;
+    $('#pe-status').value = rec.status;
+    $('#pe-view').href = '../' + (rec.file || 'index.html');
+    const main = $('#pe-main');
+    const saved = S.pageText(key); const isPolicy = key.startsWith('policy-'); const pk = key.replace('policy-', '');
+    const done = (msg) => { rec.status = $('#pe-status').value; rec.date = new Date().toISOString(); const l = S.pages(); l[l.findIndex((x) => x.id === rec.id)] = rec; S.savePages(l); A.toast(msg || 'Page updated'); };
+    if (isPolicy) {
+      const cur = S.policy(pk); const st = { title: cur.title, paras: cur.paras.slice() };
+      const paint = () => { main.innerHTML = `<div class="card"><div class="field"><label for="pp-title">Page title</label><input id="pp-title" class="big-input" value="${esc(st.title)}"></div></div>
+        <div class="card metabox"><div class="metabox-h"><h3>Page text</h3></div><div class="metabox-b col gap-12">${st.paras.map((t, i) => t === 'TABLE' ? `<div class="hm-qcard" data-i="${i}"><div class="row between"><b class="small">Size chart table</b><span class="muted xs">Shown automatically</span></div></div>` : `<div class="hm-qcard" data-i="${i}"><textarea data-para rows="3">${esc(t)}</textarea><div class="row gap-8"><button class="btn btn-ghost btn-icon btn-sm" data-mv="-1" ${i === 0 ? 'disabled' : ''} type="button" aria-label="Move up">${icon('chevron-up', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-mv="1" ${i === st.paras.length - 1 ? 'disabled' : ''} type="button" aria-label="Move down">${icon('chevron-down', 14)}</button><button class="btn btn-ghost btn-sm danger" data-rm type="button">Remove paragraph</button></div></div>`).join('')}<button class="btn btn-glass btn-sm" id="pp-add" type="button" style="align-self:flex-start">${icon('plus', 14)} Add paragraph</button></div></div>`; };
+      paint();
+      main.addEventListener('input', (e) => { if (e.target.id === 'pp-title') st.title = e.target.value; const row = e.target.closest('[data-i]'); if (row && e.target.dataset.para != null) st.paras[Number(row.dataset.i)] = e.target.value; });
+      main.addEventListener('click', (e) => {
+        if (e.target.closest('#pp-add')) { st.paras.push(''); paint(); return; }
+        const row = e.target.closest('[data-i]'); if (!row) return; const i = Number(row.dataset.i);
+        if (e.target.closest('[data-rm]')) { st.paras.splice(i, 1); paint(); return; }
+        const mv = e.target.closest('[data-mv]'); if (mv) { const j = i + Number(mv.dataset.mv); [st.paras[i], st.paras[j]] = [st.paras[j], st.paras[i]]; paint(); }
+      });
+      $('#pe-save').addEventListener('click', () => { S.savePageText(key, { title: st.title.trim() || cur.title, paras: st.paras.filter((t) => t === 'TABLE' || t.trim()) }); rec.title = st.title.trim() || rec.title; done(); });
+      return;
+    }
+    if (key === 'shop') {
+      main.innerHTML = '<div class="card"><p>The shop page lists your products and categories automatically, so it has no text to edit here.</p><ul class="small muted" style="margin:10px 0 0 18px;list-style:disc"><li>Change products and categories in <a class="btn-link" href="products.html">Products</a>.</li><li>Change the banner picture in <a class="btn-link" href="banners.html">Banners</a>.</li></ul></div>';
+      $('#pe-save').addEventListener('click', () => done());
+      return;
+    }
+    main.innerHTML = '<div class="card"><p class="muted">Loading the page…</p></div>';
+    let fields = [];
+    try {
+      const html = await (await fetch('../' + rec.file)).text();
+      const dom = new DOMParser().parseFromString(html, 'text/html');
+      fields = [...dom.querySelectorAll('[data-edit]')].map((el) => ({ k: el.dataset.edit, label: el.dataset.label || el.dataset.edit, group: el.dataset.group || 'Content', type: el.dataset.type || (el.tagName === 'P' ? 'area' : 'text'), def: el.textContent.replace(/\s+/g, ' ').trim() }));
+    } catch (e) { fields = []; }
+    if (!fields.length) { main.innerHTML = '<div class="card"><p>This page could not be loaded for editing. Open the admin from your website address (not from a file on your computer) and try again.</p></div>'; return; }
+    const groups = [...new Set(fields.map((f) => f.group))];
+    const val = {}; fields.forEach((f) => { val[f.k] = saved[f.k] != null && saved[f.k] !== '' ? saved[f.k] : f.def; });
+    main.innerHTML = groups.map((g) => `<div class="card metabox"><div class="metabox-h"><h3>${esc(g)}</h3><span class="mb-toggle">${icon('chevron-up', 18)}</span></div><div class="metabox-b col gap-12">${fields.filter((f) => f.group === g).map((f) => `<div class="field"><label>${esc(f.label)}</label>${f.type === 'area' ? `<textarea data-k="${esc(f.k)}" rows="3">${esc(val[f.k])}</textarea>` : `<input data-k="${esc(f.k)}" value="${esc(val[f.k])}">`}</div>`).join('')}</div></div>`).join('');
+    main.addEventListener('input', (e) => { if (e.target.dataset.k) val[e.target.dataset.k] = e.target.value; });
+    $$('.metabox-h', main).forEach((h) => h.addEventListener('click', () => h.parentElement.classList.toggle('closed')));
+    $('#pe-save').addEventListener('click', () => { const out = {}; fields.forEach((f) => { if (val[f.k].trim() && val[f.k].replace(/\s+/g, ' ').trim() !== f.def) out[f.k] = val[f.k].trim(); }); S.savePageText(key, out); done(); });
   };
 
   P.login = () => {

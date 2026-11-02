@@ -195,19 +195,12 @@
   /* ======================================================================
      Policies
      ====================================================================== */
-  const POLICIES = {
-    shipping: ['Shipping Policy', ['Delivery inside Dhaka takes 1–2 working days and 3–5 working days elsewhere in Bangladesh.', 'Delivery charges are shown at checkout and depend on your location and order value. Orders above the free-delivery threshold ship free.', 'You can also pick your order up from any showroom at no charge.']],
-    terms: ['Terms and Conditions', ['By placing an order you agree to provide accurate delivery information and to pay for the items you receive.', 'Prices and stock can change without notice. If an item sells out after you order, we will contact you for an alternative or a refund.', 'We may cancel orders that appear fraudulent or that we cannot fulfil.']],
-    privacy: ['Privacy Policy', ['We collect the details you give us (name, phone, address, email) to process orders and provide support.', 'We do not sell your personal information. Payment details for cards are handled by our payment partner.', 'You can ask us to correct or delete your information at any time.']],
-    payment: ['Payment Policy', ['We accept Cash on Delivery, bKash, Nagad and cards. Digital payments may qualify for a discount shown at checkout.', 'For bKash and Nagad, send money to the number shown at checkout and enter the transaction ID. Orders are confirmed after verification.', 'Loyalty points can be combined with any other payment method.']],
-    exchange: ['Exchange & Refund', ['Wrong size? Exchange within 7 days of delivery. Items must be unworn, unwashed and have their tags.', 'Exchange online by contacting us, or visit any showroom with your invoice.', 'Refunds are issued to the original payment method after the returned item passes inspection.']],
-    size: ['Size Guide', ['Measure a panjabi that fits you well, lay it flat and compare it with the chart below. Between sizes? Choose the larger one for a relaxed fit.', 'TABLE']],
-  };
+  const POLICIES = S.POLICIES;
   P.policy = () => {
     const key = POLICIES[A.qs.get('p')] ? A.qs.get('p') : 'shipping';
-    const [title, paras] = POLICIES[key];
+    const { title, paras } = S.policy(key);
     document.title = `${title} — ${settings.storeName}`;
-    $('#policy-nav').innerHTML = Object.entries(POLICIES).map(([k, v]) => `<a href="policy.html?p=${k}" class="${k === key ? 'on' : ''}">${v[0]}</a>`).join('');
+    $('#policy-nav').innerHTML = Object.keys(POLICIES).filter((k) => { const d = S.pageDoc('policy-' + k); return !d || d.status === 'publish'; }).map((k) => `<a href="policy.html?p=${k}" class="${k === key ? 'on' : ''}">${esc(S.policy(k).title)}</a>`).join('');
     $('#policy-body').innerHTML = `<h1>${esc(title)}</h1>` + paras.map((t) => (t === 'TABLE' ? `<div class="table-wrap"><table class="gtable"><thead><tr><th>Size</th><th>Chest</th><th>Length</th><th>Sleeve</th></tr></thead><tbody><tr><td>S / 38</td><td>38"</td><td>39"</td><td>23.5"</td></tr><tr><td>M / 40</td><td>40"</td><td>40"</td><td>24"</td></tr><tr><td>L / 42</td><td>42"</td><td>41"</td><td>24.5"</td></tr><tr><td>XL / 44</td><td>44"</td><td>42"</td><td>25"</td></tr><tr><td>XXL / 46</td><td>46"</td><td>43"</td><td>25.5"</td></tr></tbody></table></div>` : `<p>${esc(t)}</p>`)).join('') + '<p class="xs muted" style="margin-top:22px">Template text. Replace it with your own policy before going live.</p>';
   };
 
@@ -253,6 +246,14 @@
      ====================================================================== */
   const page = document.body.dataset.page;
   Shop.mount(page);
-  if (P[page]) P[page]();
+  const pageKey = page === 'policy' ? 'policy-' + (POLICIES[A.qs.get('p')] ? A.qs.get('p') : 'shipping') : ({ home: 'home', shop: 'shop', about: 'about', contact: 'contact', track: 'track', stores: 'stores' })[page];
+  const doc = pageKey && S.pageDoc(pageKey);
+  if (doc && doc.status !== 'publish') {
+    $('#main').innerHTML = '<div class="container"><div class="empty glass pad" style="margin:60px auto;max-width:560px;text-align:center"><h2>This page is not available right now</h2><p class="muted">Please check back soon.</p><a class="btn btn-primary" href="index.html">Back to home</a></div></div>';
+  } else {
+    if (P[page]) P[page]();
+    const txt = S.pageText(pageKey || page);
+    $$('[data-edit]').forEach((el) => { const v = txt[el.dataset.edit]; if (v != null && v !== '') el.textContent = v; });
+  }
   A.hydrate();
 })();

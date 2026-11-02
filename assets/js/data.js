@@ -293,13 +293,18 @@
   ];
 
   const SEED_PAGES = [
-    { id: 1, type: 'page', title: 'Home', slug: '/', author: 'Amnu Admin', status: 'publish', date: daysAgo(120), file: 'index.html' },
-    { id: 2, type: 'page', title: 'Shop', slug: '/shop', author: 'Amnu Admin', status: 'publish', date: daysAgo(120), file: 'shop.html' },
-    { id: 3, type: 'page', title: 'About Us', slug: '/about', author: 'Amnu Admin', status: 'publish', date: daysAgo(110), file: 'about.html' },
-    { id: 4, type: 'page', title: 'Contact', slug: '/contact', author: 'Amnu Admin', status: 'publish', date: daysAgo(110), file: 'contact.html' },
-    { id: 5, type: 'page', title: 'Track Your Order', slug: '/track-order', author: 'Amnu Admin', status: 'publish', date: daysAgo(100), file: 'track-order.html' },
-    { id: 6, type: 'page', title: 'Return & Exchange Policy', slug: '/returns', author: 'Shop Manager', status: 'publish', date: daysAgo(90) },
-    { id: 7, type: 'page', title: 'Privacy Policy', slug: '/privacy', author: 'Shop Manager', status: 'draft', date: daysAgo(30) },
+    { id: 1, key: 'home', system: true, type: 'page', title: 'Home', slug: '/', author: 'Amnu Admin', status: 'publish', date: daysAgo(120), file: 'index.html' },
+    { id: 2, key: 'shop', system: true, type: 'page', title: 'Shop', slug: '/shop', author: 'Amnu Admin', status: 'publish', date: daysAgo(120), file: 'shop.html' },
+    { id: 3, key: 'about', system: true, type: 'page', title: 'About Us', slug: '/about', author: 'Amnu Admin', status: 'publish', date: daysAgo(110), file: 'about.html' },
+    { id: 4, key: 'contact', system: true, type: 'page', title: 'Contact', slug: '/contact', author: 'Amnu Admin', status: 'publish', date: daysAgo(110), file: 'contact.html' },
+    { id: 5, key: 'track', system: true, type: 'page', title: 'Track Your Order', slug: '/track-order', author: 'Amnu Admin', status: 'publish', date: daysAgo(100), file: 'track-order.html' },
+    { id: 6, key: 'stores', system: true, type: 'page', title: 'Store Locations', slug: '/stores', author: 'Amnu Admin', status: 'publish', date: daysAgo(100), file: 'stores.html' },
+    { id: 7, key: 'policy-shipping', system: true, type: 'page', title: 'Shipping Policy', slug: '/policy/shipping', author: 'Shop Manager', status: 'publish', date: daysAgo(90), file: 'policy.html?p=shipping' },
+    { id: 8, key: 'policy-terms', system: true, type: 'page', title: 'Terms and Conditions', slug: '/policy/terms', author: 'Shop Manager', status: 'publish', date: daysAgo(90), file: 'policy.html?p=terms' },
+    { id: 9, key: 'policy-privacy', system: true, type: 'page', title: 'Privacy Policy', slug: '/policy/privacy', alt: ['/privacy'], author: 'Shop Manager', status: 'publish', date: daysAgo(90), file: 'policy.html?p=privacy' },
+    { id: 10, key: 'policy-payment', system: true, type: 'page', title: 'Payment Policy', slug: '/policy/payment', author: 'Shop Manager', status: 'publish', date: daysAgo(90), file: 'policy.html?p=payment' },
+    { id: 11, key: 'policy-exchange', system: true, type: 'page', title: 'Exchange & Refund', slug: '/policy/exchange', alt: ['/returns'], author: 'Shop Manager', status: 'publish', date: daysAgo(90), file: 'policy.html?p=exchange' },
+    { id: 12, key: 'policy-size', system: true, type: 'page', title: 'Size Guide', slug: '/policy/size', author: 'Shop Manager', status: 'publish', date: daysAgo(90), file: 'policy.html?p=size' }
   ];
 
   const SEED_USERS = [
@@ -503,7 +508,31 @@
   };
 
   /* pages, users, plugins, media */
-  store.pages = () => (DB.get('pages', null) || (DB.set('pages', SEED_PAGES), SEED_PAGES.map((p) => Object.assign({}, p)))).filter((p) => p.type !== 'post');
+  /* built-in pages (home, about, policies...) always exist: they can be turned to draft but not deleted */
+  store.pages = () => {
+    const raw = DB.get('pages', null);
+    const list = (raw || SEED_PAGES.map((p) => Object.assign({}, p))).filter((p) => p.type !== 'post');
+    let changed = !raw;
+    SEED_PAGES.forEach((sd) => {
+      const f = list.find((p) => p.key === sd.key) || list.find((p) => p.slug === sd.slug || (sd.alt || []).includes(p.slug));
+      if (f) { if (f.key !== sd.key || !f.system) { f.key = sd.key; f.system = true; f.file = f.file || sd.file; changed = true; } } else { list.push(Object.assign({}, sd, { id: list.reduce((n, x) => Math.max(n, x.id), 0) + 1 })); changed = true; }
+    });
+    if (changed) DB.set('pages', list);
+    return list;
+  };
+  store.pageDoc = (key) => store.pages().find((p) => p.key === key);
+  /** text edited in Admin -> Pages for the static pages: { 'about.headline': '...' } (policies: { title, paras }) */
+  store.pageText = (key) => (DB.get('pagetext', {})[key] || {});
+  store.savePageText = (key, obj) => { const all = DB.get('pagetext', {}); all[key] = obj; DB.set('pagetext', all); };
+  store.POLICIES = {
+    shipping: ['Shipping Policy', ['Delivery inside Dhaka takes 1–2 working days and 3–5 working days elsewhere in Bangladesh.', 'Delivery charges are shown at checkout and depend on your location and order value. Orders above the free-delivery threshold ship free.', 'You can also pick your order up from any showroom at no charge.']],
+    terms: ['Terms and Conditions', ['By placing an order you agree to provide accurate delivery information and to pay for the items you receive.', 'Prices and stock can change without notice. If an item sells out after you order, we will contact you for an alternative or a refund.', 'We may cancel orders that appear fraudulent or that we cannot fulfil.']],
+    privacy: ['Privacy Policy', ['We collect the details you give us (name, phone, address, email) to process orders and provide support.', 'We do not sell your personal information. Payment details for cards are handled by our payment partner.', 'You can ask us to correct or delete your information at any time.']],
+    payment: ['Payment Policy', ['We accept Cash on Delivery, bKash, Nagad and cards. Digital payments may qualify for a discount shown at checkout.', 'For bKash and Nagad, send money to the number shown at checkout and enter the transaction ID. Orders are confirmed after verification.', 'Loyalty points can be combined with any other payment method.']],
+    exchange: ['Exchange & Refund', ['Wrong size? Exchange within 7 days of delivery. Items must be unworn, unwashed and have their tags.', 'Exchange online by contacting us, or visit any showroom with your invoice.', 'Refunds are issued to the original payment method after the returned item passes inspection.']],
+    size: ['Size Guide', ['Measure a panjabi that fits you well, lay it flat and compare it with the chart below. Between sizes? Choose the larger one for a relaxed fit.', 'TABLE']],
+  };
+  store.policy = (k) => { const d = store.POLICIES[k] || store.POLICIES.shipping; const o = store.pageText('policy-' + k); return { title: o.title || d[0], paras: o.paras && o.paras.length ? o.paras : d[1] }; };
   store.savePages = (l) => DB.set('pages', l);
   store.users = () => DB.get('users', null) || (DB.set('users', SEED_USERS), SEED_USERS.map((u) => Object.assign({}, u)));
   store.saveUsers = (l) => DB.set('users', l);
