@@ -60,7 +60,7 @@
   const NAV_SITE = () => [
     { heading: 'Site and Product' },
     { id: 'pages', label: 'Pages', icon: 'file', href: 'pages.html' },
-    { id: 'products', label: 'Products', icon: 'tag', href: 'products.html', sub: [['All Products', 'products.html', 'products'], ['Add New', 'product-edit.html', 'product-edit'], ['Categories', 'categories.html', 'categories']] },
+    { id: 'products', label: 'Products', icon: 'tag', href: 'products.html' },
     { id: 'banners', label: 'Banners', icon: 'image', href: 'banners.html' },
     { id: 'media', label: 'Media', icon: 'image', href: 'media.html' },
     { id: 'appearance', label: 'Customize', icon: 'sliders', href: 'appearance.html' }
