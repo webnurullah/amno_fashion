@@ -262,7 +262,7 @@
       const lk = (id, v) => { if (v) $(id).href = v; };
       if (txt['contact.phone']) lk('#cc-phone', 'tel:' + txt['contact.phone'].replace(/[^\d+]/g, ''));
       if (txt['contact.email']) lk('#cc-mail', 'mailto:' + txt['contact.email']);
-      lk('#cc-msgr', txt['contact.msgr']); lk('#cc-stores', txt['contact.storesLink']);
+      lk('#cc-msgr', txt['contact.msgr']);
     }
     if (previewMode) {
       if (page === 'policy') { const h = $('#policy-body h1'); if (h) h.dataset.pv = 'title'; $$('#policy-body p, #policy-body .table-wrap').forEach((x) => { x.dataset.pv = 'text'; }); }
