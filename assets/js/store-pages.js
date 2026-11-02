@@ -33,10 +33,7 @@
     const set = (id) => pub.find((p) => p.id === id) || pub[0];
     $('#hero-title').textContent = settings.heroTitle;
     $('#hero-sub').textContent = settings.heroSub;
-    $('#pct-off').textContent = (settings.digitalDiscountPct || 0) + '%';
-    if (!settings.digitalDiscountPct) $('#tile-b').hidden = true;
     $('#tile-art-a').innerHTML = [set(2), set(1), set(4)].map((p, i) => `<div class="tile-pj p${i}">${S.thumb(p)}</div>`).join('');
-    $('#tile-art-b').innerHTML = [set(8), set(7)].map((p, i) => `<div class="tile-pj p${i}">${S.thumb(p)}</div>`).join('');
     $('#tile-art-c').innerHTML = [set(13), set(14), set(16)].map((p, i) => `<div class="tile-pj p${i}">${S.thumb(p)}</div>`).join('');
     $('#tile-art-d').innerHTML = [set(16), set(9)].map((p, i) => `<div class="tile-pj p${i}">${S.thumb(p)}</div>`).join('');
     (() => {
