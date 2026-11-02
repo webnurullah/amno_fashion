@@ -37,6 +37,25 @@
     if (!settings.digitalDiscountPct) $('#tile-b').hidden = true;
     $('#tile-art-a').innerHTML = [set(2), set(1), set(4)].map((p, i) => `<div class="tile-pj p${i}">${S.thumb(p)}</div>`).join('');
     $('#tile-art-b').innerHTML = [set(8), set(7)].map((p, i) => `<div class="tile-pj p${i}">${S.thumb(p)}</div>`).join('');
+    $('#tile-art-c').innerHTML = [set(13), set(14), set(16)].map((p, i) => `<div class="tile-pj p${i}">${S.thumb(p)}</div>`).join('');
+    $('#tile-art-d').innerHTML = [set(16), set(9)].map((p, i) => `<div class="tile-pj p${i}">${S.thumb(p)}</div>`).join('');
+    (() => {
+      const track = $('#hero-track'); const slides = [...track.children].filter((t) => !t.hidden); const dots = $('#hero-dots');
+      const per = () => (window.matchMedia('(max-width: 900px)').matches ? 1 : 2);
+      let idx = 0; let timer;
+      const step = () => slides[0].getBoundingClientRect().width + 20;
+      const max = () => Math.max(0, slides.length - per());
+      const go = (n) => { idx = (n + max() + 1) % (max() + 1); track.style.transform = `translateX(${-idx * step()}px)`; [...dots.children].forEach((d, k) => d.classList.toggle('on', k === idx)); };
+      const build = () => { dots.innerHTML = Array.from({ length: max() + 1 }, (_, k) => `<button type="button" aria-label="Slide ${k + 1}"></button>`).join(''); go(Math.min(idx, max())); };
+      const play = () => { clearInterval(timer); if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) timer = setInterval(() => go(idx + 1), 5000); };
+      $('#hero-prev').addEventListener('click', () => { go(idx - 1); play(); });
+      $('#hero-next').addEventListener('click', () => { go(idx + 1); play(); });
+      dots.addEventListener('click', (ev) => { const k = [...dots.children].indexOf(ev.target.closest('button')); if (k >= 0) { go(k); play(); } });
+      const root = $('.hero-slider'); root.addEventListener('mouseenter', () => clearInterval(timer)); root.addEventListener('mouseleave', play);
+      let sx = null; track.addEventListener('touchstart', (ev) => { sx = ev.touches[0].clientX; }, { passive: true });
+      track.addEventListener('touchend', (ev) => { if (sx == null) return; const dx = ev.changedTouches[0].clientX - sx; if (Math.abs(dx) > 40) { go(idx + (dx < 0 ? 1 : -1)); play(); } sx = null; });
+      window.addEventListener('resize', build); build(); play();
+    })();
 
     const byCat = (slug) => pub.find((p) => p.cats[0] === slug) || pub.find((p) => p.cats.includes(slug)) || pub[0];
     const catCards = (slugs) => slugs.map((s) => { const c = S.categories().find((x) => x.slug === s); return c ? collectionCard(c.name, `shop.html?cat=${s}`, byCat(s), A.plural(S.categoryCount(s), 'style')) : ''; }).join('');
