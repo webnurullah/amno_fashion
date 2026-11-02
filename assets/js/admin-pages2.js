@@ -190,7 +190,6 @@
     $('#presets').innerHTML = presets.map(([hex, n]) => `<button type="button" class="swatch lg ${hex === st.look.accent ? 'on' : ''}" data-hex="${hex}" style="--c:${hex}" title="${n}" aria-label="${n}"></button>`).join('');
     const fill = () => {
       $('#c-accent').value = st.look.accent; $('#c-blur').value = st.look.blur; $('#c-opacity').value = st.look.opacity; $('#c-radius').value = st.look.radius;
-      $('#c-title').value = st.heroTitle; $('#c-sub').value = st.heroSub; $('#c-announce').value = st.announcement;
       $('#v-blur').textContent = st.look.blur + 'px'; $('#v-opacity').textContent = Math.round(st.look.opacity * 100) + '%'; $('#v-radius').textContent = st.look.radius + 'px';
       $$('#presets .swatch').forEach((s) => s.classList.toggle('on', s.dataset.hex.toLowerCase() === st.look.accent.toLowerCase()));
       $('#c-mode').value = DB.get('theme', 'light');
@@ -204,9 +203,6 @@
       if (id === 'c-blur') st.look.blur = Number(e.target.value);
       if (id === 'c-opacity') st.look.opacity = Number(e.target.value);
       if (id === 'c-radius') st.look.radius = Number(e.target.value);
-      if (id === 'c-title') st.heroTitle = e.target.value;
-      if (id === 'c-sub') st.heroSub = e.target.value;
-      if (id === 'c-announce') st.announcement = e.target.value;
       if (id === 'c-mode') { DB.set('theme', e.target.value); A.applyTheme(); try { frame.contentDocument.documentElement.dataset.theme = document.documentElement.dataset.theme; } catch (er) { /* ignore */ } }
       fill(); send();
     });
@@ -218,7 +214,7 @@
     });
     /* ---- site-wide settings: identity, contact, header, footer ---- */
     const base = S.settings();
-    const sv = JSON.parse(JSON.stringify({ storeName: base.storeName, tagline: base.tagline, email: base.email, phone: base.phone, address: base.address, facebook: base.facebook, messenger: base.messenger, site: base.site }));
+    const sv = JSON.parse(JSON.stringify({ announcement: base.announcement || '', storeName: base.storeName, tagline: base.tagline, email: base.email, phone: base.phone, address: base.address, facebook: base.facebook, messenger: base.messenger, site: base.site }));
     const getp = (path) => path.split('.').reduce((o, k) => (o == null ? o : o[k]), sv);
     const setp = (path, v) => { const ks = path.split('.'); const last = ks.pop(); const o = ks.reduce((a, k) => a[k], sv); o[last] = v; };
     const tx = (label, path, ph = '') => `<div class="field"><label>${label}</label><input data-p="${path}" value="${esc(getp(path) || '')}" placeholder="${esc(ph)}"></div>`;
@@ -228,7 +224,7 @@
     const siteHTML = () => `
       <details class="c-det" open><summary>Site identity</summary>${tx('Site title', 'storeName')}${tx('Tagline', 'tagline')}${logoBox()}${tx('Logo text (optional)', 'site.logoText', 'Defaults to the site title')}</details>
       <details class="c-det"><summary>Contact &amp; social</summary>${tx('Phone', 'phone')}${tx('Email', 'email')}${tx('Address', 'address')}${tx('Facebook page link', 'facebook')}${tx('Messenger link', 'messenger')}</details>
-      <details class="c-det"><summary>Header</summary>${ck('Show the top bar', 'site.topbar.show')}${ck('Show the email in the top bar', 'site.topbar.showEmail')}${tx('Deliver to (text)', 'site.topbar.deliverTo')}${links('Top bar links', 'site.topbar.links')}${links('Main menu', 'site.menu')}<p class="xs muted">New shop pages you publish are added to the menu automatically.</p></details>
+      <details class="c-det"><summary>Header</summary>${tx('Announcement bar (text above the header, empty = hidden)', 'announcement')}${ck('Show the top bar', 'site.topbar.show')}${ck('Show the email in the top bar', 'site.topbar.showEmail')}${tx('Deliver to (text)', 'site.topbar.deliverTo')}${links('Top bar links', 'site.topbar.links')}${links('Main menu', 'site.menu')}<p class="xs muted">New shop pages you publish are added to the menu automatically.</p></details>
       <details class="c-det"><summary>Footer</summary>${tx('Text under the logo', 'site.footerNote')}
         ${[0, 1, 2].map((i) => `<div class="field"><label>Column ${i + 1} title</label><input data-p="site.footer.cols.${i}.title" value="${esc(sv.site.footer.cols[i].title)}"></div>${links('Column ' + (i + 1) + ' links', 'site.footer.cols.' + i + '.links')}`).join('')}
         ${ck('Show the service center column', 'site.footer.showService')}${tx('Service center title', 'site.footer.serviceTitle')}
@@ -255,13 +251,13 @@
     });
     $('#c-publish').addEventListener('click', () => {
       DB.set('look', st.look);
-      S.saveSettings({ heroTitle: st.heroTitle.trim() || DEF_TITLE, heroSub: st.heroSub, announcement: st.announcement, storeName: sv.storeName.trim() || base.storeName, tagline: sv.tagline, email: sv.email, phone: sv.phone, address: sv.address, facebook: sv.facebook, messenger: sv.messenger, site: sv.site });
+      S.saveSettings({ announcement: sv.announcement, storeName: sv.storeName.trim() || base.storeName, tagline: sv.tagline, email: sv.email, phone: sv.phone, address: sv.address, facebook: sv.facebook, messenger: sv.messenger, site: sv.site });
       try { frame.contentWindow.location.reload(); } catch (er) { /* cross-origin */ }
       A.toast('Changes published to your storefront');
     });
     const DEF_TITLE = 'Choose Your Best Panjabi';
     $('#c-reset').addEventListener('click', () => {
-      st.look = Object.assign({}, DEF); st.heroTitle = DEF_TITLE; st.heroSub = "They're all so nice"; st.announcement = '';
+      st.look = Object.assign({}, DEF);
       fill(); send(); A.toast('Reset to defaults. Click Publish to save.');
     });
   };
