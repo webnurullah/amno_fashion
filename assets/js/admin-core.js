@@ -59,7 +59,7 @@
   Admin.SITE_ONLY = true;
   const NAV_SITE = () => [
     { heading: 'Site and Product' },
-    { id: 'pages', label: 'Pages', icon: 'file', href: 'pages.html', sub: [['All Pages', 'pages.html', 'pages'], ['Add Shop Page', 'collection-edit.html', 'collection-edit'], ['Add Page', 'pages.html?new=page', ''], ['Add Post', 'pages.html?new=post', '']] },
+    { id: 'pages', label: 'Pages', icon: 'file', href: 'pages.html', sub: [['All Pages', 'pages.html', 'pages'], ['Add Shop Page', 'collection-edit.html', 'collection-edit'], ['Add Page', 'pages.html?new=page', '']] },
     { id: 'products', label: 'Products', icon: 'tag', href: 'products.html', sub: [['All Products', 'products.html', 'products'], ['Add New', 'product-edit.html', 'product-edit'], ['Categories', 'categories.html', 'categories']] },
     { id: 'banners', label: 'Banners', icon: 'image', href: 'banners.html' },
     { id: 'media', label: 'Media', icon: 'image', href: 'media.html' },
@@ -89,7 +89,7 @@
       { id: 'inventory', label: 'Showroom stock', icon: 'barcode', href: 'inventory.html' },
       { id: 'banners', label: 'Banners', icon: 'layout', href: 'banners.html' },
       { id: 'media', label: 'Media', icon: 'image', href: 'media.html' },
-      { id: 'pages', label: 'Pages & Posts', icon: 'file', href: 'pages.html' },
+      { id: 'pages', label: 'Pages', icon: 'file', href: 'pages.html' },
       { heading: 'Finance' },
       { id: 'finance', label: 'Finance overview', icon: 'coins', href: 'finance.html' },
       { id: 'expenses', label: 'Expenses', icon: 'trend-down', href: 'expenses.html' },
@@ -137,7 +137,7 @@
       <button class="search-btn" id="search-open" type="button" aria-label="Search">${icon('search', 18)}<span>Search anything…</span><kbd>⌘ K</kbd></button>
       <div class="top-actions">
         <div class="dd"><button class="btn btn-violet btn-sm" data-dd aria-haspopup="true">${icon('plus', 16)} <span class="hide-sm">New</span></button>
-          <div class="dd-menu glass-strong">${Admin.SITE_ONLY ? `<a href="collection-edit.html">${icon('layout', 18)} Collection page</a><a href="product-edit.html">${icon('package', 18)} Product</a><a href="pages.html?new=post">${icon('file', 18)} Post</a><a href="banners.html">${icon('image', 18)} Banner</a>` : `<a href="pos.html">${icon('receipt', 18)} POS sale</a><a href="product-edit.html">${icon('package', 18)} Product</a><a href="expenses.html?new=1">${icon('trend-down', 18)} Expense</a><a href="purchases.html?new=1">${icon('swap', 18)} Purchase order</a><a href="pages.html?new=post">${icon('file', 18)} Post</a><a href="coupons.html?new=1">${icon('tag', 18)} Coupon</a><a href="users.html?new=1">${icon('user', 18)} User</a>`}</div></div>
+          <div class="dd-menu glass-strong">${Admin.SITE_ONLY ? `<a href="collection-edit.html">${icon('layout', 18)} Collection page</a><a href="product-edit.html">${icon('package', 18)} Product</a><a href="banners.html">${icon('image', 18)} Banner</a>` : `<a href="pos.html">${icon('receipt', 18)} POS sale</a><a href="product-edit.html">${icon('package', 18)} Product</a><a href="expenses.html?new=1">${icon('trend-down', 18)} Expense</a><a href="purchases.html?new=1">${icon('swap', 18)} Purchase order</a><a href="coupons.html?new=1">${icon('tag', 18)} Coupon</a><a href="users.html?new=1">${icon('user', 18)} User</a>`}</div></div>
         <div class="dd"><button class="icon-btn" data-dd aria-label="Notifications" aria-haspopup="true">${icon('bell', 20)}${alerts ? '<span class="pulse"></span>' : ''}</button>
           <div class="dd-menu glass-strong wide"><div class="dd-h">Notifications</div>
             ${Admin.SITE_ONLY ? '' : `<a href="orders.html?status=processing">${icon('bag', 18)}<span><b>${openOrders}</b> orders waiting to be processed</span></a>`}
@@ -167,7 +167,7 @@
             S.products().filter((p) => has(p.name, p.sku)).slice(0, 4).forEach((p) => items.push({ t: p.name, s: 'Product · ' + p.sku, href: 'product-edit.html?id=' + p.id, ic: 'package' }));
             (Admin.SITE_ONLY ? [] : S.orders()).filter((o) => has('#' + o.id, o.customer.name, o.customer.phone)).slice(-4).reverse().forEach((o) => items.push({ t: `Order #${o.id} · ${o.customer.name}`, s: money(o.total), href: 'order-view.html?id=' + o.id, ic: 'bag' }));
             (Admin.SITE_ONLY ? [] : S.customers()).filter((c) => has(c.name, c.phone, c.email)).slice(0, 3).forEach((c) => items.push({ t: c.name, s: 'Customer · ' + c.phone, href: 'customers.html?q=' + encodeURIComponent(c.name), ic: 'user' }));
-            S.pages().filter((p) => has(p.title)).slice(0, 3).forEach((p) => items.push({ t: p.title, s: p.type === 'post' ? 'Post' : 'Page', href: 'pages.html?q=' + encodeURIComponent(p.title), ic: 'file' }));
+            S.pages().filter((p) => has(p.title)).slice(0, 3).forEach((p) => items.push({ t: p.title, s: 'Page', href: 'pages.html?q=' + encodeURIComponent(p.title), ic: 'file' }));
           }
           idx = 0;
           out.innerHTML = items.length ? items.map((it, i) => `<a class="pal-item ${i === 0 ? 'on' : ''}" role="option" href="${it.href}">${icon(it.ic, 18)}<span class="grow"><b>${esc(it.t)}</b></span><span class="xs muted">${esc(it.s)}</span></a>`).join('') : '<p class="muted center" style="padding:20px">No results</p>';
