@@ -796,3 +796,6 @@ a.contact-card:hover { transform: translateX(4px); }
 /* banner picture of a content page */
 .page-banner { margin: 14px 0 22px; border-radius: 26px; overflow: hidden; box-shadow: var(--shadow); }
 .page-banner img { display: block; width: 100%; height: auto; max-height: 420px; object-fit: cover; }
+
+.logo-img { display: block; height: 40px; width: auto; max-width: 200px; object-fit: contain; }
+.footer-brand .logo-img { height: 52px; }

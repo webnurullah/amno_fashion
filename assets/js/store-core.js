@@ -183,27 +183,38 @@
   /* ======================================================================
      Chrome
      ====================================================================== */
-  const NAV = [
-    ['Eid Special', 'shop.html?cat=eid', (c, p) => c === 'eid'], ['New Arrivals', 'shop.html?sort=new', (c, p, s) => s === 'new'],
-    ['Panjabi', 'category.html?c=panjabi', (c, p) => p === 'category'], ['Wedding', 'shop.html?cat=wedding', (c) => c === 'wedding'],
-    ['Kids', 'shop.html?cat=kids', (c) => c === 'kids'], ['Sets', 'shop.html?cat=sets', (c) => c === 'sets'],
-    ['Inside Story', 'about.html', (c, p) => p === 'about']
-  ];
+  /** is this menu link the page the visitor is on? (same file and same query values) */
+  const linkOn = (href) => {
+    try {
+      const u = new URL(href, location.href); const here = location.pathname.split('/').pop() || 'index.html';
+      if (u.pathname.split('/').pop() !== here) return false;
+      let ok = true; u.searchParams.forEach((v, k) => { if (A.qs.get(k) !== v) ok = false; });
+      return ok && (u.search !== '' || [...new URLSearchParams(location.search)].every(([k]) => !['cat', 'sort', 'c'].includes(k)));
+    } catch (e) { return false; }
+  };
+  const logoHTML = (s) => {
+    const site = s.site || {};
+    if (site.logoImage) return `<img class="logo-img" src="${site.logoImage}" alt="${esc(s.storeName)}">`;
+    const words = String(site.logoText || s.storeName || '').trim().split(/\s+/);
+    const first = words.shift() || '';
+    return `<span class="logo-name">${esc(first)}${words.length ? ' <b>' + esc(words.join(' ')) + '</b>' : ''}</span>`;
+  };
 
   function headerHTML(page) {
     const cat = A.qs.get('cat'); const sort = A.qs.get('sort');
     const s = settings;
     const user = Auth.user();
+    const site = s.site; const tb = site.topbar || {};
     const ann = /^Free delivery on orders over/.test(s.announcement || '') ? '' : s.announcement;
     return `${ann ? `<div class="announce"><span id="announce-text">${esc(ann)}</span></div>` : '<div class="announce" hidden><span id="announce-text"></span></div>'}
-    <div class="util"><div class="container util-in">
+    ${tb.show === false ? '' : `<div class="util"><div class="container util-in">
       <div class="util-l">
-        <a href="mailto:${esc(s.email)}">${icon('mail', 16)}<span>${esc(s.email)}</span></a><a href="contact.html">${icon('phone', 16)}<span>Contact</span></a></div>
-      <div class="util-r"><span class="deliver">${icon('truck', 16)} Deliver to: <i class="flag-bd"></i> <b>Bangladesh</b></span><a href="stores.html">Store Locations</a><a href="track-order.html">Track Order</a></div>
-    </div></div>
+        ${tb.showEmail === false ? '' : `<a href="mailto:${esc(s.email)}">${icon('mail', 16)}<span>${esc(s.email)}</span></a>`}<a href="contact.html">${icon('phone', 16)}<span>Contact</span></a></div>
+      <div class="util-r">${tb.deliverTo ? `<span class="deliver">${icon('truck', 16)} Deliver to: <i class="flag-bd"></i> <b>${esc(tb.deliverTo)}</b></span>` : ''}${(tb.links || []).map((l) => `<a href="${esc(l.href)}">${esc(l.label)}</a>`).join('')}</div>
+    </div></div>`}
     <header class="site-header"><div class="container nav-in">
-      <a class="logo" href="index.html" aria-label="${esc(s.storeName)} home"><span class="logo-name">AMNU <b>Fashion</b></span></a>
-      <nav class="menu" id="menu" aria-label="Main">${NAV.map(([l, h, on]) => `<a href="${h}" class="${on(cat, page, sort) ? 'active' : ''}">${l}</a>`).join('')}${S.livePages().filter((c) => !['panjabi', 'kids', 'sets'].includes(c.slug)).map((c) => `<a href="category.html?c=${esc(c.slug)}" class="${page === 'category' && A.qs.get('c') === c.slug ? 'active' : ''}">${esc(c.title)}</a>`).join('')}<a class="menu-extra" href="stores.html">Store Locations</a><a class="menu-extra" href="track-order.html">Track Order</a></nav>
+      <a class="logo" href="index.html" aria-label="${esc(s.storeName)} home">${logoHTML(s)}</a>
+      <nav class="menu" id="menu" aria-label="Main">${(site.menu || []).map((x) => `<a href="${esc(x.href)}" class="${linkOn(x.href) ? 'active' : ''}">${esc(x.label)}</a>`).join('')}${S.livePages().filter((c) => !['panjabi', 'kids', 'sets'].includes(c.slug) && !(site.menu || []).some((x) => x.href === 'category.html?c=' + c.slug)).map((c) => `<a href="category.html?c=${esc(c.slug)}" class="${page === 'category' && A.qs.get('c') === c.slug ? 'active' : ''}">${esc(c.title)}</a>`).join('')}<a class="menu-extra" href="stores.html">Store Locations</a><a class="menu-extra" href="track-order.html">Track Order</a></nav>
       <div class="nav-actions">
         <button class="icon-btn" data-search aria-label="Search">${icon('search', 21)}</button>
         <div class="dd" id="acc-dd"><button class="icon-btn" data-dd aria-label="Account" aria-haspopup="true">${icon('user', 21)}</button><div class="dd-menu acc-menu glass-strong">${accountMenu(user)}</div></div>
@@ -222,17 +233,15 @@
   function footerHTML() {
     const s = settings;
     const L = (href, label) => `<li><a href="${href}">${label}</a></li>`;
-    const cats = S.categories();
+    const ft = s.site || {}; const f = ft.footer || {}; const pay = f.pay || {};
     return `<footer class="site-footer"><div class="container">
-      <div class="footer-brand"><span class="logo-name">AMNU <b>Fashion</b></span><p>${esc(s.tagline)}<span>Panjabi for Eid, weddings and every day.</span></p></div>
+      <div class="footer-brand">${logoHTML(s)}<p>${esc(s.tagline)}<span>${esc(ft.footerNote || '')}</span></p></div>
       <div class="footer-top glass">
-        <div><h4>Legal</h4><ul>${L('policy.html?p=shipping', 'Shipping Policy')}${L('policy.html?p=terms', 'Terms and Conditions')}${L('policy.html?p=privacy', 'Privacy Policy')}${L('policy.html?p=payment', 'Payment Policy')}</ul></div>
-        <div><h4>Information</h4><ul>${L('policy.html?p=exchange', 'Exchange &amp; Refund')}${L('policy.html?p=size', 'Size Guide')}${L('stores.html', 'Store Locations')}${L('track-order.html', 'Track Your Order')}</ul></div>
-        <div><h4>Company</h4><ul>${L('about.html', 'About Us')}${L('contact.html', 'Contact Us')}${L('about.html#craft', 'Our Craft')}${L('about.html', 'Inside Story')}${L('login.html', 'Sign in')}</ul></div>
-        <div><h4>Service Center</h4><ul class="contact"><li>${esc(s.phone)}</li><li>${esc(s.email)}</li><li><a href="${esc(s.facebook)}" target="_blank" rel="noopener">${icon('facebook', 16)} Facebook</a></li><li><a href="${esc(s.messenger)}" target="_blank" rel="noopener">${icon('message', 16)} Messenger</a></li></ul></div>
-        <div><h4>You Can Pay By</h4><div class="paylogos"><span class="pl pl-visa">VISA</span><span class="pl pl-nagad">Nagad</span><span class="pl pl-bkash">bKash</span><span class="pl pl-mc"><i></i><i></i></span><span class="pl">COD</span></div></div>
+        ${(f.cols || []).map((c) => `<div><h4>${esc(c.title)}</h4><ul>${(c.links || []).map((l) => L(esc(l.href), esc(l.label))).join('')}</ul></div>`).join('')}
+        ${f.showService === false ? '' : `<div><h4>${esc(f.serviceTitle || 'Service Center')}</h4><ul class="contact"><li>${esc(s.phone)}</li><li>${esc(s.email)}</li><li><a href="${esc(s.facebook)}" target="_blank" rel="noopener">${icon('facebook', 16)} Facebook</a></li><li><a href="${esc(s.messenger)}" target="_blank" rel="noopener">${icon('message', 16)} Messenger</a></li></ul></div>`}
+        ${f.showPay === false ? '' : `<div><h4>${esc(f.payTitle || 'You Can Pay By')}</h4><div class="paylogos">${pay.visa !== false ? '<span class="pl pl-visa">VISA</span>' : ''}${pay.nagad !== false ? '<span class="pl pl-nagad">Nagad</span>' : ''}${pay.bkash !== false ? '<span class="pl pl-bkash">bKash</span>' : ''}${pay.mc !== false ? '<span class="pl pl-mc"><i></i><i></i></span>' : ''}${pay.cod !== false ? '<span class="pl">COD</span>' : ''}</div></div>`}
       </div>
-      <p class="copy">© ${new Date().getFullYear()} ${esc(s.storeName)}. All rights reserved. <a href="admin/login.html" class="admin-link">Admin dashboard</a></p>
+      <p class="copy">${esc(String(f.copyright || '').replace('{year}', new Date().getFullYear()).replace('{name}', s.storeName))}${f.showAdminLink === false ? '' : ' <a href="admin/login.html" class="admin-link">Admin dashboard</a>'}</p>
     </div></footer>`;
   }
 

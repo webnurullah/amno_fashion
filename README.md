@@ -81,6 +81,13 @@ move them up and down, change titles, links and text, choose which shop pages fe
 shows (newest, best selling, featured or one category) and how many products, edit the quality-slider cards and its background, and add
 new collection or product-row sections. **Update** saves it. The slider pictures are managed in the Hero slider box. The page design itself is unchanged.
 
+## Customize: site-wide settings (admin)
+
+*Admin → Customize* holds everything that is shared across the whole website, with a live preview: **Site identity** (site title, tagline, logo
+picture or logo text), **Contact & social** (phone, email, address, Facebook and Messenger links), **Header** (top bar on/off, "Deliver to" text,
+top bar links and the main menu, each link with text, address, reorder and remove), **Footer** (text under the logo, the three link columns, service center,
+payment logos, copyright line, Admin dashboard link), plus the brand colour, glass effect and home headline from before. **Publish** saves and refreshes the preview.
+
 ## Editing the other pages (admin)
 
 Every storefront page is in *Admin → Pages*: Home, Shop, About Us, Contact, Track Your Order, Store Locations and the six policy pages
