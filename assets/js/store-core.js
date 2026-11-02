@@ -193,10 +193,8 @@
     } catch (e) { return false; }
   };
   /** banner picture with its optional headline, subtitle and button */
-  Shop.bannerHTML = (b, cls) => {
-    const text = b.title || b.sub || b.cta ? `<div class="banner-text a-${esc(b.align || 'left')}">${b.title ? `<h2>${esc(b.title)}</h2>` : ''}${b.sub ? `<p>${esc(b.sub)}</p>` : ''}${b.cta ? `<a class="btn btn-primary" href="${esc(b.link || 'shop.html')}">${esc(b.cta)}</a>` : ''}</div>` : '';
-    return `<div class="${cls}${b.image ? '' : ' no-img'}">${b.image ? `<img src="${b.image}" alt="${esc(b.title || '')}">` : ''}${text}</div>`;
-  };
+  Shop.bannerText = (b) => (b.title || b.sub || b.cta ? `<div class="banner-text a-${esc(b.align || 'left')}">${b.title ? `<h2>${esc(b.title)}</h2>` : ''}${b.sub ? `<p>${esc(b.sub)}</p>` : ''}${b.cta ? `<a class="btn btn-primary" href="${esc(b.link || 'shop.html')}">${esc(b.cta)}</a>` : ''}</div>` : '');
+  Shop.bannerHTML = (b, cls) => `<div class="${cls}${b.image ? '' : ' no-img'}">${b.image ? `<img src="${b.image}" alt="${esc(b.title || '')}">` : ''}${Shop.bannerText(b)}</div>`;
   const logoHTML = (s) => {
     const site = s.site || {};
     if (site.logoImage) return `<img class="logo-img" src="${site.logoImage}" alt="${esc(s.storeName)}">`;
