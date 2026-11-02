@@ -61,7 +61,6 @@
     { heading: 'Site and Product' },
     { id: 'pages', label: 'Pages', icon: 'file', href: 'pages.html' },
     { id: 'products', label: 'Products', icon: 'tag', href: 'products.html' },
-    { id: 'banners', label: 'Banners', icon: 'image', href: 'banners.html' },
     { id: 'media', label: 'Media', icon: 'image', href: 'media.html' },
     { id: 'appearance', label: 'Customize', icon: 'sliders', href: 'appearance.html' }
   ];
@@ -87,7 +86,6 @@
       { id: 'products', label: 'Designs & products', icon: 'tag', href: 'products.html', sub: [['All Products', 'products.html', 'products'], ['Add New', 'product-edit.html', 'product-edit'], ['Categories', 'categories.html', 'categories']] },
       { id: 'collections', label: 'Collection pages', icon: 'layout', href: 'collections.html', sub: [['All Pages', 'collections.html', 'collections'], ['Add New', 'collection-edit.html', 'collection-edit']] },
       { id: 'inventory', label: 'Showroom stock', icon: 'barcode', href: 'inventory.html' },
-      { id: 'banners', label: 'Banners', icon: 'layout', href: 'banners.html' },
       { id: 'media', label: 'Media', icon: 'image', href: 'media.html' },
       { id: 'pages', label: 'Pages', icon: 'file', href: 'pages.html' },
       { heading: 'Finance' },
@@ -137,7 +135,7 @@
       <button class="search-btn" id="search-open" type="button" aria-label="Search">${icon('search', 18)}<span>Search anything…</span><kbd>⌘ K</kbd></button>
       <div class="top-actions">
         <div class="dd"><button class="btn btn-violet btn-sm" data-dd aria-haspopup="true">${icon('plus', 16)} <span class="hide-sm">New</span></button>
-          <div class="dd-menu glass-strong">${Admin.SITE_ONLY ? `<a href="collection-edit.html">${icon('layout', 18)} Collection page</a><a href="product-edit.html">${icon('package', 18)} Product</a><a href="banners.html">${icon('image', 18)} Banner</a>` : `<a href="pos.html">${icon('receipt', 18)} POS sale</a><a href="product-edit.html">${icon('package', 18)} Product</a><a href="expenses.html?new=1">${icon('trend-down', 18)} Expense</a><a href="purchases.html?new=1">${icon('swap', 18)} Purchase order</a><a href="coupons.html?new=1">${icon('tag', 18)} Coupon</a><a href="users.html?new=1">${icon('user', 18)} User</a>`}</div></div>
+          <div class="dd-menu glass-strong">${Admin.SITE_ONLY ? `<a href="collection-edit.html">${icon('layout', 18)} Collection page</a><a href="product-edit.html">${icon('package', 18)} Product</a>` : `<a href="pos.html">${icon('receipt', 18)} POS sale</a><a href="product-edit.html">${icon('package', 18)} Product</a><a href="expenses.html?new=1">${icon('trend-down', 18)} Expense</a><a href="purchases.html?new=1">${icon('swap', 18)} Purchase order</a><a href="coupons.html?new=1">${icon('tag', 18)} Coupon</a><a href="users.html?new=1">${icon('user', 18)} User</a>`}</div></div>
         <div class="dd"><button class="icon-btn" data-dd aria-label="Notifications" aria-haspopup="true">${icon('bell', 20)}${alerts ? '<span class="pulse"></span>' : ''}</button>
           <div class="dd-menu glass-strong wide"><div class="dd-h">Notifications</div>
             ${Admin.SITE_ONLY ? '' : `<a href="orders.html?status=processing">${icon('bag', 18)}<span><b>${openOrders}</b> orders waiting to be processed</span></a>`}

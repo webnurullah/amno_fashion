@@ -384,41 +384,13 @@
   /* ======================================================================
      Login (demo)
      ====================================================================== */
-  P.banners = () => {
-    const st = S.banners();
-    st.home = st.home || []; st.cats = st.cats || {};
-    const save = (msg) => { const ok = S.saveBanners(st); if (ok === false) { A.toast('Browser storage is full. Remove an image first.', 'err'); return false; } if (msg) A.toast(msg); return true; };
-    const pick = (accept = 'image/*') => new Promise((res) => { const i = document.createElement('input'); i.type = 'file'; i.accept = accept; i.onchange = () => res(i.files[0] || null); i.click(); });
-    const read = async (file) => { if (!file) return null; if (!/^image\//.test(file.type)) { A.toast('Choose an image file', 'err'); return null; } try { return await Admin.compressImage(file, 1800); } catch (e) { A.toast('Could not read that image', 'err'); return null; } };
-    const thumb = (src, label) => (src ? `<img src="${src}" alt="">` : `<span class="muted xs">${label}</span>`);
-    const paint = () => {
-      $('#bn-defaults').checked = st.showDefaults !== false;
-      $('#bn-craft').innerHTML = `<div class="bn-thumb wide">${thumb(st.craftBg, 'Uses the dark marble artwork')}</div><div class="bn-cat-body"><div class="row gap-8"><button class="btn btn-glass btn-sm" data-cbg type="button">${icon('upload', 14)} ${st.craftBg ? 'Replace' : 'Upload'}</button>${st.craftBg ? '<button class="btn btn-ghost btn-sm danger" data-cbgrm type="button">Remove</button>' : ''}</div></div>`;
-      $('#bn-home').innerHTML = st.home.length ? st.home.map((b, i) => `<div class="bn-row" data-i="${i}">
-          <div class="bn-thumb">${thumb(b.image, 'No image')}</div>
-          <div class="bn-fields">
-            <div class="row gap-8 wrap"><button class="btn btn-glass btn-sm" data-up type="button">${icon('upload', 14)} ${b.image ? 'Replace image' : 'Upload image'}</button><label class="check small"><input type="checkbox" data-k="active" ${b.active !== false ? 'checked' : ''}> Show on site</label><span class="grow"></span><button class="btn btn-ghost btn-icon btn-sm" data-mv="-1" ${i === 0 ? 'disabled' : ''} aria-label="Move up">${icon('chevron-up', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-mv="1" ${i === st.home.length - 1 ? 'disabled' : ''} aria-label="Move down">${icon('chevron-down', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-rm aria-label="Remove slide">${icon('trash', 14)}</button></div>
-            <div class="form-grid2"><div class="field"><label>Headline (optional)</label><input data-k="title" value="${esc(b.title || '')}" maxlength="60"></div><div class="field"><label>Subtitle (optional)</label><input data-k="sub" value="${esc(b.sub || '')}" maxlength="90"></div><div class="field"><label>Button text (optional)</label><input data-k="cta" value="${esc(b.cta || '')}" maxlength="24" placeholder="Shop now"></div><div class="field"><label>Link</label><input data-k="link" value="${esc(b.link || '')}" placeholder="shop.html?cat=eid"></div></div>
-          </div></div>`).join('') : '<p class="muted small">No uploaded slides yet. Add one to show your own banner on the homepage.</p>';
-      const cats = [{ slug: 'all', name: 'All products (default for every category)' }].concat(S.categories().map((c) => ({ slug: c.slug, name: c.name })));
-      $('#bn-cats').innerHTML = cats.map((c) => `<div class="bn-cat" data-slug="${esc(c.slug)}"><div class="bn-thumb wide">${thumb(st.cats[c.slug], 'Uses the default banner')}</div><div class="bn-cat-body"><b class="small">${esc(c.name)}</b><div class="row gap-8"><button class="btn btn-glass btn-sm" data-cup type="button">${icon('upload', 14)} ${st.cats[c.slug] ? 'Replace' : 'Upload'}</button>${st.cats[c.slug] ? '<button class="btn btn-ghost btn-sm danger" data-crm type="button">Remove</button>' : ''}</div></div></div>`).join('');
-    };
-    $('#bn-add').addEventListener('click', () => { st.home.push({ id: 'b' + A.uid(), image: '', title: '', sub: '', cta: '', link: 'shop.html', active: true }); paint(); });
-    $('#bn-defaults').addEventListener('change', (e) => { st.showDefaults = e.target.checked; });
-    $('#bn-home').addEventListener('input', (e) => { const row = e.target.closest('.bn-row'); const k = e.target.dataset.k; if (!row || !k) return; const b = st.home[Number(row.dataset.i)]; b[k] = e.target.type === 'checkbox' ? e.target.checked : e.target.value; });
-    $('#bn-home').addEventListener('click', async (e) => {
-      const row = e.target.closest('.bn-row'); if (!row) return; const i = Number(row.dataset.i); const b = st.home[i];
-      if (e.target.closest('[data-up]')) { const src = await read(await pick()); if (src) { b.image = src; paint(); } return; }
-      if (e.target.closest('[data-rm]')) { st.home.splice(i, 1); paint(); return; }
-      const mv = e.target.closest('[data-mv]'); if (mv) { const j = i + Number(mv.dataset.mv); [st.home[i], st.home[j]] = [st.home[j], st.home[i]]; paint(); }
-    });
-    $('#bn-cats').addEventListener('click', async (e) => {
-      const card = e.target.closest('.bn-cat'); if (!card) return; const slug = card.dataset.slug;
-      if (e.target.closest('[data-cup]')) { const src = await read(await pick()); if (src) { st.cats[slug] = src; paint(); } return; }
-      if (e.target.closest('[data-crm]')) { delete st.cats[slug]; paint(); }
-    });
-    $('#bn-craft').addEventListener('click', async (e) => { if (e.target.closest('[data-cbg]')) { const src = await read(await pick()); if (src) { st.craftBg = src; paint(); } } if (e.target.closest('[data-cbgrm]')) { delete st.craftBg; paint(); } });
-    $('#bn-save').addEventListener('click', () => save('Banners saved. Your storefront is updated.'));
+  P.banners = () => { location.replace('pages.html'); };
+
+  /** one banner picture: preview + upload/remove, saved by the caller */
+  const bannerPicker = (host, label, getSrc, setSrc, hint) => {
+    const read = () => new Promise((res) => { const i = document.createElement('input'); i.type = 'file'; i.accept = 'image/*'; i.onchange = async () => { if (!i.files[0]) return res(''); try { res(await Admin.compressImage(i.files[0], 1800)); } catch (e) { A.toast('Could not read that image', 'err'); res(''); } }; i.click(); });
+    const paint = () => { const src = getSrc(); host.innerHTML = `<div class="field"><label>${esc(label)}</label><div class="cp-img-pick"><div class="bn-thumb wide" style="width:240px">${src ? `<img src="${src}" alt="">` : '<span class="muted xs">No banner (default look)</span>'}</div><button class="btn btn-glass btn-sm" data-bn-up type="button">${icon('upload', 14)} ${src ? 'Replace' : 'Upload'}</button>${src ? '<button class="btn btn-ghost btn-sm danger" data-bn-rm type="button">Remove</button>' : ''}</div>${hint ? `<span class="hint">${esc(hint)}</span>` : ''}</div>`; };
+    host.addEventListener('click', async (e) => { if (e.target.closest('[data-bn-up]')) { const v = await read(); if (v) { setSrc(v); paint(); } } if (e.target.closest('[data-bn-rm]')) { setSrc(''); paint(); } });
     paint();
   };
 
@@ -470,6 +442,8 @@
       $('#cp-products').innerHTML = prods.slice(0, 18).map((p) => `<a class="cp-prod" href="product-edit.html?id=${p.id}" title="${esc(p.name)}">${Admin.thumb(p, 'sm')}</a>`).join('') + (prods.length > 18 ? `<span class="muted small">+${prods.length - 18} more</span>` : '') || '<p class="muted small">Products appear here automatically when they belong to one of the categories above.</p>';
     };
     const paintNewImg = () => { $('#cp-new-img').innerHTML = newImg ? `<img src="${newImg}" alt=""><button class="btn btn-ghost btn-sm" id="cp-new-rm" type="button">Remove</button>` : '<span class="muted xs">No image yet</span>'; };
+    const cbn = S.banners(); let pageBanner = (cbn.cats || {})[st.slug] || ''; const oldSlug = st.slug;
+    bannerPicker($('#cp-banner'), 'Banner picture', () => pageBanner, (v) => { pageBanner = v; }, 'Shown at the top of this page when visitors open its shop view. Wide pictures (about 1800 x 700) work best.');
     const fill = () => { $('#cp-title').value = st.title; $('#cp-sub').value = st.sub; $('#cp-status').value = st.status; $('#cp-order').value = st.order; paintHead(); paintCats(); paintNewImg(); };
     fill();
     $('#cp-title').addEventListener('input', (e) => { st.title = e.target.value; if (!slugTouched) { st.slug = A.slug(st.title); const v = $('#cp-slug-view'); if (v) v.textContent = st.slug || '…'; } });
@@ -483,14 +457,15 @@
       const mv = e.target.closest('[data-mv]'); if (mv) { const j = i + Number(mv.dataset.mv); [st.cats[i], st.cats[j]] = [st.cats[j], st.cats[i]]; paintCats(); return; }
       if (e.target.closest('[data-edit]')) {
         const list = S.categories(); const c = list.find((x) => x.slug === slug); let img = c.image || '';
-        const m = A.modal({ title: 'Edit category', body: `<div class="field"><label for="ec-name">Category name</label><input id="ec-name" value="${esc(c.name)}"></div><div class="field"><label>Category image</label><div class="cp-img-pick"><div id="ec-img" class="cp-new-img"></div><button class="btn btn-glass btn-sm" id="ec-up" type="button">${icon('upload', 14)} Upload image</button></div></div>`, footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Save category</button>' });
+        const m = A.modal({ title: 'Edit category', body: `<div class="field"><label for="ec-name">Category name</label><input id="ec-name" value="${esc(c.name)}"></div><div class="field"><label>Category image (round picture)</label><div class="cp-img-pick"><div id="ec-img" class="cp-new-img"></div><button class="btn btn-glass btn-sm" id="ec-up" type="button">${icon('upload', 14)} Upload image</button></div></div><div id="ec-banner"></div>`, footer: '<button class="btn btn-ghost" data-close>Cancel</button><button class="btn btn-violet" data-save>Save category</button>' });
+        const ebn = S.banners(); let catBanner = (ebn.cats || {})[slug] || ''; bannerPicker($('#ec-banner', m.el), 'Category page banner', () => catBanner, (v) => { catBanner = v; }, 'Shown at the top of this category\'s shop page.');
         const pi = () => { $('#ec-img', m.el).innerHTML = img ? `<img src="${img}" alt=""><button class="btn btn-ghost btn-sm" id="ec-rm" type="button">Remove</button>` : '<span class="muted xs">No image</span>'; }; pi();
         m.el.addEventListener('click', async (ev) => {
           if (ev.target.closest('#ec-up')) { const src = await readImg(); if (src) { img = src; pi(); } return; }
           if (ev.target.closest('#ec-rm')) { img = ''; pi(); return; }
           if (!ev.target.closest('[data-save]')) return;
           const nm = $('#ec-name', m.el).value.trim(); if (!nm) { A.toast('Enter a name', 'err'); return; }
-          c.name = nm; c.image = img; S.saveCategories(list); m.close(); paintCats(); A.toast('Category updated');
+          c.name = nm; c.image = img; S.saveCategories(list); { const bn = S.banners(); bn.cats = bn.cats || {}; if (catBanner) bn.cats[slug] = catBanner; else delete bn.cats[slug]; S.saveBanners(bn); } m.close(); paintCats(); A.toast('Category updated');
         });
       }
     });
@@ -510,6 +485,7 @@
       const list = S.collections(); const slug = A.slug(st.slug || st.title);
       if (list.some((c) => c.slug === slug && c.id !== st.id)) { A.toast('Another page already uses that slug', 'err'); return; }
       st.slug = slug; st.title = st.title.trim(); st.status = status;
+      { const bn = S.banners(); bn.cats = bn.cats || {}; if (oldSlug && oldSlug !== slug) delete bn.cats[oldSlug]; if (pageBanner) bn.cats[slug] = pageBanner; else delete bn.cats[slug]; S.saveBanners(bn); }
       if (st.id) list[list.findIndex((c) => c.id === st.id)] = JSON.parse(JSON.stringify(st));
       else { st.id = list.reduce((m, c) => Math.max(m, c.id), 0) + 1; list.push(JSON.parse(JSON.stringify(st))); }
       S.saveCollections(list); fill(); $('#cp-status').value = st.status;
@@ -530,7 +506,7 @@
     const LABEL = { hero: 'Hero slider', collection: 'Collection cards', rail: 'Product row', showrooms: 'Showrooms', recent: 'Recently viewed', quality: 'Quality slider' };
     const SIC = { hero: 'image', collection: 'grid', rail: 'tag', showrooms: 'store', recent: 'clock', quality: 'shield' };
     const settings = S.settings();
-    const st = { layout: JSON.parse(JSON.stringify(S.homeLayout())), heroTitle: settings.heroTitle || '', heroSub: settings.heroSub || '', showDefaults: S.banners().showDefaults !== false, craftBg: S.banners().craftBg || '' };
+    const st = { layout: JSON.parse(JSON.stringify(S.homeLayout())), heroTitle: settings.heroTitle || '', heroSub: settings.heroSub || '', slides: JSON.parse(JSON.stringify(S.banners().home || [])), showDefaults: S.banners().showDefaults !== false, craftBg: S.banners().craftBg || '' };
     if (!st.layout.some((x) => x.type === 'hero')) st.layout.unshift({ id: 'hero', type: 'hero', enabled: true });
     const closed = new Set(); let dirty = false;
     const pages = () => S.collections();
@@ -541,7 +517,11 @@
       const id = x.id;
       if (x.type === 'hero') return `<div class="form-grid2">${field('Headline (first slide)', `<input data-top="heroTitle" value="${esc(st.heroTitle)}" maxlength="60">`)}${field('Subtitle (first slide)', `<input data-top="heroSub" value="${esc(st.heroSub)}" maxlength="90">`)}</div>
         <label class="check small" style="margin-top:6px"><input type="checkbox" data-top="showDefaults" ${st.showDefaults ? 'checked' : ''}> Also show the built-in slides (New Arrivals, Kids, Sets)</label>
-        <p class="small muted" style="margin-top:10px">Upload, reorder or hide your own slider pictures in <a class="btn-link" href="banners.html">Banners</a>.</p>`;
+        <div class="field" style="margin-top:12px"><label>Your slider pictures</label><span class="hint">Best size 1800 x 700 (wide). Leave the text empty to show the picture on its own.</span>
+          ${st.slides.map((b, i) => `<div class="bn-row" data-si="${i}"><div class="bn-thumb">${b.image ? `<img src="${b.image}" alt="">` : '<span class="muted xs">No image</span>'}</div><div class="bn-fields">
+            <div class="row gap-8 wrap"><button class="btn btn-glass btn-sm" data-slide-up type="button">${icon('upload', 14)} ${b.image ? 'Replace image' : 'Upload image'}</button><label class="check small"><input type="checkbox" data-slide="active" ${b.active !== false ? 'checked' : ''}> Show</label><span class="grow"></span><button class="btn btn-ghost btn-icon btn-sm" data-slide-mv="-1" ${i === 0 ? 'disabled' : ''} type="button" aria-label="Move up">${icon('chevron-up', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-slide-mv="1" ${i === st.slides.length - 1 ? 'disabled' : ''} type="button" aria-label="Move down">${icon('chevron-down', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-slide-rm type="button" aria-label="Remove slide">${icon('trash', 14)}</button></div>
+            <div class="form-grid2"><div class="field"><label>Headline (optional)</label><input data-slide="title" value="${esc(b.title || '')}" maxlength="60"></div><div class="field"><label>Subtitle (optional)</label><input data-slide="sub" value="${esc(b.sub || '')}" maxlength="90"></div><div class="field"><label>Button text (optional)</label><input data-slide="cta" value="${esc(b.cta || '')}" maxlength="24" placeholder="Shop now"></div><div class="field"><label>Link</label><input data-slide="link" value="${esc(b.link || '')}" placeholder="shop.html?cat=eid"></div></div></div></div>`).join('')}
+          <button class="btn btn-glass btn-sm" data-slide-add type="button" style="align-self:flex-start">${icon('plus', 14)} Add slide</button></div>`;
       if (x.type === 'collection') return `<div class="form-grid2">${field('Section title', inp(id, 'title', x.title))}${field('Link text', inp(id, 'linkLabel', x.linkLabel, 'Explore All'))}</div>
         ${field('Link address', inp(id, 'link', x.link, 'category.html?c=panjabi'))}
         <div class="field"><label>Shop pages to show here</label><div class="cat-checks">${pages().map((c) => `<label class="check small"><input type="checkbox" data-sec="${id}" data-page="${esc(c.slug)}" ${(x.pages || []).includes(c.slug) ? 'checked' : ''}> ${esc(c.title)} <span class="muted xs">(${c.cats.length} categories)</span></label>`).join('')}</div><span class="hint">Each category of the chosen pages becomes a card.</span></div>
@@ -573,6 +553,7 @@
     root.addEventListener('input', (e) => {
       dirty = true; const t = e.target;
       if (t.dataset.top) { st[t.dataset.top] = t.type === 'checkbox' ? t.checked : t.value; return; }
+      if (t.dataset.slide) { const sl = st.slides[Number(t.closest('[data-si]').dataset.si)]; sl[t.dataset.slide] = t.type === 'checkbox' ? t.checked : t.value; return; }
       const holder = t.closest('[data-sec]') || t; const x = sec(holder.dataset.sec || t.dataset.sec); if (!x) return;
       if (t.dataset.page) { x.pages = x.pages || []; const i = x.pages.indexOf(t.dataset.page); if (t.checked && i < 0) x.pages.push(t.dataset.page); if (!t.checked && i >= 0) x.pages.splice(i, 1); return; }
       const row = t.closest('[data-i]'); const i = row ? Number(row.dataset.i) : -1;
@@ -585,7 +566,13 @@
       }
     });
     root.addEventListener('click', async (e) => {
-      const t = e.target; const boxEl = t.closest('[data-box]'); if (!boxEl) return; const id = boxEl.dataset.box; const x = sec(id); const i = st.layout.indexOf(x);
+      const t = e.target;
+      const srow = t.closest('[data-si]'); const si = srow ? Number(srow.dataset.si) : -1;
+      if (t.closest('[data-slide-add]')) { st.slides.push({ id: 'b' + A.uid(), image: '', title: '', sub: '', cta: '', link: 'shop.html', active: true }); dirty = true; paint(); return; }
+      if (t.closest('[data-slide-rm]')) { st.slides.splice(si, 1); dirty = true; paint(); return; }
+      const smv = t.closest('[data-slide-mv]'); if (smv) { const j = si + Number(smv.dataset.slideMv); [st.slides[si], st.slides[j]] = [st.slides[j], st.slides[si]]; dirty = true; paint(); return; }
+      if (t.closest('[data-slide-up]')) { const f = document.createElement('input'); f.type = 'file'; f.accept = 'image/*'; f.onchange = async () => { if (!f.files[0]) return; try { st.slides[si].image = await Admin.compressImage(f.files[0], 1800); dirty = true; paint(); } catch (er) { A.toast('Could not read that image', 'err'); } }; f.click(); return; }
+      const boxEl = t.closest('[data-box]'); if (!boxEl) return; const id = boxEl.dataset.box; const x = sec(id); const i = st.layout.indexOf(x);
       const mv = t.closest('[data-mv]'); if (mv) { const j = i + Number(mv.dataset.mv); if (j >= 1 && j < st.layout.length) { [st.layout[i], st.layout[j]] = [st.layout[j], st.layout[i]]; dirty = true; paint(); } return; }
       if (t.closest('[data-rm]')) { if (await A.confirm(`Remove the section “${x.title || LABEL[x.type]}”?`, 'Remove')) { st.layout.splice(i, 1); dirty = true; paint(); } return; }
       const ea = t.closest('[data-extra-add]'); if (ea) { x.extra = x.extra || []; x.extra.push({ title: '', sub: '', link: 'shop.html', pid: 1 }); dirty = true; paint(); return; }
@@ -606,7 +593,7 @@
     $('#hm-add-rail').addEventListener('click', () => add('rail'));
     $('#hm-save').addEventListener('click', () => {
       S.saveHomeLayout(st.layout); S.saveSettings({ heroTitle: st.heroTitle.trim() || settings.heroTitle, heroSub: st.heroSub });
-      const bn = S.banners(); bn.showDefaults = st.showDefaults; if (st.craftBg) bn.craftBg = st.craftBg; else delete bn.craftBg; S.saveBanners(bn);
+      const bn = S.banners(); bn.home = st.slides; bn.showDefaults = st.showDefaults; if (st.craftBg) bn.craftBg = st.craftBg; else delete bn.craftBg; S.saveBanners(bn);
       dirty = false; A.toast('Home page updated');
     });
     $('#hm-reset').addEventListener('click', () => A.confirm('Put the home page back to its original layout and text?', 'Reset').then((ok) => { if (ok) { S.saveHomeLayout(S.homeDefault()); location.reload(); } }));
@@ -625,7 +612,11 @@
     $('#pe-view').href = '../' + (rec.file || 'index.html');
     const main = $('#pe-main');
     const saved = S.pageText(key); const isPolicy = key.startsWith('policy-'); const pk = key.replace('policy-', '');
-    const done = (msg) => { rec.status = $('#pe-status').value; rec.date = new Date().toISOString(); const l = S.pages(); l[l.findIndex((x) => x.id === rec.id)] = rec; S.savePages(l); A.toast(msg || 'Page updated'); };
+    let pb = key === 'shop' ? (S.banners().cats || {}).all || '' : (S.banners().pages || {})[key] || '';
+    const bannerHost = $('#pe-banner'); bannerHost.className = 'card';
+    bannerPicker(bannerHost, key === 'shop' ? 'Shop page banner (all products)' : 'Page banner', () => pb, (v) => { pb = v; }, key === 'shop' ? 'Shown above the products. Each category can have its own banner under Pages > its shop page.' : 'A wide picture shown at the top of this page. Leave empty for no banner.');
+    const saveBanner = () => { const bn = S.banners(); if (key === 'shop') { bn.cats = bn.cats || {}; if (pb) bn.cats.all = pb; else delete bn.cats.all; } else { bn.pages = bn.pages || {}; if (pb) bn.pages[key] = pb; else delete bn.pages[key]; } S.saveBanners(bn); };
+    const done = (msg) => { saveBanner(); rec.status = $('#pe-status').value; rec.date = new Date().toISOString(); const l = S.pages(); l[l.findIndex((x) => x.id === rec.id)] = rec; S.savePages(l); A.toast(msg || 'Page updated'); };
     if (isPolicy) {
       const cur = S.policy(pk); const st = { title: cur.title, paras: cur.paras.slice() };
       const paint = () => { main.innerHTML = `<div class="card"><div class="field"><label for="pp-title">Page title</label><input id="pp-title" class="big-input" value="${esc(st.title)}"></div></div>
@@ -642,7 +633,7 @@
       return;
     }
     if (key === 'shop') {
-      main.innerHTML = '<div class="card"><p>The shop page lists your products and categories automatically, so it has no text to edit here.</p><ul class="small muted" style="margin:10px 0 0 18px;list-style:disc"><li>Change products and categories in <a class="btn-link" href="products.html">Products</a>.</li><li>Change the banner picture in <a class="btn-link" href="banners.html">Banners</a>.</li></ul></div>';
+      main.innerHTML = '<div class="card"><p>The shop page lists your products and categories automatically, so it has no text to edit here.</p><ul class="small muted" style="margin:10px 0 0 18px;list-style:disc"><li>Change products and categories in <a class="btn-link" href="products.html">Products</a>.</li><li>Each category and shop page has its own banner in <a class="btn-link" href="pages.html">Pages</a>.</li></ul></div>';
       $('#pe-save').addEventListener('click', () => done());
       return;
     }

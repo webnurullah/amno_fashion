@@ -79,7 +79,7 @@ also be edited under *Products → Categories*. The storefront design itself doe
 *Admin → Pages → Home* opens the **home page builder**: every section of the storefront home page as a box. Turn sections on or off,
 move them up and down, change titles, links and text, choose which shop pages feed a collection-cards section, set what a product row
 shows (newest, best selling, featured or one category) and how many products, edit the quality-slider cards and its background, and add
-new collection or product-row sections. **Update** saves it. The slider pictures are managed in *Banners*. The page design itself is unchanged.
+new collection or product-row sections. **Update** saves it. The slider pictures are managed in the Hero slider box. The page design itself is unchanged.
 
 ## Editing the other pages (admin)
 
@@ -92,7 +92,7 @@ another piece of text editable, add `data-edit="page.key" data-label="Name" data
 ## Admin menu: Site and Product
 
 The admin menu currently shows one group, **Site and Product**: **Pages** (all storefront pages in one WordPress-style list: shop pages
-like Panjabi/Kids/Sets, content pages like About and policies, ), Products (with Categories), Banners, Media and Customize. The business modules (orders, POS, couriers,
+like Panjabi/Kids/Sets, content pages like About and policies, ), Products (with Categories), Media and Customize. The business modules (orders, POS, couriers,
 warehouse, finance, reports, settings) are hidden from the menu but their pages and data are untouched. To show the full
 menu again set `Admin.SITE_ONLY = false` in `assets/js/admin-core.js`.
 
@@ -208,3 +208,9 @@ the page scripts.
 
 Current Chrome, Edge, Firefox and Safari. Uses CSS `backdrop-filter`, `color-mix()` and
 optional chaining. `prefers-reduced-motion` is respected.
+
+### Banners
+
+There is no separate Banners menu. Each page has its own banner option: the hero slider pictures and the quality-slider background are in the
+Home builder; every built-in page (About, Contact, policies, ...) has a "Page banner" at the top of its editor; the Shop page editor sets the
+all-products banner; each shop page has its banner in its editor; and each category's banner is in that category's Edit box.

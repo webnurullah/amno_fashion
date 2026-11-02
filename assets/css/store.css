@@ -792,3 +792,7 @@ a.contact-card:hover { transform: translateX(4px); }
 .cat-hero.scene .cat-hero-tag { left: auto; right: 18px; }
 @media (max-width: 1000px) { .cat-hero-photo { width: 34%; left: 5%; top: 44%; } }
 @media (max-width: 1000px) { .cat-hero.has-photo .cat-pj.c0 { display: none; } .cat-hero.has-photo .cat-hero-art { padding-left: 30%; } }
+
+/* banner picture of a content page */
+.page-banner { margin: 14px 0 22px; border-radius: 26px; overflow: hidden; box-shadow: var(--shadow); }
+.page-banner img { display: block; width: 100%; height: auto; max-height: 420px; object-fit: cover; }

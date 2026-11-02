@@ -252,6 +252,8 @@
     $('#main').innerHTML = '<div class="container"><div class="empty glass pad" style="margin:60px auto;max-width:560px;text-align:center"><h2>This page is not available right now</h2><p class="muted">Please check back soon.</p><a class="btn btn-primary" href="index.html">Back to home</a></div></div>';
   } else {
     if (P[page]) P[page]();
+    const pbn = (S.banners().pages || {})[pageKey];
+    if (pbn && page !== 'home' && page !== 'shop') { const c = $('#main .container'); if (c) { const html = `<div class="page-banner"><img src="${pbn}" alt=""></div>`; const cr = c.querySelector('.crumbs'); if (cr) cr.insertAdjacentHTML('afterend', html); else c.insertAdjacentHTML('afterbegin', html); } }
     const txt = S.pageText(pageKey || page);
     $$('[data-edit]').forEach((el) => { const v = txt[el.dataset.edit]; if (v != null && v !== '') el.textContent = v; });
   }
