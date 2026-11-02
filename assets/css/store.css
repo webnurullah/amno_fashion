@@ -766,3 +766,9 @@ a.contact-card:hover { transform: translateX(4px); }
 .cat-hero.scene .cat-pj .pj { filter: drop-shadow(0 10px 10px rgba(30, 15, 5, .3)); }
 .cat-hero-tag { position: absolute; left: 18px; bottom: 16px; z-index: 2; padding: 7px 16px; border-radius: 99px; font-weight: 700; font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: #3b2a22; background: rgba(255, 255, 255, .85); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 @media (max-width: 1000px) { .cat-hero.scene { aspect-ratio: 16 / 9; } .cat-hero.scene .cat-pj { width: 26%; } .cat-hero.scene .cat-hero-art { opacity: 1; padding: 0; } }
+
+/* category chips under the collection banner */
+.cat-chips { justify-content: center; gap: 8px; padding: 18px 0 4px; overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; }
+.cat-chips::-webkit-scrollbar { display: none; }
+.cat-chips .chip { flex: 0 0 auto; }
+@media (max-width: 1000px) { .cat-chips { justify-content: flex-start; } }
