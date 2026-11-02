@@ -559,6 +559,16 @@
   /** uploaded banners: home slider slides + per-category banner images ('all' = every listing) */
   store.banners = () => Object.assign({ home: [], cats: {}, pages: {}, showDefaults: true }, DB.get('banners', {}));
   store.saveBanners = (b) => DB.set('banners', b);
+  /** home hero slides (all editable in Admin -> Pages -> Home). art: a ivory, c sky blue, d mint */
+  store.heroDefault = () => { const st = store.settings(); return [
+    { id: 'h1', art: 'a', kicker: 'New Arrivals', title: st.heroTitle || 'Choose Your Best Panjabi', sub: st.heroSub || "They're all so nice", stamp: 'In stores and online', cta: 'Shop now', btn: 'primary', link: 'shop.html?sort=new', active: true },
+    { id: 'h2', art: 'c', kicker: 'Kids', title: 'Little Ones, Big Occasions', sub: 'Matching looks for the whole family', stamp: 'Sizes 2Y to 12Y', cta: 'Shop kids', btn: 'primary', link: 'shop.html?cat=kids', active: true },
+    { id: 'h3', art: 'd', kicker: 'Sets', title: 'Panjabi & Pajama Sets', sub: 'Ready to wear, ready to gift', stamp: 'Eid & wedding ready', cta: 'Shop sets', btn: 'glass', link: 'shop.html?cat=sets', active: true }]; };
+  store.heroSlides = () => {
+    const bn = store.banners(); if (Array.isArray(bn.slides)) return bn.slides;
+    const mine = (bn.home || []).filter((b) => b.image).map((b) => ({ id: b.id, image: b.image, art: 'a', kicker: '', title: b.title || '', sub: b.sub || '', stamp: '', cta: b.cta || '', btn: 'primary', link: b.link || 'shop.html', active: b.active !== false }));
+    return bn.showDefaults === false ? mine : mine.concat(store.heroDefault());
+  };
   /** a banner is a picture (older ones are just the picture string) plus optional details: title, sub, cta, link, align */
   store.bn = (v) => (typeof v === 'string' ? { image: v } : Object.assign({}, v || {}));
   store.bnHas = (b) => !!(b && (b.image || b.title));

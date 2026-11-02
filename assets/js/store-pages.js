@@ -31,21 +31,19 @@
   P.home = () => {
     const pub = S.published();
     const set = (id) => pub.find((p) => p.id === id) || pub[0];
-    $('#hero-title').textContent = settings.heroTitle;
-    $('#hero-sub').textContent = settings.heroSub;
-    $('#tile-art-a').innerHTML = [set(2), set(1), set(4)].map((p, i) => `<div class="tile-pj p${i}">${S.thumb(p)}</div>`).join('');
-    $('#tile-art-c').innerHTML = [set(13), set(14), set(16)].map((p, i) => `<div class="tile-pj p${i}">${S.thumb(p)}</div>`).join('');
-    $('#tile-art-d').innerHTML = [set(16), set(9)].map((p, i) => `<div class="tile-pj p${i}">${S.thumb(p)}</div>`).join('');
-    (() => {
-      const bn = S.banners(); const track = $('#hero-track');
-      const mine = bn.home.filter((b) => b.image && b.active !== false);
-      if (mine.length) {
-        if (bn.showDefaults === false) [...track.children].forEach((t) => { t.hidden = true; });
-        track.insertAdjacentHTML('afterbegin', mine.map((b) => `<a class="tile tile-img" href="${esc(b.link || 'shop.html')}" aria-label="${esc(b.title || 'Featured banner')}"><div class="tile-art" style="background-image:url('${b.image}')" aria-hidden="true"></div>${b.title || b.sub || b.cta ? `<div class="tile-copy">${b.title ? `<h2 class="tile-h">${esc(b.title)}</h2>` : ''}${b.sub ? `<p>${esc(b.sub)}</p>` : ''}${b.cta ? `<span class="btn btn-primary">${esc(b.cta)}</span>` : ''}</div>` : ''}</a>`).join(''));
-      }
-    })();
+    const ART = { a: [2, 1, 4], c: [13, 14, 16], d: [16, 9] };
+    const heroList = S.heroSlides().filter((x) => x.active !== false);
+    $('.hero-slider').hidden = !heroList.length;
+    $('#hero-track').innerHTML = heroList.map((x, i) => {
+      const copy = `<div class="tile-copy">${x.kicker ? `<span class="kicker">${esc(x.kicker)}</span>` : ''}${i === 0 ? '<h1 id="hero-title">' : '<h2 class="tile-h">'}${esc(x.title || '')}${i === 0 ? '</h1>' : '</h2>'}${x.sub ? `<p>${esc(x.sub)}</p>` : ''}${x.stamp ? `<span class="stamp">${esc(x.stamp)}</span>` : ''}${x.cta ? `<span class="btn ${x.btn === 'glass' ? 'btn-glass' : 'btn-primary'}">${esc(x.cta)}</span>` : ''}</div>`;
+      const hasText = x.kicker || x.title || x.sub || x.stamp || x.cta;
+      if (x.image) return `<a class="tile tile-img" href="${esc(x.link || 'shop.html')}" aria-label="${esc(x.title || 'Featured banner')}"><div class="tile-art" style="background-image:url('${x.image}')" aria-hidden="true"></div>${hasText ? copy : ''}</a>`;
+      const art = ART[x.art] ? x.art : 'a';
+      return `<a class="tile tile-${art}" href="${esc(x.link || 'shop.html')}" aria-label="${esc(x.title || 'Featured')}"><div class="tile-art" aria-hidden="true">${ART[art].map((id, k) => `<div class="tile-pj p${k}">${S.thumb(set(id))}</div>`).join('')}</div>${copy}</a>`;
+    }).join('');
     (() => {
       const track = $('#hero-track'); const slides = [...track.children].filter((t) => !t.hidden); const dots = $('#hero-dots');
+      if (!slides.length) return;
       const per = () => 1;
       let idx = 0; let timer;
       const step = () => slides[0].getBoundingClientRect().width + 20;
@@ -231,8 +229,9 @@
       const tag = st.sale ? 'Online offer' : st.sort === 'new' ? 'New arrivals' : st.cat ? 'Collection' : 'Our collection';
       const catRec = st.cat ? S.categories().find((c) => c.slug === st.cat) : null; const catImg = catRec && catRec.image;
       const bns = S.banners().cats; const binfo = [bns[st.cat || (coll ? coll.slug : 'all')], bns.all].map(S.bn).find(S.bnHas);
-      if (binfo) { const h = $('#cat-hero'); h.className = 'cat-hero has-img'; h.removeAttribute('style'); h.innerHTML = Shop.bannerHTML(binfo, 'hb'); return; }
-      $('#cat-hero').className = 'cat-hero scene' + (catImg ? ' has-photo' : ''); $('#cat-hero').innerHTML = `${sceneSVG(st.cat || (coll && SCENES[coll.slug] ? coll.slug : 'all'))}<div class="cat-hero-art" aria-hidden="true">${pics.slice(0, 3).map((p, i) => `<div class="cat-pj c${i}">${S.thumb(p)}</div>`).join('')}</div><span class="cat-hero-tag">${esc(title)}</span>${catImg ? `<div class="cat-hero-photo"><img src="${catImg}" alt="${esc(title)}"></div>` : ''}`;
+      if (binfo && binfo.image) { const h = $('#cat-hero'); h.className = 'cat-hero has-img'; h.removeAttribute('style'); h.innerHTML = Shop.bannerHTML(binfo, 'hb'); return; }
+      const btxt = binfo && !binfo.image ? Shop.bannerText(binfo) : '';
+      $('#cat-hero').className = 'cat-hero scene' + (btxt ? ' has-text t-' + (binfo.align || 'left') : catImg ? ' has-photo' : ''); $('#cat-hero').innerHTML = `${sceneSVG(st.cat || (coll && SCENES[coll.slug] ? coll.slug : 'all'))}<div class="cat-hero-art" aria-hidden="true">${pics.slice(0, 3).map((p, i) => `<div class="cat-pj c${i}">${S.thumb(p)}</div>`).join('')}</div>${btxt ? btxt : `<span class="cat-hero-tag">${esc(title)}</span>`}${!btxt && catImg ? `<div class="cat-hero-photo"><img src="${catImg}" alt="${esc(title)}"></div>` : ''}`;
     })();
     document.title = `${st.cat ? catName(st.cat) : coll ? coll.title : 'Shop'} — ${settings.storeName}`;
 

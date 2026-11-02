@@ -545,7 +545,7 @@
     const LABEL = { hero: 'Hero slider', collection: 'Collection cards', rail: 'Product row', showrooms: 'Showrooms', recent: 'Recently viewed', quality: 'Quality slider' };
     const SIC = { hero: 'image', collection: 'grid', rail: 'tag', showrooms: 'store', recent: 'clock', quality: 'shield' };
     const settings = S.settings();
-    const st = { layout: JSON.parse(JSON.stringify(S.homeLayout())), heroTitle: settings.heroTitle || '', heroSub: settings.heroSub || '', slides: JSON.parse(JSON.stringify(S.banners().home || [])), showDefaults: S.banners().showDefaults !== false, craftBg: S.banners().craftBg || '' };
+    const st = { layout: JSON.parse(JSON.stringify(S.homeLayout())), slides: JSON.parse(JSON.stringify(S.heroSlides())), craftBg: S.banners().craftBg || '' };
     if (!st.layout.some((x) => x.type === 'hero')) st.layout.unshift({ id: 'hero', type: 'hero', enabled: true });
     const closed = new Set(); let dirty = false;
     const pages = () => S.collections();
@@ -554,13 +554,12 @@
     const inp = (id, k, v, ph = '', extra = '') => `<input data-sec="${id}" data-k="${k}" value="${esc(v == null ? '' : v)}" placeholder="${esc(ph)}" ${extra}>`;
     const body = (x) => {
       const id = x.id;
-      if (x.type === 'hero') return `<div class="form-grid2">${field('Headline (first slide)', `<input data-top="heroTitle" value="${esc(st.heroTitle)}" maxlength="60">`)}${field('Subtitle (first slide)', `<input data-top="heroSub" value="${esc(st.heroSub)}" maxlength="90">`)}</div>
-        <label class="check small" style="margin-top:6px"><input type="checkbox" data-top="showDefaults" ${st.showDefaults ? 'checked' : ''}> Also show the built-in slides (New Arrivals, Kids, Sets)</label>
-        <div class="field" style="margin-top:12px"><label>Your slider pictures</label><span class="hint">Best size 1800 x 700 (wide). Leave the text empty to show the picture on its own.</span>
-          ${st.slides.map((b, i) => `<div class="bn-row" data-si="${i}"><div class="bn-thumb">${b.image ? `<img src="${b.image}" alt="">` : '<span class="muted xs">No image</span>'}</div><div class="bn-fields">
-            <div class="row gap-8 wrap"><button class="btn btn-glass btn-sm" data-slide-up type="button">${icon('upload', 14)} ${b.image ? 'Replace image' : 'Upload image'}</button><label class="check small"><input type="checkbox" data-slide="active" ${b.active !== false ? 'checked' : ''}> Show</label><span class="grow"></span><button class="btn btn-ghost btn-icon btn-sm" data-slide-mv="-1" ${i === 0 ? 'disabled' : ''} type="button" aria-label="Move up">${icon('chevron-up', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-slide-mv="1" ${i === st.slides.length - 1 ? 'disabled' : ''} type="button" aria-label="Move down">${icon('chevron-down', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-slide-rm type="button" aria-label="Remove slide">${icon('trash', 14)}</button></div>
-            <div class="form-grid2"><div class="field"><label>Headline (optional)</label><input data-slide="title" value="${esc(b.title || '')}" maxlength="60"></div><div class="field"><label>Subtitle (optional)</label><input data-slide="sub" value="${esc(b.sub || '')}" maxlength="90"></div><div class="field"><label>Button text (optional)</label><input data-slide="cta" value="${esc(b.cta || '')}" maxlength="24" placeholder="Shop now"></div><div class="field"><label>Link</label><input data-slide="link" value="${esc(b.link || '')}" placeholder="shop.html?cat=eid"></div></div></div></div>`).join('')}
-          <button class="btn btn-glass btn-sm" data-slide-add type="button" style="align-self:flex-start">${icon('plus', 14)} Add slide</button></div>`;
+      if (x.type === 'hero') return `<div class="field"><label>Slider banners</label><span class="hint">Every slide of the home slider. Edit the text and button of each one, switch its look, or use your own picture (best size 1800 x 700). Leave all text empty to show a picture on its own.</span>
+          ${st.slides.map((b, i) => `<div class="bn-row" data-si="${i}"><div class="bn-thumb">${b.image ? `<img src="${b.image}" alt="">` : `<span class="muted xs">${({ a: 'Ivory', c: 'Sky blue', d: 'Mint' })[b.art] || 'Ivory'} look<br>with panjabis</span>`}</div><div class="bn-fields">
+            <div class="row gap-8 wrap"><button class="btn btn-glass btn-sm" data-slide-up type="button">${icon('upload', 14)} ${b.image ? 'Replace picture' : 'Use my picture'}</button>${b.image ? '<button class="btn btn-ghost btn-sm danger" data-slide-img-rm type="button">Remove picture</button>' : ''}<label class="check small"><input type="checkbox" data-slide="active" ${b.active !== false ? 'checked' : ''}> Show</label><span class="grow"></span><button class="btn btn-ghost btn-icon btn-sm" data-slide-mv="-1" ${i === 0 ? 'disabled' : ''} type="button" aria-label="Move up">${icon('chevron-up', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-slide-mv="1" ${i === st.slides.length - 1 ? 'disabled' : ''} type="button" aria-label="Move down">${icon('chevron-down', 14)}</button><button class="btn btn-ghost btn-icon btn-sm" data-slide-rm type="button" aria-label="Remove slide">${icon('trash', 14)}</button></div>
+            <div class="form-grid2"><div class="field"><label>Small heading</label><input data-slide="kicker" value="${esc(b.kicker || '')}" maxlength="30"></div><div class="field"><label>Headline</label><input data-slide="title" value="${esc(b.title || '')}" maxlength="60"></div><div class="field"><label>Subtitle</label><input data-slide="sub" value="${esc(b.sub || '')}" maxlength="90"></div><div class="field"><label>Badge text</label><input data-slide="stamp" value="${esc(b.stamp || '')}" maxlength="30" placeholder="e.g. In stores and online"></div><div class="field"><label>Button text</label><input data-slide="cta" value="${esc(b.cta || '')}" maxlength="24"></div><div class="field"><label>Button link</label><input data-slide="link" value="${esc(b.link || '')}" placeholder="shop.html?cat=eid"></div>
+            <div class="field"><label>Button style</label><select data-slide="btn"><option value="primary" ${b.btn !== 'glass' ? 'selected' : ''}>Blue</option><option value="glass" ${b.btn === 'glass' ? 'selected' : ''}>White</option></select></div>${b.image ? '' : `<div class="field"><label>Look</label><select data-slide="art"><option value="a" ${b.art === 'a' || !b.art ? 'selected' : ''}>Ivory</option><option value="c" ${b.art === 'c' ? 'selected' : ''}>Sky blue</option><option value="d" ${b.art === 'd' ? 'selected' : ''}>Mint</option></select></div>`}</div></div></div>`).join('')}
+          <div class="row gap-8 wrap"><button class="btn btn-glass btn-sm" data-slide-add type="button">${icon('plus', 14)} Add slide</button><button class="btn btn-ghost btn-sm" data-slide-reset type="button">Reset slides to the originals</button></div></div>`;
       if (x.type === 'collection') return `<div class="form-grid2">${field('Section title', inp(id, 'title', x.title))}${field('Link text', inp(id, 'linkLabel', x.linkLabel, 'Explore All'))}</div>
         ${field('Link address', inp(id, 'link', x.link, 'category.html?c=panjabi'))}
         <div class="field"><label>Shop pages to show here</label><div class="cat-checks">${pages().map((c) => `<label class="check small"><input type="checkbox" data-sec="${id}" data-page="${esc(c.slug)}" ${(x.pages || []).includes(c.slug) ? 'checked' : ''}> ${esc(c.title)} <span class="muted xs">(${c.cats.length} categories)</span></label>`).join('')}</div><span class="hint">Each category of the chosen pages becomes a card.</span></div>
@@ -607,8 +606,10 @@
     root.addEventListener('click', async (e) => {
       const t = e.target;
       const srow = t.closest('[data-si]'); const si = srow ? Number(srow.dataset.si) : -1;
-      if (t.closest('[data-slide-add]')) { st.slides.push({ id: 'b' + A.uid(), image: '', title: '', sub: '', cta: '', link: 'shop.html', active: true }); dirty = true; paint(); return; }
+      if (t.closest('[data-slide-add]')) { st.slides.push({ id: 'b' + A.uid(), art: 'a', kicker: '', title: 'New slide', sub: '', stamp: '', cta: 'Shop now', btn: 'primary', link: 'shop.html', active: true }); dirty = true; paint(); return; }
       if (t.closest('[data-slide-rm]')) { st.slides.splice(si, 1); dirty = true; paint(); return; }
+      if (t.closest('[data-slide-img-rm]')) { delete st.slides[si].image; dirty = true; paint(); return; }
+      if (t.closest('[data-slide-reset]')) { if (await A.confirm('Put the slider back to its three original slides? Your own pictures are removed from it.', 'Reset')) { st.slides = S.heroDefault(); dirty = true; paint(); } return; }
       const smv = t.closest('[data-slide-mv]'); if (smv) { const j = si + Number(smv.dataset.slideMv); [st.slides[si], st.slides[j]] = [st.slides[j], st.slides[si]]; dirty = true; paint(); return; }
       if (t.closest('[data-slide-up]')) { const f = document.createElement('input'); f.type = 'file'; f.accept = 'image/*'; f.onchange = async () => { if (!f.files[0]) return; try { st.slides[si].image = await Admin.compressImage(f.files[0], 1800); dirty = true; paint(); } catch (er) { A.toast('Could not read that image', 'err'); } }; f.click(); return; }
       const boxEl = t.closest('[data-box]'); if (!boxEl) return; const id = boxEl.dataset.box; const x = sec(id); const i = st.layout.indexOf(x);
@@ -631,8 +632,8 @@
     $('#hm-add-collection').addEventListener('click', () => add('collection'));
     $('#hm-add-rail').addEventListener('click', () => add('rail'));
     $('#hm-save').addEventListener('click', () => {
-      S.saveHomeLayout(st.layout); S.saveSettings({ heroTitle: st.heroTitle.trim() || settings.heroTitle, heroSub: st.heroSub });
-      const bn = S.banners(); bn.home = st.slides; bn.showDefaults = st.showDefaults; if (st.craftBg) bn.craftBg = st.craftBg; else delete bn.craftBg; S.saveBanners(bn);
+      S.saveHomeLayout(st.layout);
+      const bn = S.banners(); bn.slides = st.slides; if (st.craftBg) bn.craftBg = st.craftBg; else delete bn.craftBg; S.saveBanners(bn);
       dirty = false; A.toast('Home page updated');
     });
     $('#hm-reset').addEventListener('click', () => A.confirm('Put the home page back to its original layout and text?', 'Reset').then((ok) => { if (ok) { S.saveHomeLayout(S.homeDefault()); location.reload(); } }));
@@ -672,7 +673,7 @@
       return;
     }
     if (key === 'shop') {
-      main.innerHTML = '<div class="card"><p>The shop page lists your products and categories automatically, so it has no text to edit here.</p><ul class="small muted" style="margin:10px 0 0 18px;list-style:disc"><li>Change products and categories in <a class="btn-link" href="products.html">Products</a>.</li><li>Each category and shop page has its own banner in <a class="btn-link" href="pages.html">Pages</a>.</li></ul></div>';
+      main.innerHTML = '<div class="card"><p>Edit the shop page banner in the "Shop page banner" box above: add a picture and/or a headline, subtitle and button. Without a picture your headline sits on the default illustrated banner. The products and categories listed below the banner come from Products.</p><ul class="small muted" style="margin:10px 0 0 18px;list-style:disc"><li>Change products and categories in <a class="btn-link" href="products.html">Products</a>.</li><li>Each category and shop page has its own banner in <a class="btn-link" href="pages.html">Pages</a>.</li></ul></div>';
       $('#pe-save').addEventListener('click', () => done());
       return;
     }

@@ -813,3 +813,10 @@ a.contact-card:hover { transform: translateX(4px); }
 .banner-text.a-center .btn { align-self: center; }
 .banner-text.a-right { right: 4%; text-align: left; }
 @media (max-width: 700px) { .banner-text { max-width: 78%; padding: 16px 18px; } .banner-text.a-left { left: 4%; } .banner-text.a-right { right: 4%; } .banner-text h2 { font-size: 1.3rem; } }
+
+/* default shop banner scene with its own headline/button */
+.cat-hero.has-text.t-left .cat-hero-art { padding-left: 42%; }
+.cat-hero.has-text.t-right .cat-hero-art { padding-right: 42%; }
+.cat-hero.has-text.t-center .cat-hero-art { opacity: .3; }
+.cat-hero.has-text .banner-text { z-index: 3; }
+@media (max-width: 1000px) { .cat-hero.has-text .cat-hero-art { padding: 0; opacity: .3; } }

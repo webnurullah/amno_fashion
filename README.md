@@ -220,6 +220,6 @@ optional chaining. `prefers-reduced-motion` is respected.
 
 Every banner can carry details on top of its picture: a headline, a subtitle, a button (text and link) and the text position (left, center, right). A banner can also be details only, without a picture.
 
-There is no separate Banners menu. Each page has its own banner option: the hero slider pictures and the quality-slider background are in the
+There is no separate Banners menu. Each page has its own banner option: every slide of the hero slider (small heading, headline, subtitle, badge, button text and link, button style, look or your own picture) and the quality-slider background are in the
 Home builder; every built-in page (About, Contact, policies, ...) has a "Page banner" at the top of its editor; the Shop page editor sets the
 all-products banner; each shop page has its banner in its editor; and each category's banner is in that category's Edit box.
