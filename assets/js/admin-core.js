@@ -59,7 +59,7 @@
   Admin.SITE_ONLY = true;
   const NAV_SITE = () => [
     { heading: 'Site and Product' },
-    { id: 'pages', label: 'Pages', icon: 'file', href: 'pages.html', sub: [['All Pages', 'pages.html', 'pages'], ['Add Shop Page', 'collection-edit.html', 'collection-edit'], ['Add Page', 'pages.html?new=page', '']] },
+    { id: 'pages', label: 'Pages', icon: 'file', href: 'pages.html' },
     { id: 'products', label: 'Products', icon: 'tag', href: 'products.html', sub: [['All Products', 'products.html', 'products'], ['Add New', 'product-edit.html', 'product-edit'], ['Categories', 'categories.html', 'categories']] },
     { id: 'banners', label: 'Banners', icon: 'image', href: 'banners.html' },
     { id: 'media', label: 'Media', icon: 'image', href: 'media.html' },
